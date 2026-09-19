@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default: Tolak seluruh akses yang tidak dideklarasikan secara eksplisit
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Path Multi-Tenant NACIRA STUDIO AI CRM: /artifacts/{appId}/users/{userId}
+    match /artifacts/{appId}/users/{userId} {
+      
+      // Koleksi Pipeline Prospek (crmLeads)
+      match /crmLeads/{leadId} {
+        // Hanya pemilik sah yang terautentikasi yang dapat membaca datanya sendiri
+        allow read: if request.auth != null && request.auth.uid == userId;
+        
+        // Validasi skema ketat saat create & update
+        allow create, update: if request.auth != null 
+          && request.auth.uid == userId
+          && request.resource.data.name is string 
+          && request.resource.data.name.size() > 0 
+          && request.resource.data.name.size() <= 100
+          && request.resource.data.project is string 
+          && request.resource.data.project.size() <= 200
+          && (request.resource.data.value == null || (request.resource.data.value is number && request.resource.data.value >= 0))
+          && request.resource.data.status in ['Prospek / Survey', 'Design Review', 'Closing / DP Masuk', 'Batal / Unqualified']
+          && request.resource.data.schemaVersion == 2
+          && request.resource.data.updatedAt is string;
+          
+        allow delete: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Koleksi Jadwal Tindak Lanjut (followUpTasks)
+      match /followUpTasks/{taskId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        
+        allow create, update: if request.auth != null 
+          && request.auth.uid == userId
+          && request.resource.data.client is string 
+          && request.resource.data.client.size() > 0 
+          && request.resource.data.client.size() <= 100
+          && request.resource.data.status in ['Pending', 'Selesai', 'Batal']
+          && request.resource.data.schemaVersion == 2
+          && request.resource.data.updatedAt is string;
+          
+        allow delete: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+}

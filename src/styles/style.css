@@ -1,0 +1,90 @@
+/* File: src/styles/style.css */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&display=swap');
+
+:root {
+    --bg-main: #0d0d0d;
+    --gold-primary: #c5a059;
+    --gold-light: #f3e7c4;
+    --gold-dark: #b8972e;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: var(--bg-main);
+    color: #f3f4f6;
+    margin: 0;
+    padding: 0;
+}
+
+.serif-font {
+    font-family: 'Playfair Display', serif;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #121215; 
+}
+
+::-webkit-scrollbar-thumb {
+    background: #2a2a2e; 
+    border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #3f3f46; 
+}
+
+/* Glassmorphism & Gold Theme Panels */
+.glass-panel {
+    background: rgba(20, 20, 24, 0.92);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(197, 160, 89, 0.22);
+}
+
+.gold-gradient-text {
+    background: linear-gradient(135deg, #f3e7c4 0%, #c5a059 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.gold-btn {
+    background: linear-gradient(135deg, #d4af37 0%, #b8972e 100%);
+    color: #0d0d0d;
+    font-weight: 700;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gold-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #e6be40 0%, #c5a059 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 25px -5px rgba(197, 160, 89, 0.3);
+}
+
+.gold-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
