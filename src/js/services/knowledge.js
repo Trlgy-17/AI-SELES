@@ -57,6 +57,7 @@ export const KnowledgeService = {
             const isMinibarQuery = /minibar|mini bar|meja bar|island|meja island|topi bar|box elektronik/i.test(normalizedQuery);
             const isAksesorisQuery = /aksesoris|rak piring|rak bumbu|rak sendok|downlight|led strip|aventos|revolve|pantry|slow motion|engsel/i.test(normalizedQuery);
             const isSipilQuery = /kanopi|canopi|pagar|las|bengkel las|besi|baja|atap|alderon|spandek|sipil|cor|coran|meja beton|backsplash|moulding|bobok|bongkar|keramik|decking|vinyl/i.test(normalizedQuery);
+            const isSopQuery = /survei|survey|jadwal|kapan|jam|hari|alamat|workshop|lokasi|garansi|termin|dp|bayar|cicil|ongkir|kontrak/i.test(normalizedQuery);
 
             matchingItems = activeItems.filter(item => {
                 const matchCategory = category ? item.category === category : true;
@@ -81,6 +82,7 @@ export const KnowledgeService = {
                 if (isMinibarQuery && (item.category === 'MINIBAR_ISLAND' || item.category === 'KITCHEN_SET')) return true;
                 if (isAksesorisQuery && (item.category === 'AKSESORIS' || item.category === 'KITCHEN_SET')) return true;
                 if (isSipilQuery && item.category === 'SIPIL_BENGKEL') return true;
+                if (isSopQuery && (item.category === 'SOP_SALES' || item.category === 'SERVICES')) return true;
 
                 // Selalu sertakan SOP dan Layanan Gratis
                 if (item.category === 'SOP_SALES' || item.category === 'SERVICES') return true;
@@ -110,7 +112,7 @@ export const KnowledgeService = {
         
         // Bentuk teks knowledge kontekstual dan daftar sitasi
         const citations = resolvedChunks.map(chunk => `${chunk.title} (${chunk.scope === 'GLOBAL' ? 'Core' : 'Brand Override'} v${chunk.version || '2026.2'})`);
-        const formattedContent = resolvedChunks.map(chunk => `[${chunk.title}]:\n${chunk.content}`).join('\n\n');
+        const formattedContent = resolvedChunks.map(chunk => `=== [${chunk.title}] (Kategori: ${chunk.category} | Wilayah: ${chunk.subCategory || 'Umum'}) ===\n${chunk.content}`).join('\n\n');
 
         return {
             resolvedChunks,

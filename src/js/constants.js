@@ -702,7 +702,7 @@ export const CANONICAL_LEAD_STATUS_MAP = {
 export const TASK_STATUS_OPTIONS = ['Pending', 'Selesai'];
 
 export const AI_RESPONSE_MODES = [
-    { id: 'SMART_REPLY', label: '⚡ Smart Auto Reply', desc: 'Analisis percakapan & buat 3 alternatif balasan optimal' },
+    { id: 'SMART_REPLY', label: '⚡ Smart Auto Reply', desc: 'Analisis percakapan & racik 1 balasan utama paling optimal' },
     { id: 'PRICE_EXPLANATION', label: '💰 Transparansi Harga', desc: 'Fokus jelaskan estimasi per meter dan keunggulan bahan' },
     { id: 'SURVEY_INVITATION', label: '📐 Ajak Survei Gratis', desc: 'Arahkan klien untuk booking jadwal survei & ukur lokasi' },
     { id: 'OBJECTION_HANDLING', label: '🛡️ Tangani Keberatan', desc: 'Atasi respon mahal, bandingkan vendor, atau ragu' },

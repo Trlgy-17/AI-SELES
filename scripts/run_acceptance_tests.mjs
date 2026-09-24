@@ -174,6 +174,22 @@ assert(brandIds.includes('brand_heya'), 'Heya brand present');
 assert(brandIds.includes('brand_putra'), 'Putra brand present');
 assert(brandIds.includes('brand_kurnia'), 'Kurnia brand present');
 
+// ----------------------------------------------------
+// TEST 11: Context-First Adaptation & Full Brand Intelligence
+// ----------------------------------------------------
+console.log('\n🧪 TEST 11: Context-First Adaptation & Full Brand Intelligence');
+assert(promptHomeputra.includes('ATURAN UTAMA: SESUAIKAN JAWABAN DENGAN PERTANYAAN / TOPIK TERAKHIR KLIEN (CONTEXT-FIRST)'), 'Context-first primary rule active');
+assert(promptHomeputra.includes('Alamat Workshop / Studio: Jl. Terusan Buah Batu No. 88, Bandung'), 'Brand workshop address accurately injected');
+assert(promptHomeputra.includes('Balon chat kanan/hijau adalah pesan admin kita, balon chat kiri/putih adalah calon klien'), 'WhatsApp screenshot bubble recognition rule present');
+assert(promptHomeputra.includes('JIKA KLIEN BERTANYA JADWAL SURVEI'), 'Dedicated survey scheduling context rule present');
+assert(promptHomeputra.includes('JIKA KLIEN BERTANYA SKEMA TERMIN PEMBAYARAN'), 'Payment terms context rule present');
+
+const sopResolved = KnowledgeService.resolveKnowledge({
+    brandId: 'brand_homeputra',
+    queryText: 'jadwal survei dan garansi pengerjaan'
+});
+assert(sopResolved.resolvedChunks.some(c => c.category === 'SOP_SALES'), 'SOP Sales knowledge resolved for survey/guarantee query');
+
 console.log('\n========================================================');
 console.log(`🎉 ALL ${passedTests}/${totalTests} ACCEPTANCE TESTS PASSED SUCCESSFULLY!`);
 console.log('========================================================\n');
