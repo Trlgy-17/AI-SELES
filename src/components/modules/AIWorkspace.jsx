@@ -371,47 +371,137 @@ export const AIWorkspace = ({
 
                     {/* Mode Respon Selector */}
                     <div className="mb-5">
-                        <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 block mb-2">
-                            Mode Respon Strategis:
-                        </label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            {AI_RESPONSE_MODES.map((mode) => (
-                                <button
-                                    key={mode.id}
-                                    type="button"
-                                    onClick={() => setSelectedMode(mode.id)}
-                                    className={`p-2.5 rounded-2xl text-left border transition-all flex flex-col justify-between ${
-                                        selectedMode === mode.id
-                                            ? 'bg-[#c5a059]/15 border-[#c5a059] text-white shadow-lg shadow-[#c5a059]/10'
-                                            : 'bg-[#15151a] border-[#26262d] text-zinc-400 hover:border-[#383844] hover:text-zinc-200'
-                                    }`}
-                                >
-                                    <span className="text-xs font-bold block">{mode.label}</span>
-                                    <span className="text-[10px] text-zinc-500 mt-0.5 line-clamp-1">{mode.desc}</span>
-                                </button>
-                            ))}
+                        <div className="flex items-center justify-between mb-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
+                                <span>🎯</span> Mode Respon Strategis:
+                            </label>
+                            <span className="text-[10px] text-zinc-400 font-medium">
+                                Klik untuk mengarahkan taktik AI
+                            </span>
                         </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                            {AI_RESPONSE_MODES.map((mode) => {
+                                const isSelected = selectedMode === mode.id;
+                                return (
+                                    <button
+                                        key={mode.id}
+                                        type="button"
+                                        onClick={() => setSelectedMode(mode.id)}
+                                        className={`p-3 rounded-2xl text-left border transition-all flex flex-col justify-between relative group ${
+                                            isSelected
+                                                ? 'bg-gradient-to-b from-[#c5a059]/20 to-[#1a1712] border-[#c5a059] text-white shadow-lg shadow-[#c5a059]/15 ring-1 ring-[#c5a059]/30'
+                                                : 'bg-[#15151a] border-[#26262d] text-zinc-400 hover:border-[#383844] hover:text-zinc-200'
+                                        }`}
+                                    >
+                                        <div className="flex items-start justify-between gap-1 mb-1">
+                                            <span className="text-xs font-bold block text-white leading-tight">
+                                                {mode.label}
+                                            </span>
+                                            {mode.badge && (
+                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider ${
+                                                    isSelected ? 'bg-[#c5a059] text-[#0d0d0d]' : 'bg-[#202028] text-zinc-400'
+                                                }`}>
+                                                    {mode.badge}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className={`text-[11px] font-medium leading-snug line-clamp-2 ${
+                                            isSelected ? 'text-amber-200/90' : 'text-zinc-400 group-hover:text-zinc-300'
+                                        }`}>
+                                            {mode.desc}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Active Strategy Guidance Callout */}
+                        {(() => {
+                            const activeModeObj = AI_RESPONSE_MODES.find(m => m.id === selectedMode) || AI_RESPONSE_MODES[0];
+                            return (
+                                <div className="mt-2.5 px-3.5 py-2.5 rounded-xl bg-[#1a1a24] border border-[#c5a059]/30 flex items-center justify-between flex-wrap gap-2 text-xs animate-fade-in shadow-inner">
+                                    <span className="text-zinc-300 font-medium flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-[#c5a059] animate-pulse"></span>
+                                        <strong className="text-[#c5a059]">Fokus Taktis:</strong>
+                                        <span className="text-zinc-200">{activeModeObj.desc}</span>
+                                    </span>
+                                    <span className="text-[10px] text-zinc-400 bg-[#22222d] px-2 py-0.5 rounded-full border border-[#30303e]">
+                                        Tersinkronisasi ke SOP {brandName}
+                                    </span>
+                                </div>
+                            );
+                        })()}
                     </div>
 
                     {/* Tautkan Klien & Client Memory Drawer Toggle */}
-                    <div className="mb-5 bg-[#15151a] border border-[#26262d] rounded-2xl p-3.5">
+                    <div className="mb-5 bg-[#15151a] border border-[#26262d] rounded-2xl p-4 transition-all">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <span className="text-[#c5a059]"><Icons.Brain /></span>
-                                <span className="text-xs font-bold text-zinc-200">Memori Klien (Anti-Tanya Ulang)</span>
+                                <span className="text-[#c5a059] text-base"><Icons.Brain /></span>
+                                <div>
+                                    <span className="text-xs font-bold text-white block">Memori Klien (Anti-Tanya Ulang)</span>
+                                    <span className="text-[10px] text-zinc-400">Data terkunci tidak akan ditanyakan lagi oleh AI</span>
+                                </div>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => setShowMemoryDrawer(!showMemoryDrawer)}
-                                className="text-xs text-[#c5a059] hover:underline font-semibold"
-                            >
-                                {showMemoryDrawer ? 'Tutup Memori' : (clientMemory.location || clientMemory.name ? '✏️ Edit Memori' : '+ Tambah Memori')}
-                            </button>
+                            <div className="flex items-center gap-2">
+                                {(clientMemory.name || clientMemory.location || clientMemory.dimensions || clientMemory.budget) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setClientMemory({ name: '', location: '', dimensions: '', budget: '', projectType: '', notes: '' });
+                                            setSelectedLeadId('');
+                                            showToast("Memori klien berhasil dikosongkan.");
+                                        }}
+                                        className="text-[11px] text-rose-400 hover:text-rose-300 font-medium px-2 py-0.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 transition-colors"
+                                        title="Kosongkan seluruh data memori"
+                                    >
+                                        Reset
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowMemoryDrawer(!showMemoryDrawer)}
+                                    className="text-xs text-[#c5a059] hover:underline font-bold px-2.5 py-1 rounded-xl bg-[#202028] border border-[#33333e]"
+                                >
+                                    {showMemoryDrawer ? 'Tutup Memori' : (clientMemory.location || clientMemory.name ? '✏️ Edit Memori' : '+ Isi Memori')}
+                                </button>
+                            </div>
                         </div>
+
+                        {/* Quick Active Memory Pills (Ketika Drawer Tertutup) */}
+                        {!showMemoryDrawer && (clientMemory.name || clientMemory.location || clientMemory.dimensions || clientMemory.budget || clientMemory.projectType) && (
+                            <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-3 border-t border-[#26262d] animate-fade-in">
+                                {clientMemory.name && (
+                                    <span className="px-2.5 py-1 rounded-xl bg-[#202028] text-zinc-200 text-[11px] font-semibold border border-[#323240] flex items-center gap-1">
+                                        👤 {clientMemory.name}
+                                    </span>
+                                )}
+                                {clientMemory.location && (
+                                    <span className="px-2.5 py-1 rounded-xl bg-emerald-500/15 text-emerald-400 text-[11px] font-semibold border border-emerald-500/35 flex items-center gap-1">
+                                        📍 {clientMemory.location}
+                                    </span>
+                                )}
+                                {clientMemory.dimensions && (
+                                    <span className="px-2.5 py-1 rounded-xl bg-cyan-500/15 text-cyan-400 text-[11px] font-semibold border border-cyan-500/35 flex items-center gap-1">
+                                        📏 {clientMemory.dimensions}
+                                    </span>
+                                )}
+                                {clientMemory.budget && (
+                                    <span className="px-2.5 py-1 rounded-xl bg-amber-500/15 text-amber-400 text-[11px] font-semibold border border-amber-500/35 flex items-center gap-1">
+                                        💰 {clientMemory.budget}
+                                    </span>
+                                )}
+                                {clientMemory.projectType && (
+                                    <span className="px-2.5 py-1 rounded-xl bg-purple-500/15 text-purple-400 text-[11px] font-semibold border border-purple-500/35 flex items-center gap-1">
+                                        🏠 {clientMemory.projectType}
+                                    </span>
+                                )}
+                            </div>
+                        )}
 
                         {/* CRM Lead Selector Dropdown */}
                         {crmLeads && crmLeads.length > 0 && (
-                            <div className="mt-2.5">
+                            <div className="mt-3">
                                 <select
                                     value={selectedLeadId}
                                     onChange={handleSelectLead}
@@ -429,46 +519,78 @@ export const AIWorkspace = ({
 
                         {/* Drawer Input Memori Klien */}
                         {showMemoryDrawer && (
-                            <div className="mt-3 pt-3 border-t border-[#26262d] grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs animate-fade-in">
+                            <div className="mt-3 pt-3 border-t border-[#26262d] space-y-3 animate-fade-in">
+                                {/* Quick 1-Click City Lock */}
                                 <div>
-                                    <label className="text-[10px] text-zinc-400 font-bold block mb-1">Nama Klien</label>
-                                    <input
-                                        type="text"
-                                        value={clientMemory.name}
-                                        onChange={(e) => setClientMemory({ ...clientMemory, name: e.target.value })}
-                                        placeholder="Contoh: Ibu Rina"
-                                        className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-2.5 py-1.5 text-xs text-white"
-                                    />
+                                    <span className="text-[10px] text-zinc-400 font-bold block mb-1.5">
+                                        Kunci Cepat Wilayah (PL DK vs PL LK):
+                                    </span>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {[
+                                            { label: 'Bandung (PL DK)', loc: 'Bandung Raya' },
+                                            { label: 'Tasikmalaya (PL DK)', loc: 'Tasikmalaya' },
+                                            { label: 'Cimahi (PL DK)', loc: 'Cimahi' },
+                                            { label: 'Jabodetabek (PL LK)', loc: 'Jabodetabek' },
+                                            { label: 'Jakarta (PL LK)', loc: 'Jakarta' },
+                                            { label: 'Bekasi/Depok (PL LK)', loc: 'Bekasi/Depok' }
+                                        ].map((city, idx) => (
+                                            <button
+                                                key={idx}
+                                                type="button"
+                                                onClick={() => setClientMemory(prev => ({ ...prev, location: city.loc }))}
+                                                className={`text-[10px] px-2 py-0.5 rounded-lg border transition-all ${
+                                                    clientMemory.location?.includes(city.loc)
+                                                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 font-bold'
+                                                        : 'bg-[#1e1e26] text-zinc-400 border-[#2e2e3a] hover:text-white'
+                                                }`}
+                                            >
+                                                + {city.label}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="text-[10px] text-zinc-400 font-bold block mb-1">Lokasi Terkonfirmasi</label>
-                                    <input
-                                        type="text"
-                                        value={clientMemory.location}
-                                        onChange={(e) => setClientMemory({ ...clientMemory, location: e.target.value })}
-                                        placeholder="Contoh: Podomoro Park Bandung"
-                                        className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-2.5 py-1.5 text-xs text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] text-zinc-400 font-bold block mb-1">Ukuran / Dimensi</label>
-                                    <input
-                                        type="text"
-                                        value={clientMemory.dimensions}
-                                        onChange={(e) => setClientMemory({ ...clientMemory, dimensions: e.target.value })}
-                                        placeholder="Contoh: 3 meter lari (L-Shape)"
-                                        className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-2.5 py-1.5 text-xs text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] text-zinc-400 font-bold block mb-1">Estimasi Budget</label>
-                                    <input
-                                        type="text"
-                                        value={clientMemory.budget}
-                                        onChange={(e) => setClientMemory({ ...clientMemory, budget: e.target.value })}
-                                        placeholder="Contoh: Rp 25jt - 30jt"
-                                        className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-2.5 py-1.5 text-xs text-white"
-                                    />
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                                    <div>
+                                        <label className="text-[10px] text-zinc-400 font-bold block mb-1">Nama Klien</label>
+                                        <input
+                                            type="text"
+                                            value={clientMemory.name}
+                                            onChange={(e) => setClientMemory({ ...clientMemory, name: e.target.value })}
+                                            placeholder="Contoh: Ibu Rina / Pak Budi"
+                                            className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-2.5 py-1.5 text-xs text-white focus:border-[#c5a059] focus:outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] text-zinc-400 font-bold block mb-1">Lokasi Terkonfirmasi</label>
+                                        <input
+                                            type="text"
+                                            value={clientMemory.location}
+                                            onChange={(e) => setClientMemory({ ...clientMemory, location: e.target.value })}
+                                            placeholder="Contoh: Podomoro Park Bandung"
+                                            className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-2.5 py-1.5 text-xs text-white focus:border-[#c5a059] focus:outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] text-zinc-400 font-bold block mb-1">Ukuran / Dimensi Ruangan</label>
+                                        <input
+                                            type="text"
+                                            value={clientMemory.dimensions}
+                                            onChange={(e) => setClientMemory({ ...clientMemory, dimensions: e.target.value })}
+                                            placeholder="Contoh: 3.5 meter lari (L-Shape)"
+                                            className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-2.5 py-1.5 text-xs text-white focus:border-[#c5a059] focus:outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] text-zinc-400 font-bold block mb-1">Estimasi Budget</label>
+                                        <input
+                                            type="text"
+                                            value={clientMemory.budget}
+                                            onChange={(e) => setClientMemory({ ...clientMemory, budget: e.target.value })}
+                                            placeholder="Contoh: Rp 25jt - 30jt"
+                                            className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-2.5 py-1.5 text-xs text-white focus:border-[#c5a059] focus:outline-none"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         )}

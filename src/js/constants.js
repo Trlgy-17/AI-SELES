@@ -702,12 +702,48 @@ export const CANONICAL_LEAD_STATUS_MAP = {
 export const TASK_STATUS_OPTIONS = ['Pending', 'Selesai'];
 
 export const AI_RESPONSE_MODES = [
-    { id: 'SMART_REPLY', label: '⚡ Smart Auto Reply', desc: 'Analisis percakapan & racik 1 balasan utama paling optimal' },
-    { id: 'PRICE_EXPLANATION', label: '💰 Transparansi Harga', desc: 'Fokus jelaskan estimasi per meter dan keunggulan bahan' },
-    { id: 'SURVEY_INVITATION', label: '📐 Ajak Survei Gratis', desc: 'Arahkan klien untuk booking jadwal survei & ukur lokasi' },
-    { id: 'OBJECTION_HANDLING', label: '🛡️ Tangani Keberatan', desc: 'Atasi respon mahal, bandingkan vendor, atau ragu' },
-    { id: 'FOLLOW_UP', label: '⏰ Follow-Up Halus', desc: 'Pancing respon klien yang belum membalas tanpa mendesak' },
-    { id: 'CLOSING', label: '🤝 Dorong DP / Closing', desc: 'Kunci kesepakatan produksi dan komitmen awal' }
+    { 
+        id: 'SMART_REPLY', 
+        label: '⚡ Smart Auto Reply', 
+        tagline: 'Deteksi Otomatis & Solutif',
+        desc: 'Otomatis analisis konteks chat & balas paling tepat sasaran', 
+        badge: 'Default SOP' 
+    },
+    { 
+        id: 'PRICE_EXPLANATION', 
+        label: '💰 Transparansi Harga', 
+        tagline: 'Estimasi RAB & Edukasi Bahan',
+        desc: 'Rincian harga per meter (DK vs LK) & spesifikasi 18mm + PVC', 
+        badge: 'Pricelist' 
+    },
+    { 
+        id: 'SURVEY_INVITATION', 
+        label: '📐 Ajak Survei Gratis', 
+        tagline: 'Ukur Lokasi & Desain 3D',
+        desc: 'Arahkan booking survei lokasi & ukur gratis tanpa risiko', 
+        badge: 'Survei' 
+    },
+    { 
+        id: 'OBJECTION_HANDLING', 
+        label: '🛡️ Tangani Keberatan', 
+        tagline: 'Atasi Mahal & Ragu Vendor',
+        desc: 'Patahkan komparasi vendor dengan edukasi kualitas & win-win', 
+        badge: 'Negosiasi' 
+    },
+    { 
+        id: 'FOLLOW_UP', 
+        label: '⏰ Follow-Up Halus', 
+        tagline: 'Pancing Respon Ghosting',
+        desc: 'Sapa prospek pasif dengan referensi karya & rute tim survei', 
+        badge: 'Follow-Up' 
+    },
+    { 
+        id: 'CLOSING', 
+        label: '🤝 Dorong DP / Closing', 
+        tagline: 'Kunci Antrian Workshop',
+        desc: 'Bantu klien amankan kuota perakitan dengan termin DP 50%', 
+        badge: 'Closing' 
+    }
 ];
 
 // Fallback untuk backward compatibility
