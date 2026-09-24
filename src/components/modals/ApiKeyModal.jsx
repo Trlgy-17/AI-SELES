@@ -10,7 +10,7 @@ export const ApiKeyModal = ({
     currentProvider = 'gemini',
     currentKey = '', 
     keyStorageMode = 'local', 
-    selectedModel = 'gemini-3.5-flash-lite', 
+    selectedModel = 'gemini-flash-lite-latest', 
     customProxyUrl = '',
     currentOpenaiBaseUrl = 'https://api.openai.com/v1',
     currentOpenaiApiKey = '',
@@ -20,7 +20,7 @@ export const ApiKeyModal = ({
     
     // Gemini Settings
     const [geminiApiKeyInput, setGeminiApiKeyInput] = useState('');
-    const [geminiModelInput, setGeminiModelInput] = useState('gemini-3.5-flash-lite');
+    const [geminiModelInput, setGeminiModelInput] = useState('gemini-flash-lite-latest');
     const [geminiProxyInput, setGeminiProxyInput] = useState('');
 
     // OpenAI / Custom Provider Settings
@@ -35,7 +35,7 @@ export const ApiKeyModal = ({
         if (isOpen) {
             setActiveProvider(currentProvider || 'gemini');
             setGeminiApiKeyInput(currentKey || '');
-            setGeminiModelInput(selectedModel || 'gemini-3.5-flash-lite');
+            setGeminiModelInput(selectedModel || 'gemini-flash-lite-latest');
             setGeminiProxyInput(customProxyUrl || '');
 
             setOpenaiBaseUrlInput(currentOpenaiBaseUrl || 'https://api.openai.com/v1');
@@ -138,10 +138,9 @@ export const ApiKeyModal = ({
                                 onChange={(e) => setGeminiModelInput(e.target.value)}
                                 className="w-full bg-[#1b1b22] border border-[#26262d] rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
                             >
-                                <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite (⚡ Ultra Cepat ~1-2 detik / Sangat Direkomendasikan)</option>
-                                <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite (⚡ Cepat & Efisien)</option>
-                                <option value="gemini-3.5-flash">Gemini 3.5 Flash (Standar Seimbang)</option>
-                                <option value="gemini-3.6-flash">Gemini 3.6 Flash (High Quality / Lebih Teliti)</option>
+                                <option value="gemini-flash-lite-latest">Gemini Flash-Lite (⚡ Ultra Cepat Sub-1.5s — Sangat Direkomendasikan)</option>
+                                <option value="gemini-flash-latest">Gemini Flash (⚡ Multimodal & Vision Seimbang)</option>
+                                <option value="gemini-3.8-flash">Gemini 3.8 Flash (High Intelligence / Analisis Detail)</option>
                             </select>
                         </FormField>
 
@@ -215,7 +214,7 @@ export const ApiKeyModal = ({
                                     className="w-full bg-[#1b1b22] border border-[#26262d] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30 font-mono text-xs"
                                 />
                                 <div className="flex flex-wrap gap-1">
-                                    {['gpt-4o-mini', 'gpt-4o', 'deepseek-chat', 'llama-3.3-70b-versatile', 'qwen-2.5'].map(m => (
+                                    {['gpt-4o-mini', 'gpt-4o', 'deepseek-chat', 'llama-3.3-70b-versatile', 'llama-3.2-11b-vision-preview'].map(m => (
                                         <button
                                             key={m}
                                             type="button"

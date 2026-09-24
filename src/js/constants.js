@@ -68,7 +68,7 @@ export const PRICE_MASTER = {
 };
 
 export const DEFAULT_GEMINI_API_KEY = 'REMOVED_SECRET';
-export const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash-lite';
+export const DEFAULT_GEMINI_MODEL = 'gemini-flash-lite-latest';
 
 export const CANONICAL_LEAD_STATUS_MAP = {
     'Prospek': 'Prospek / Survey',

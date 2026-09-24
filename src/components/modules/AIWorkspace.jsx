@@ -6,12 +6,14 @@ import { ApiKeyModal } from '../modals/ApiKeyModal.jsx';
 import { StorageService } from '../../js/services/storage.js';
 import { AIService } from '../../js/services/ai.js';
 import { copyToClipboard } from '../../js/utils/clipboard.js';
+import { optimizeImageForAI } from '../../js/utils/image.js';
 import { DEFAULT_GEMINI_API_KEY, DEFAULT_GEMINI_MODEL } from '../../js/constants.js';
 
 export const AIWorkspace = ({ showToast }) => {
     const [inputText, setInputText] = useState('');
     const [selectedImage, setSelectedImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [optimizedImagePart, setOptimizedImagePart] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [aiResponse, setAiResponse] = useState(null);
     const [copySuccess, setCopySuccess] = useState(false);
@@ -95,30 +97,48 @@ export const AIWorkspace = ({ showToast }) => {
         showToast("Pengaturan AI Provider & API berhasil disimpan!");
     };
 
-    const processImageFile = (file) => {
+    const processImageFile = async (file) => {
         if (!file.type.startsWith('image/')) {
             setAiError("Format file harus berupa gambar (PNG, JPG, WEBP).");
             return;
         }
-        if (file.size > 5 * 1024 * 1024) {
-            setAiError("Ukuran gambar terlalu besar. Maksimal 5MB.");
+        if (file.size > 12 * 1024 * 1024) {
+            setAiError("Ukuran gambar terlalu besar. Maksimal 12MB.");
             return;
         }
         setAiError(null);
         setSelectedImage(file);
-        const reader = new FileReader();
-        reader.onload = () => {
-            setImagePreview(reader.result);
-            showToast("Screenshot WhatsApp berhasil dimuat!");
-        };
-        reader.onerror = () => {
-            setAiError("Gagal membaca file gambar. Silakan pilih kembali.");
-            removeImage();
-        };
-        reader.onabort = () => {
-            setAiError("Pembacaan file gambar dibatalkan.");
-        };
-        reader.readAsDataURL(file);
+
+        try {
+            // Kompresi & downscale cerdas (mengurangi ukuran 95% tanpa mengurangi keterbacaan teks chat)
+            const optimized = await optimizeImageForAI(file, 1200, 0.85);
+            setImagePreview(optimized.dataUrl);
+            setOptimizedImagePart({
+                inlineData: {
+                    data: optimized.base64,
+                    mimeType: optimized.mimeType
+                }
+            });
+            showToast("Screenshot chat berhasil dimuat & dioptimasi!");
+        } catch (err) {
+            console.warn("[AIWorkspace] Gagal kompresi canvas, fallback pembacaan dasar:", err);
+            const reader = new FileReader();
+            reader.onload = () => {
+                setImagePreview(reader.result);
+                setOptimizedImagePart({
+                    inlineData: {
+                        data: reader.result.split(',')[1],
+                        mimeType: file.type || 'image/png'
+                    }
+                });
+                showToast("Screenshot chat berhasil dimuat!");
+            };
+            reader.onerror = () => {
+                setAiError("Gagal membaca file gambar. Silakan pilih kembali.");
+                removeImage();
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleImageUpload = (e) => {
@@ -151,11 +171,12 @@ export const AIWorkspace = ({ showToast }) => {
     const removeImage = () => {
         setSelectedImage(null);
         setImagePreview(null);
+        setOptimizedImagePart(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     const generateReply = async () => {
-        if (!inputText.trim() && !selectedImage) {
+        if (!inputText.trim() && !selectedImage && !imagePreview) {
             setAiError("Mohon masukkan teks chat atau unggah/paste screenshot percakapan WhatsApp.");
             return;
         }
@@ -185,17 +206,12 @@ export const AIWorkspace = ({ showToast }) => {
         setAiResponse(null);
 
         try {
-            let imagePart = null;
-            if (imagePreview) {
-                const base64Data = imagePreview.split(',')[1];
-                const mimeType = selectedImage ? selectedImage.type : 'image/png';
-                imagePart = {
-                    inlineData: {
-                        data: base64Data,
-                        mimeType: mimeType
-                    }
-                };
-            }
+            const imagePart = optimizedImagePart || (imagePreview ? {
+                inlineData: {
+                    data: imagePreview.split(',')[1],
+                    mimeType: selectedImage ? selectedImage.type : 'image/jpeg'
+                }
+            } : null);
 
             const result = await AIService.generateWhatsAppReply({
                 provider: aiProvider,
