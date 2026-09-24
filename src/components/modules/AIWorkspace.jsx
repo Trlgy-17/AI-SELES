@@ -290,7 +290,7 @@ export const AIWorkspace = ({
                 setClientMemory(prev => ({ ...prev, budget: result.clientAnalysis.extractedBudget }));
             }
 
-            showToast("3 Alternatif balasan WhatsApp & analisis strategis berhasil diracik!");
+            showToast("Rekomendasi balasan WhatsApp & analisis strategis berhasil diracik!");
         } catch (error) {
             console.error("[AI Workspace] Error:", error);
             setAiError(error.message);
@@ -335,7 +335,7 @@ export const AIWorkspace = ({
         );
     };
 
-    const currentReplyText = aiResponse?.replies?.[activeReplyTab] || aiResponse?.replies?.recommended || '';
+    const primaryReplyText = aiResponse?.reply || aiResponse?.replies?.recommended || '';
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12 animate-fade-in">
@@ -556,12 +556,12 @@ export const AIWorkspace = ({
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
-                                        <span>Meracik 3 Balasan & Analisis Penjualan...</span>
+                                        <span>Meracik Rekomendasi Balasan Terbaik...</span>
                                     </React.Fragment>
                                 ) : (
                                     <React.Fragment>
                                         <Icons.Zap /> 
-                                        <span>Generate 3 Alternatif Balasan ({brandName})</span>
+                                        <span>⚡ Generate Rekomendasi Balasan ({brandName})</span>
                                     </React.Fragment>
                                 )}
                             </button>
@@ -570,7 +570,7 @@ export const AIWorkspace = ({
                 </div>
             </div>
 
-            {/* SISI KANAN: 3 ALTERNATIF BALASAN & SMART CONTEXT PANEL */}
+            {/* SISI KANAN: REKOMENDASI UTAMA BALASAN & SMART CONTEXT PANEL */}
             <div className="lg:col-span-6 space-y-6">
                 {isLoading ? (
                     <div className="glass-panel rounded-3xl p-8 shadow-2xl h-full flex flex-col justify-center items-center text-zinc-500 border border-[#26262d] min-h-[480px]">
@@ -582,83 +582,47 @@ export const AIWorkspace = ({
                         </div>
                         <h3 className="serif-font text-lg font-bold text-white">{brandName} AI Copilot Sedang Bekerja...</h3>
                         <p className="text-sm mt-2 text-center max-w-sm text-zinc-400">
-                            Mencocokkan knowledge base 3-layer, mengaudit integritas harga 2026, dan merumuskan 3 opsi respon closing.
+                            Mencocokkan knowledge base 3-layer, mengaudit integritas harga 2026, dan merumuskan rekomendasi balasan WhatsApp terbaik.
                         </p>
                     </div>
                 ) : aiResponse ? (
                     <div className="space-y-6">
-                        {/* KARTU 3 ALTERNATIF BALASAN */}
+                        {/* KARTU REKOMENDASI UTAMA BALASAN */}
                         <div className="bg-[#15151a] rounded-3xl shadow-2xl border border-[#26262d] overflow-hidden flex flex-col animate-fade-in">
-                            {/* Tab Switcher untuk 3 Alternatif */}
-                            <div className="bg-[#1a1a22] border-b border-[#26262d] p-3 flex gap-2 flex-wrap sm:flex-nowrap">
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveReplyTab('recommended')}
-                                    className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                                        activeReplyTab === 'recommended'
-                                            ? 'bg-[#c5a059] text-[#0d0d0d] shadow-md'
-                                            : 'bg-[#202028] text-zinc-400 hover:text-white'
-                                    }`}
-                                >
-                                    <span>🌟</span>
-                                    <span>Rekomendasi Utama</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveReplyTab('alternativeSoft')}
-                                    className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                                        activeReplyTab === 'alternativeSoft'
-                                            ? 'bg-[#c5a059] text-[#0d0d0d] shadow-md'
-                                            : 'bg-[#202028] text-zinc-400 hover:text-white'
-                                    }`}
-                                >
-                                    <span>🕊️</span>
-                                    <span>Alternatif Soft</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveReplyTab('alternativeDirect')}
-                                    className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                                        activeReplyTab === 'alternativeDirect'
-                                            ? 'bg-[#c5a059] text-[#0d0d0d] shadow-md'
-                                            : 'bg-[#202028] text-zinc-400 hover:text-white'
-                                    }`}
-                                >
-                                    <span>⚡</span>
-                                    <span>Alternatif Direct</span>
-                                </button>
+                            {/* Header Rekomendasi Utama */}
+                            <div className="bg-[#1a1a22] border-b border-[#26262d] p-4 flex items-center justify-between flex-wrap gap-2">
+                                <div className="flex items-center gap-2">
+                                    <span className="px-2.5 py-1 rounded-xl bg-[#c5a059]/20 text-[#c5a059] text-xs font-bold uppercase tracking-wider border border-[#c5a059]/30 flex items-center gap-1.5">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                        🌟 Rekomendasi Utama
+                                    </span>
+                                    <span className="text-xs text-zinc-400 font-medium hidden sm:inline">
+                                        (Standard SOP & Persuasif)
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => handleCopy('primary', primaryReplyText)}
+                                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
+                                            copiedKey === 'primary' 
+                                                ? 'bg-emerald-500 text-white' 
+                                                : 'bg-[#202028] hover:bg-[#c5a059] hover:text-[#0d0d0d] text-zinc-200 border border-[#2e2e38]'
+                                        }`}
+                                    >
+                                        {copiedKey === 'primary' ? (
+                                            <React.Fragment><Icons.CheckCircle /> Disalin!</React.Fragment>
+                                        ) : (
+                                            <React.Fragment><Icons.Copy /> Copy Balasan</React.Fragment>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Teks Pesan WhatsApp */}
                             <div className="p-6 space-y-4">
-                                <div className="flex justify-between items-center">
-                                    <div className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                                        {activeReplyTab === 'recommended' && 'Rekomendasi Utama (Standard SOP & Persuasif)'}
-                                        {activeReplyTab === 'alternativeSoft' && 'Alternatif Soft (Santai, Edukatif & Ramah)'}
-                                        {activeReplyTab === 'alternativeDirect' && 'Alternatif Direct (To The Point & Jadwal Survei)'}
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <button 
-                                            onClick={() => handleCopy(activeReplyTab, currentReplyText)}
-                                            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
-                                                copiedKey === activeReplyTab 
-                                                    ? 'bg-emerald-500 text-white' 
-                                                    : 'bg-[#202028] hover:bg-[#c5a059] hover:text-[#0d0d0d] text-zinc-200 border border-[#2e2e38]'
-                                            }`}
-                                        >
-                                            {copiedKey === activeReplyTab ? (
-                                                <React.Fragment><Icons.CheckCircle /> Disalin!</React.Fragment>
-                                            ) : (
-                                                <React.Fragment><Icons.Copy /> Copy Balasan Ini</React.Fragment>
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-
                                 <div className="bg-[#1b1b22] border border-[#26262d] rounded-2xl p-5 relative group">
                                     <p className="text-zinc-100 text-sm md:text-base leading-relaxed whitespace-pre-wrap font-medium">
-                                        {currentReplyText}
+                                        {primaryReplyText}
                                     </p>
                                 </div>
 
@@ -776,7 +740,7 @@ export const AIWorkspace = ({
                         </div>
                         <h3 className="serif-font font-bold text-white text-base">Belum Ada Balasan Dibuat</h3>
                         <p className="text-sm mt-1 text-zinc-400 max-w-sm">
-                            Masukkan chat atau screenshot pelanggan {brandName} di sebelah kiri, lalu klik Generate untuk membuat 3 alternatif balasan AI.
+                            Masukkan chat atau screenshot pelanggan {brandName} di sebelah kiri, lalu klik Generate untuk membuat rekomendasi balasan AI terbaik.
                         </p>
                     </div>
                 )}

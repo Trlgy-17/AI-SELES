@@ -65,12 +65,12 @@ ${knowledgeContent || 'Gunakan pricelist standar Bandung & Jabodetabek: Multiple
             clientContext += 'Belum ada profil memori tersimpan untuk klien ini.';
         }
 
-        // 6. TASK CONTEXT & OUTPUT SCHEMA
+        // 6. TASK CONTEXT & STRUCTURED OUTPUT (MODE: ${responseMode})
         const taskContext = `# TASK CONTEXT & STRUCTURED OUTPUT (MODE: ${responseMode})
-Buat analisis intelijen penjualan internal dan HASILKAN 3 ALTERNATIF BALASAN WHATSAPP:
-1. "recommended": Balasan paling seimbang, natural, persuasif, sesuai SOP standar.
-2. "alternativeSoft": Balasan bernada lebih santai, ramah, edukatif, dan menurunkan tekanan.
-3. "alternativeDirect": Balasan lebih lugas, to the point pada estimasi angka dan langsung menawarkan booking survei.
+Buat analisis intelijen penjualan internal dan HASILKAN 1 REKOMENDASI UTAMA BALASAN WHATSAPP TERBAIK:
+- Balasan paling optimal, persuasif, santun, transparan terhadap harga (sesuai SOP & pricelist resmi), dan secara elegan mengarahkan calon klien ke langkah berikutnya (jadwal survei/konsultasi lanjutan).
+- Gaya bahasa manusiawi, profesional, hangat khas admin marketing interior, to the point, dan anti-kaku.
+- JANGAN menghasilkan beberapa alternatif; fokuskan pada 1 balasan terbaik siap kirim agar respon ultra-cepat dan akurat.
 
 OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
 {
@@ -84,11 +84,7 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
     "missingInformation": ["Daftar informasi penting yang belum diketahui, misal: ukuran panjang, lokasi"],
     "nextBestAction": "Rekomendasi taktis untuk admin sales"
   },
-  "replies": {
-    "recommended": "Teks balasan WhatsApp siap copy-paste (bersih tanpa tanda kutip pembungkus)",
-    "alternativeSoft": "Teks alternatif bernada ramah & konsultatif",
-    "alternativeDirect": "Teks alternatif bernada langsung ke penawaran jadwal survei"
-  },
+  "reply": "Teks balasan WhatsApp rekomendasi utama siap kirim (bersih tanpa tanda kutip pembungkus)",
   "principlesUsed": ["Prinsip SOP yang digunakan"],
   "internalSources": ${JSON.stringify(citations.length > 0 ? citations : ['Master Price List 2026', 'SOP WhatsApp Sales'])},
   "confidence": 0.95
@@ -97,10 +93,11 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
         return [systemCore, salesPolicy, brandContext, knowledgeContext, clientContext, taskContext].join('\n\n---\n\n');
     },
 
-    // Parsing JSON tangguh yang mendukung skema 3 alternatif & fallback darurat
+    // Parsing JSON tangguh yang mendukung skema 1 balasan utama & fallback darurat
     parseJsonResponse: (text, activeBrand) => {
         const defaultBrandName = activeBrand?.brandName || 'Nacira Studio';
         if (!text) {
+            const defaultReply = `Halo Kak! Terima kasih sudah menghubungi *${defaultBrandName}*. Ada yang bisa kami bantu untuk kebutuhan interior impian Kakak hari ini? 😊`;
             return {
                 clientAnalysis: {
                     intent: "CONSULTATION",
@@ -109,10 +106,11 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
                     missingInformation: ["Ukuran ruangan", "Lokasi rumah"],
                     nextBestAction: "Tanyakan lokasi dan ukuran perkiraan ruangan."
                 },
+                reply: defaultReply,
                 replies: {
-                    recommended: `Halo Kak! Terima kasih sudah menghubungi *${defaultBrandName}*. Ada yang bisa kami bantu untuk kebutuhan interior impian Kakak hari ini? 😊`,
-                    alternativeSoft: `Halo Kak! Salam kenal dari *${defaultBrandName}*. Mau konsultasi seputar kitchen set atau custom furniture ruangan apa nih Kak?`,
-                    alternativeDirect: `Halo Kak! Untuk estimasi pengerjaan interior di *${defaultBrandName}*, boleh info rencana kebutuhan dan lokasinya di mana Kak?`
+                    recommended: defaultReply,
+                    alternativeSoft: defaultReply,
+                    alternativeDirect: defaultReply
                 },
                 principlesUsed: ["Sapaan Ramah Konsultatif"],
                 internalSources: ["Master SOP Sales v2026"],
@@ -136,7 +134,7 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
 
             // Ekstraksi darurat regex jika JSON terpotong di tengah jalan
             let extractedReply = "";
-            const replyMatch = text.match(/"(?:recommended|reply)"\s*:\s*"((?:[^"\\]|\\.)*)"/s);
+            const replyMatch = text.match(/"(?:reply|recommended)"\s*:\s*"((?:[^"\\]|\\.)*)"/s);
             if (replyMatch && replyMatch[1]) {
                 extractedReply = replyMatch[1]
                     .replace(/\\n/g, '\n')
@@ -160,6 +158,7 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
                     missingInformation: ["Ukuran panjang ruangan", "Lokasi detail"],
                     nextBestAction: "Gali informasi lokasi dan ukuran ruangan sebelum estimasi akhir."
                 },
+                reply: extractedReply,
                 replies: {
                     recommended: extractedReply,
                     alternativeSoft: extractedReply,
@@ -172,19 +171,17 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
         }
     },
 
-    // Menormalkan output agar selalu memiliki format 3 alternatif lengkap
+    // Menormalkan output agar selalu memiliki format 1 rekomendasi utama (dengan backward compatibility)
     normalizeStructuredOutput: (raw, activeBrand) => {
         const brandName = activeBrand?.brandName || 'Nacira Studio';
         
-        let replies = raw.replies;
-        if (!replies) {
-            const single = raw.reply || raw.recommended || "";
-            replies = {
-                recommended: single,
-                alternativeSoft: raw.alternativeSoft || single,
-                alternativeDirect: raw.alternativeDirect || single
-            };
-        }
+        const singleReply = raw.reply || raw.recommended || raw.replies?.recommended || (typeof raw.replies === 'string' ? raw.replies : "") || `Halo Kak! Ada yang bisa kami bantu dari *${brandName}*?`;
+        
+        const replies = {
+            recommended: singleReply,
+            alternativeSoft: raw.replies?.alternativeSoft || raw.alternativeSoft || singleReply,
+            alternativeDirect: raw.replies?.alternativeDirect || raw.alternativeDirect || singleReply
+        };
 
         const clientAnalysis = raw.clientAnalysis || {
             intent: raw.intent || "CONSULTATION",
@@ -199,11 +196,8 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
 
         return {
             clientAnalysis,
-            replies: {
-                recommended: replies.recommended || `Halo Kak! Ada yang bisa kami bantu dari *${brandName}*?`,
-                alternativeSoft: replies.alternativeSoft || replies.recommended,
-                alternativeDirect: replies.alternativeDirect || replies.recommended
-            },
+            reply: singleReply,
+            replies,
             principlesUsed: Array.isArray(raw.principlesUsed) ? raw.principlesUsed : ["Transparansi Harga", "Micro-Commitment"],
             internalSources: Array.isArray(raw.internalSources) ? raw.internalSources : ["Master Price List 2026"],
             confidence: raw.confidence || 0.95
@@ -283,7 +277,7 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
 
         const userPrompt = inputText && inputText.trim() 
             ? `<untrusted_customer_message>\n${inputText.trim()}\n</untrusted_customer_message>`
-            : "Analisis screenshot percakapan WhatsApp calon klien berikut dan susun draf balasan 3 alternatif.";
+            : "Analisis screenshot percakapan WhatsApp calon klien berikut dan susun 1 rekomendasi balasan WhatsApp terbaik siap kirim.";
 
         let userContent;
         if (imagePart?.inlineData?.data) {
@@ -308,7 +302,7 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
                 { role: 'user', content: userContent }
             ],
             temperature: 0.25,
-            max_tokens: 650,
+            max_tokens: 500,
             response_format: { type: 'json_object' }
         };
 
@@ -365,14 +359,14 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
         if (inputText && inputText.trim()) {
             parts.push({ text: `<untrusted_customer_message>\n${inputText.trim()}\n</untrusted_customer_message>` });
         } else {
-            parts.push({ text: "Analisis screenshot percakapan WhatsApp calon klien berikut dan susun draf balasan 3 alternatif." });
+            parts.push({ text: "Analisis screenshot percakapan WhatsApp calon klien berikut dan susun 1 rekomendasi balasan WhatsApp terbaik siap kirim." });
         }
         if (imagePart) parts.push(imagePart);
 
         const buildPayload = (useThinking) => {
             const genConfig = {
                 temperature: 0.2,
-                maxOutputTokens: 650,
+                maxOutputTokens: 500,
                 responseMimeType: "application/json"
             };
             if (useThinking) {

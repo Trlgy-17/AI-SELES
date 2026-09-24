@@ -113,9 +113,9 @@ assert(memoryPrompt.includes('Dimensi Ruangan: 3.5m x 2.2m (SUDAH DIKETAHUI, JAN
 assert(memoryPrompt.includes('ANTI-HALUSINASI: Hanya gunakan data harga dan material dari KNOWLEDGE CONTEXT'), 'Strict anti-hallucination guardrail active');
 
 // ----------------------------------------------------
-// TEST 6: Structured 3-Alternative Output Normalization
+// TEST 6: Structured Primary Reply & Normalization
 // ----------------------------------------------------
-console.log('\n🧪 TEST 6: Structured 3-Alternative Output Normalization');
+console.log('\n🧪 TEST 6: Structured Primary Reply & Normalization');
 const rawAiOutput = JSON.stringify({
     clientAnalysis: {
         intent: 'ASK_PRICE',
@@ -125,19 +125,15 @@ const rawAiOutput = JSON.stringify({
         missingInformation: ['Tinggi plafon'],
         nextBestAction: 'Tawarkan jadwal survei gratis besok siang'
     },
-    replies: {
-        recommended: 'Halo Kak! Estimasi kitchen set multipleks HPL kami mulai 2,5jt/m. Boleh kami survei gratis ke lokasi?',
-        alternativeSoft: 'Halo Kak! Senang sekali bisa bantu. Mau dibuatkan konsep kitchen set minimalis seperti apa?',
-        alternativeDirect: 'Halo Kak! Untuk 3 meter kitchen set est. Rp 7,5jt - 9,6jt include survey & 3D. Kapan ada waktu luang untuk tim kami ukur?'
-    },
+    reply: 'Halo Kak! Estimasi kitchen set multipleks HPL kami mulai 2,5jt/m. Boleh kami survei gratis ke lokasi?',
     principlesUsed: ['Transparansi Harga', 'Survei Gratis'],
     internalSources: ['Master Price List 2026', 'SOP WhatsApp Sales']
 });
 
 const parsed = AIService.parseJsonResponse(rawAiOutput, homeputraBrand);
-assert(Boolean(parsed.replies.recommended), 'Recommended reply present');
-assert(Boolean(parsed.replies.alternativeSoft), 'Alternative Soft reply present');
-assert(Boolean(parsed.replies.alternativeDirect), 'Alternative Direct reply present');
+assert(Boolean(parsed.reply), 'Primary single reply present');
+assert(parsed.reply.includes('2,5jt/m'), 'Primary reply content intact');
+assert(Boolean(parsed.replies.recommended), 'Backward-compatible recommended reply present');
 
 // ----------------------------------------------------
 // TEST 7: Smart Context Panel Data Extraction
