@@ -25,6 +25,25 @@ export const CustomerMemoryEngine = {
         return 'UNKNOWN';
     },
 
+    // Deteksi sapaan gender berdasarkan nama klien (Ibu / Bapak)
+    detectHonorific: (nameStr = '') => {
+        if (!nameStr) return { title: 'Kak', short: 'Kak', gender: 'NEUTRAL' };
+        const cleanName = nameStr.trim();
+        const lower = cleanName.toLowerCase();
+
+        // Indikator nama wanita
+        if (/\b(ibu|bu|bunda|mami|mama|tante|mba|mbak|rina|siti|maya|dewi|sari|putri|wati|tri|dian|lani|novi|fitri|bella|nadia|nur|ani|ayu|wulan|ratna|indah|lia|mega|kartika)\b/i.test(lower)) {
+            return { title: 'Ibu', short: 'Bu', gender: 'FEMALE' };
+        }
+
+        // Indikator nama pria
+        if (/\b(bapak|pak|ayah|papi|om|mas|budi|hendra|agus|bambang|dimas|ahmad|muhammad|joko|anton|reza|arif|eko|fajar|bayu|doni|rizky|aditya|surya|gilang|dedi|yusuf)\b/i.test(lower)) {
+            return { title: 'Bapak', short: 'Pak', gender: 'MALE' };
+        }
+
+        return { title: 'Kak', short: 'Kak', gender: 'NEUTRAL' };
+    },
+
     // Format memori klien menjadi blok prompt dengan instruksi ketat ANTI-TANYA ULANG
     buildMemoryPromptBlock: (clientMemory) => {
         if (!clientMemory || Object.keys(clientMemory).length === 0) {
@@ -35,7 +54,14 @@ export const CustomerMemoryEngine = {
         let hasActiveMemory = false;
 
         if (clientMemory.name && clientMemory.name.trim()) {
-            block += `- Nama Klien: ${clientMemory.name.trim()} (Gunakan sapaan sopan dengan nama ini jika cocok)\n`;
+            const cleanName = clientMemory.name.trim();
+            const h = CustomerMemoryEngine.detectHonorific(cleanName);
+            const genderGuidance = h.gender === 'FEMALE' 
+                ? 'GENDER WANITA -> Sapa dengan "Ibu ' + cleanName + '" / "Bu"'
+                : h.gender === 'MALE'
+                ? 'GENDER PRIA -> Sapa dengan "Bapak ' + cleanName + '" / "Pak"'
+                : 'Gunakan sapaan santun "Kak ' + cleanName + '"';
+            block += `- Nama Klien: ${cleanName} (Gunakan sapaan sopan dengan nama ini jika cocok. ${genderGuidance}. Dilarang menulis "ibu/bapak" literal pakai slash!)\n`;
             hasActiveMemory = true;
         }
 

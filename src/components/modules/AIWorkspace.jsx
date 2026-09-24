@@ -12,12 +12,12 @@ import { buildWaLink, formatDisplayPhone } from '../../js/utils/phone.js';
 import { TelemetryService } from '../../js/services/telemetry.js';
 
 const ADMIN_DIRECTIVE_SHORTCUTS = [
-    { label: 'Follow Up Klien', text: 'follow up klien ini dengan ramah dan tanyakan kelanjutan rencana interiornya', icon: '👋', mode: 'FOLLOW_UP' },
-    { label: 'Arahkan ke Survei', text: 'arahkan klien untuk booking jadwal survei pengukuran lokasi gratis tanpa ikatan', icon: '📍', mode: 'SURVEY_INVITATION' },
+    { label: 'Follow Up Survei Weekend', text: 'follow up rencana interior klien ini dan tawarkan slot rute survei akhir pekan (Sabtu & Minggu) dengan sapaan sopan Ibu/Bapak', icon: '📍', mode: 'FOLLOW_UP' },
+    { label: 'Arahkan ke Survei', text: 'arahkan klien untuk booking jadwal survei pengukuran lokasi gratis tanpa ikatan', icon: '📐', mode: 'SURVEY_INVITATION' },
     { label: 'Edukasi Harga & Bahan', text: 'jelaskan kisaran harga per meter transparan dan keunggulan bahan multipleks 18mm padat + PVC waterproof', icon: '💰', mode: 'PRICE_EXPLANATION' },
     { label: 'Atasi Ragu / Budget', text: 'atasi keberatan harga klien dengan solusi fleksibel dan bandingkan mutu multipleks vs serbuk kayu mdf', icon: '🛡️', mode: 'OBJECTION_HANDLING' },
     { label: 'Kunci DP Antrian', text: 'rekapitulasi rencana dan tawarkan untuk kunci slot antrian produksi workshop dengan komitmen DP aman 50%', icon: '🤝', mode: 'CLOSING' },
-    { label: 'Tanyakan Ukuran', text: 'tanyakan perkiraan ukuran ruangan atau denah layout yang sudah ada secara santun', icon: '📐', mode: 'SMART_REPLY' }
+    { label: 'Tanyakan Ukuran', text: 'tanyakan perkiraan ukuran ruangan atau denah layout yang sudah ada secara santun', icon: '📏', mode: 'SMART_REPLY' }
 ];
 
 export const AIWorkspace = ({ 

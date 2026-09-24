@@ -39,14 +39,33 @@ LANGKAH EKSEKUSI WAJIB:
 4. Tegaskan jaminan Garansi Resmi pemeliharaan unit setelah serah terima.`;
 
             case 'FOLLOW_UP':
-                return `# STRATEGIC MODE: FOLLOW-UP HALUS (ANTI-GHOSTING)
-TUGAS UTAMA: Menyapa kembali klien yang belum membalas atau membaca saja tanpa membuat klien merasa terdesak atau risih.
-LANGKAH EKSEKUSI WAJIB:
-1. Sapaan hangat dan santai: Mulai dengan ramah mendoakan kelancaran aktivitas klien.
-2. Tawarkan Nilai Tambah (Value-Add):
-   - Informasikan update slot jadwal tim survei yang kebetulan sedang melintas di area kota/perumahan klien minggu ini.
-   - Atau tawarkan referensi portofolio terbaru yang serupa dengan rencana ruangan klien.
-3. No-Pressure Reassurance: Tegaskan jika klien masih tahap persiapan atau menunggu renovasi/kunci rumah, tidak masalah sama sekali, kami siap membantu kapan pun Kakak butuh konsultasi.`;
+                return `# STRATEGIC MODE: FOLLOW-UP HALUS (SURVEI & AMANKAN RUTE AKHIR PEKAN)
+TUGAS UTAMA: Menindaklanjuti (follow up) rencana interior calon klien dengan santun, hangat, dan menawarkan slot jadwal rute survei akhir pekan (Sabtu & Minggu) secara eksklusif.
+
+CONTOH & STRUKTUR BALASAN WAJIB DIIKUTI:
+"Selamat [pagi/siang/sore] [Ibu/Bapak/Kak] [Nama], semoga sehat selalu ya [Bu/Pak/Kak] 🙏
+
+Mohon izin menindaklanjuti rencana pembuatan interior yang sempat kita diskusikan sebelumnya. Saat ini tim kami sedang menyusun rute survey dan pengukuran untuk akhir pekan ini (Sabtu & Minggu) khusus area [Area Klien: Jabodetabek & sekitarnya / Bandung & sekitarnya].
+
+Mengingat jadwal weekend ini kebetulan peminatnya cukup tinggi, saat ini hanya tersisa 1-2 slot kosong untuk area tersebut.
+
+Agar bisa segera kami buatkan estimasi biaya yang presisi, apakah [Ibu/Bapak/Kak] berkenan untuk kami amankan jadwal surveinya di akhir pekan ini? Jika berkenan, mohon konfirmasinya hari ini agar tidak terisi oleh klien lain ya [Bu/Pak/Kak]. Terima kasih banyak 🙏🏻"
+
+ATURAN WAJIB DIEKSEKUSI:
+1. ATURAN GENDER NAMA (IBU / BAPAK):
+   - Jika nama klien wanita (contoh: Rina, Siti, Maya, Dewi, Ibu ...) -> WAJIB gunakan "Ibu [Nama]" di awal dan penutup "ya Bu".
+   - Jika nama klien pria (contoh: Budi, Hendra, Agus, Anton, Bapak ...) -> WAJIB gunakan "Bapak [Nama]" di awal dan penutup "ya Pak".
+   - Jika nama belum diketahui atau gender belum pasti -> gunakan sapaan santun "Kak [Nama]" atau "Bapak/Ibu" tanpa garis miring bertumpuk.
+   - DILARANG KERAS mencetak teks literal "ibu/bapak" dengan garis miring di teks WhatsApp! Pilih salah satu yang cocok sesuai nama.
+2. ATURAN WILAYAH RUTE SURVEI:
+   - Sesuaikan nama wilayah dengan kota klien:
+     * Area Jabodetabek/Jakarta/Tangerang/Bekasi/Bogor/Depok -> "khusus area Jabodetabek & sekitarnya"
+     * Area Bandung/Cimahi/Padalarang -> "khusus area Bandung & sekitarnya"
+     * Area Tasik/Priangan -> "khusus area Tasikmalaya & sekitarnya"
+3. ETHICAL SCARCITY & CALL TO ACTION:
+   - Sebutkan bahwa rute survei akhir pekan (Sabtu & Minggu) sedang disusun dan tersisa 1-2 slot.
+   - Tujuan survei: "agar bisa segera kami buatkan estimasi biaya yang presisi".
+   - Micro-commitment: minta konfirmasi hari ini agar slot jadwal tidak terisi klien lain.`;
 
             case 'CLOSING':
                 return `# STRATEGIC MODE: DORONG DP / KUNCI ANTRIAN WORKSHOP

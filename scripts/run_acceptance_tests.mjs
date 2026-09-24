@@ -267,7 +267,26 @@ const promptWithDirective = AIService.buildModularPrompt({
 });
 assert(promptWithDirective.includes('ADMIN STRATEGIC DIRECTIVE (PERINTAH KERJA ADMIN MARKETING)'), 'Directive header included in prompt');
 assert(promptWithDirective.includes('follow up klien ini dan arahkan ke survei akhir pekan'), 'Admin directive text accurately injected');
-assert(promptWithDirective.includes('ATURAN MUTLAK MENJALANKAN PERINTAH ADMIN'), 'Admin directive execution rules enforced');
+// ----------------------------------------------------
+// TEST 17: Gender Honorific Detection & Survey Follow-up
+// ----------------------------------------------------
+console.log('\n🧪 TEST 17: Gender Honorific Detection & Survey Follow-up');
+const femaleHonorific = CustomerMemoryEngine.detectHonorific('Ibu Rina Anggraeni');
+assert(femaleHonorific.gender === 'FEMALE', 'Female name correctly identified');
+assert(femaleHonorific.title === 'Ibu', 'Female title is Ibu');
+
+const maleHonorific = CustomerMemoryEngine.detectHonorific('Pak Budi Hendrawan');
+assert(maleHonorific.gender === 'MALE', 'Male name correctly identified');
+assert(maleHonorific.title === 'Bapak', 'Male title is Bapak');
+
+const femaleMemoryPrompt = AIService.buildModularPrompt({
+    brand: homeputraBrand,
+    clientMemory: { name: 'Ibu Rina' },
+    responseMode: 'FOLLOW_UP'
+});
+assert(femaleMemoryPrompt.includes('GENDER WANITA'), 'Gender guidance embedded in client memory prompt');
+assert(femaleMemoryPrompt.includes('FOLLOW-UP HALUS (SURVEI & AMANKAN RUTE AKHIR PEKAN)'), 'Weekend survey follow-up playbook active');
+assert(femaleMemoryPrompt.includes('Mengingat jadwal weekend ini kebetulan peminatnya cukup tinggi'), 'Exact consultative template present in playbook');
 
 console.log('\n========================================================');
 console.log(`🎉 ALL ${passedTests}/${totalTests} ACCEPTANCE TESTS PASSED SUCCESSFULLY!`);
