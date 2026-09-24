@@ -11,6 +11,15 @@ import { DEFAULT_GEMINI_API_KEY, DEFAULT_GEMINI_MODEL, AI_RESPONSE_MODES } from 
 import { buildWaLink, formatDisplayPhone } from '../../js/utils/phone.js';
 import { TelemetryService } from '../../js/services/telemetry.js';
 
+const ADMIN_DIRECTIVE_SHORTCUTS = [
+    { label: 'Follow Up Klien', text: 'follow up klien ini dengan ramah dan tanyakan kelanjutan rencana interiornya', icon: '👋', mode: 'FOLLOW_UP' },
+    { label: 'Arahkan ke Survei', text: 'arahkan klien untuk booking jadwal survei pengukuran lokasi gratis tanpa ikatan', icon: '📍', mode: 'SURVEY_INVITATION' },
+    { label: 'Edukasi Harga & Bahan', text: 'jelaskan kisaran harga per meter transparan dan keunggulan bahan multipleks 18mm padat + PVC waterproof', icon: '💰', mode: 'PRICE_EXPLANATION' },
+    { label: 'Atasi Ragu / Budget', text: 'atasi keberatan harga klien dengan solusi fleksibel dan bandingkan mutu multipleks vs serbuk kayu mdf', icon: '🛡️', mode: 'OBJECTION_HANDLING' },
+    { label: 'Kunci DP Antrian', text: 'rekapitulasi rencana dan tawarkan untuk kunci slot antrian produksi workshop dengan komitmen DP aman 50%', icon: '🤝', mode: 'CLOSING' },
+    { label: 'Tanyakan Ukuran', text: 'tanyakan perkiraan ukuran ruangan atau denah layout yang sudah ada secara santun', icon: '📐', mode: 'SMART_REPLY' }
+];
+
 export const AIWorkspace = ({ 
     activeBrand, 
     currentUser, 
@@ -342,6 +351,14 @@ export const AIWorkspace = ({
         showToast(feedbackType === 'POSITIVE' ? 'Terima kasih! Feedback positif dicatat.' : 'Feedback dicatat untuk perbaikan AI.');
     };
 
+    const handleApplyDirective = (directiveText, targetMode) => {
+        setInputText(directiveText);
+        if (targetMode) {
+            setSelectedMode(targetMode);
+        }
+        showToast(`Arahan diterapkan: "${directiveText}"`);
+    };
+
     // Helper untuk warna suhu prospek (HOT / WARM / COLD)
     const getTemperatureBadge = (temp) => {
         const t = (temp || 'WARM').toUpperCase();
@@ -633,17 +650,62 @@ export const AIWorkspace = ({
                         </div>
                     )}
 
-                    {/* Chat Text Input */}
+                    {/* Chat Text / Directive Input & Screenshot Container */}
                     <div className="space-y-5">
-                        <FormField label="Pesan / Pertanyaan Klien" helperText="Opsional jika melampirkan screenshot chat">
+                        <div className="space-y-3">
+                        <FormField 
+                            label={selectedImage || imagePreview ? "💬 Perintah / Arahan Khusus Admin" : "Pesan Chat Calon Klien / Perintah Admin"} 
+                            helperText={selectedImage || imagePreview ? "Ketik instruksi untuk AI (misal: 'follow up klien ini', 'arahkan ke survei', 'tanyakan ukuran')" : "Ketik pesan calon klien atau instruksi kerja admin"}
+                        >
                             <textarea 
                                 className="w-full bg-[#15151a] border border-[#26262d] rounded-2xl p-4 text-sm focus:ring-2 focus:ring-[#c5a059]/30 focus:border-[#c5a059] transition-all resize-none shadow-inner text-zinc-100 placeholder:text-zinc-600"
-                                rows="4"
-                                placeholder={`Contoh: 'Halo ${brandName}, mau tanya bikin kitchen set multipleks minimalis 3 meter di Bandung berapa ya? Apakah sudah termasuk survey dan desain 3D?'`}
+                                rows="3"
+                                placeholder={selectedImage || imagePreview 
+                                    ? "Contoh: 'follow up klien ini dengan sopan', 'arahkan untuk booking survei akhir pekan ini', 'tawarkan opsi penyesuaian budget'..." 
+                                    : `Contoh: 'Halo ${brandName}, mau tanya bikin kitchen set multipleks minimalis 3 meter di Bandung berapa ya?' atau ketik perintah: 'follow up klien ini'`}
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
                             ></textarea>
                         </FormField>
+
+                        {/* Quick Directive Shortcut Chips */}
+                        <div className="space-y-1.5 pt-0.5">
+                            <div className="flex items-center justify-between text-[11px]">
+                                <span className="text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                                    <span>⚡</span> Arahan Cepat Admin:
+                                </span>
+                                {inputText && (
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setInputText('')} 
+                                        className="text-zinc-500 hover:text-zinc-300 text-[10px] underline underline-offset-2"
+                                    >
+                                        Bersihkan
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                {ADMIN_DIRECTIVE_SHORTCUTS.map((chip, idx) => {
+                                    const isSelected = inputText === chip.text;
+                                    return (
+                                        <button
+                                            key={idx}
+                                            type="button"
+                                            onClick={() => handleApplyDirective(chip.text, chip.mode)}
+                                            className={`text-xs px-2.5 py-1 rounded-xl border transition-all flex items-center gap-1 font-medium ${
+                                                isSelected
+                                                    ? 'bg-[#c5a059]/20 text-[#c5a059] border-[#c5a059]/50 font-bold shadow-sm'
+                                                    : 'bg-[#1a1a22] text-zinc-300 border-[#2e2e38] hover:border-[#c5a059]/40 hover:text-white hover:bg-[#202028]'
+                                            }`}
+                                        >
+                                            <span>{chip.icon}</span>
+                                            <span>{chip.label}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
 
                         {/* Screenshot Input */}
                         <div>

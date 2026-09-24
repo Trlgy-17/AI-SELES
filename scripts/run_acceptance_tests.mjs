@@ -256,6 +256,19 @@ const analysis2 = ConversationAnalyzer.heuristicAnalyze('Kira-kira bisa minta ja
 assert(analysis2.detectedIntent === 'ASK_SURVEY_SCHEDULE', 'Survey schedule intent correctly identified');
 assert(analysis2.detectedTemperature === 'HOT', 'Survey intent flagged as HOT temperature');
 
+// ----------------------------------------------------
+// TEST 16: Admin Directive Workflow (Follow-up & Survey)
+// ----------------------------------------------------
+console.log('\n🧪 TEST 16: Admin Directive Workflow (Follow-up & Survey)');
+const promptWithDirective = AIService.buildModularPrompt({
+    brand: homeputraBrand,
+    knowledgeContent: 'Master Price List 2026',
+    adminDirective: 'follow up klien ini dan arahkan ke survei akhir pekan'
+});
+assert(promptWithDirective.includes('ADMIN STRATEGIC DIRECTIVE (PERINTAH KERJA ADMIN MARKETING)'), 'Directive header included in prompt');
+assert(promptWithDirective.includes('follow up klien ini dan arahkan ke survei akhir pekan'), 'Admin directive text accurately injected');
+assert(promptWithDirective.includes('ATURAN MUTLAK MENJALANKAN PERINTAH ADMIN'), 'Admin directive execution rules enforced');
+
 console.log('\n========================================================');
 console.log(`🎉 ALL ${passedTests}/${totalTests} ACCEPTANCE TESTS PASSED SUCCESSFULLY!`);
 console.log('========================================================\n');

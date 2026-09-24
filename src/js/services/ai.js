@@ -14,7 +14,8 @@ export const AIService = {
         citations = [],
         clientMemory = null, 
         conversationHistory = [], 
-        responseMode = 'SMART_REPLY' 
+        responseMode = 'SMART_REPLY',
+        adminDirective = ''
     }) => {
         const brandName = brand?.brandName || 'HOMEPUTRA INTERIOR';
         const displayName = brand?.displayName || brandName;
@@ -130,7 +131,24 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
   "confidence": 0.95
 }`;
 
-        return [systemCore, salesPolicy, brandContext, knowledgeContext, clientContext, taskContext].join('\n\n---\n\n');
+        let directiveContext = '';
+        if (adminDirective && adminDirective.trim()) {
+            directiveContext = `# ADMIN STRATEGIC DIRECTIVE (PERINTAH KERJA ADMIN MARKETING)
+Admin sales marketing memberikan instruksi eksplisit:
+>>> "${adminDirective.trim()}" <<<
+
+ATURAN MUTLAK MENJALANKAN PERINTAH ADMIN:
+1. PRIORITAS TERTINGGI: Balasan WhatsApp yang kamu racik WAJIB berfokus mencapai tujuan perintah admin di atas (misal: memfollow up klien dengan halus, mengarahkan booking jadwal survei lokasi gratis, mengedukasi harga & bahan, mengatasi keberatan budget, atau meminta data ukuran).
+2. Tautkan instruksi ini secara alami, mengalir, dan sopan dengan konteks percakapan terakhir calon klien.
+3. Rujuk data resmi KNOWLEDGE CONTEXT di atas (pricelist PL DK/PL LK, standar multipleks 18mm & PVC waterproof, garansi resmi, alur termin).
+4. DILARANG KERAS menyebut kata 'perintah admin' atau 'arahan internal' di dalam balasan WhatsApp; tuliskan seolah-olah admin marketing berbicara langsung kepada calon klien dengan hangat, personal, dan profesional.`;
+        }
+
+        const layers = [systemCore, salesPolicy, brandContext, knowledgeContext, clientContext];
+        if (directiveContext) layers.push(directiveContext);
+        layers.push(taskContext);
+
+        return layers.join('\n\n---\n\n');
     },
 
     // Parsing JSON tangguh via ResponseParser module
@@ -172,13 +190,19 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
         });
         tracker.markRetrievalEnd();
 
+        const isDirective = (imagePart && inputText && inputText.trim()) 
+            || (inputText && /follow\s*up|arahkan|survei|survey|jadwal|harga|edukasi|diskon|tanyakan|ingatkan|kunci|dp|closing|buatkan|susun|sapa/i.test(inputText));
+
+        const effectiveDirective = isDirective ? inputText.trim() : '';
+
         // 2. Susun prompt modular 7-layer
         const systemPromptText = AIService.buildModularPrompt({
             brand: activeBrand,
             knowledgeContent: formattedContent,
             citations,
             clientMemory,
-            responseMode
+            responseMode,
+            adminDirective: effectiveDirective
         });
 
         let result;
@@ -261,18 +285,29 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
         }
 
         let userPrompt = "";
+        const isExplicitDirective = inputText && /follow\s*up|arahkan|survei|survey|jadwal|harga|edukasi|diskon|tanyakan|ingatkan|kunci|dp|closing|buatkan|susun|sapa/i.test(inputText);
+
         if (imagePart?.inlineData?.data && inputText && inputText.trim()) {
-            userPrompt = `Analisis screenshot percakapan WhatsApp calon klien berikut dengan teliti.
-Catatan konteks admin marketing: "${inputText.trim()}".
-- Perhatikan balon chat: kanan/hijau adalah pesan admin kita, kiri/putih adalah calon klien.
-- Identifikasi pesan atau pertanyaan TERAKHIR calon klien.
-- Susun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang menjawab pertanyaan terakhir klien secara tepat sasaran, ramah, dan solutif sesuai SOP dan data resmi ${activeBrand?.brandName || ''}.`;
+            userPrompt = `PERINTAH STRATEGIS DARI ADMIN MARKETING:
+"${inputText.trim()}"
+
+TUGAS UTAMA:
+1. Analisis screenshot percakapan WhatsApp calon klien berikut (balon hijau/kanan = admin kita, balon putih/kiri = calon klien).
+2. EKSEKUSI PERINTAH ADMIN: Susun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang secara presisi mewujudkan perintah admin di atas (misal: memfollow up klien, mengarahkan ke jadwal survei gratis, klarifikasi ukuran/budget, edukasi harga/bahan).
+3. Sambungkan secara alami dengan pesan atau pertanyaan TERAKHIR calon klien di screenshot.
+4. Rujuk data resmi ${activeBrand?.brandName || ''}. JANGAN tanyakan ulang data yang sudah disebutkan di screenshot.
+5. Akhiri dengan 1 kalimat ajakan (call-to-action) yang relevan dan mudah dijawab oleh klien.`;
         } else if (imagePart?.inlineData?.data) {
             userPrompt = `Analisis screenshot percakapan WhatsApp calon klien berikut dengan teliti.
 - Perhatikan balon chat: kanan/hijau adalah pesan admin kita, kiri/putih adalah calon klien.
 - Temukan pertanyaan atau topik pesan TERAKHIR dari calon klien yang belum dibalas tuntas.
 - JANGAN tanyakan ulang hal yang sudah disebutkan klien di screenshot (nama, kota, ukuran, dll).
 - Susun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang menjawab pertanyaan terakhir tersebut secara tepat konteks, ramah, transparan, dan profesional sesuai SOP dan data resmi ${activeBrand?.brandName || ''}.`;
+        } else if (isExplicitDirective) {
+            userPrompt = `PERINTAH STRATEGIS DARI ADMIN MARKETING:
+"${inputText.trim()}"
+
+TUGAS: Susun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang secara tepat sasaran, santun, dan solutif menjalankan perintah admin di atas sesuai SOP dan data resmi ${activeBrand?.brandName || ''}.`;
         } else {
             userPrompt = `<untrusted_customer_message>\n${inputText ? inputText.trim() : ''}\n</untrusted_customer_message>\n\nSusun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang menjawab pesan klien di atas secara tepat sasaran, ramah, dan sesuai SOP resmi ${activeBrand?.brandName || ''}.`;
         }
@@ -409,14 +444,20 @@ Catatan konteks admin marketing: "${inputText.trim()}".
             throw new Error("Kunci API Gemini belum dikonfigurasi. Masukkan API Key Anda di Pengaturan AI.");
         }
 
+        const isExplicitDirective = inputText && /follow\s*up|arahkan|survei|survey|jadwal|harga|edukasi|diskon|tanyakan|ingatkan|kunci|dp|closing|buatkan|susun|sapa/i.test(inputText);
+
         const parts = [];
         if (imagePart && inputText && inputText.trim()) {
             parts.push({
-                text: `Analisis screenshot percakapan WhatsApp calon klien berikut dengan teliti.
-Catatan konteks admin marketing: "${inputText.trim()}".
-- Perhatikan balon chat: kanan/hijau adalah pesan admin kita, kiri/putih adalah calon klien.
-- Identifikasi pesan atau pertanyaan TERAKHIR calon klien.
-- Susun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang menjawab pertanyaan terakhir klien secara tepat sasaran, ramah, dan solutif sesuai SOP dan data resmi ${activeBrand?.brandName || ''}.`
+                text: `PERINTAH STRATEGIS DARI ADMIN MARKETING:
+"${inputText.trim()}"
+
+TUGAS UTAMA:
+1. Analisis screenshot percakapan WhatsApp calon klien berikut (balon hijau/kanan = admin kita, balon putih/kiri = calon klien).
+2. EKSEKUSI PERINTAH ADMIN: Susun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang secara presisi mewujudkan perintah admin di atas (misal: memfollow up klien, mengarahkan ke jadwal survei gratis, klarifikasi ukuran/budget, edukasi harga/bahan).
+3. Sambungkan secara alami dengan pesan atau pertanyaan TERAKHIR calon klien di screenshot.
+4. Rujuk data resmi ${activeBrand?.brandName || ''}. JANGAN tanyakan ulang data yang sudah disebutkan di screenshot.
+5. Akhiri dengan 1 kalimat ajakan (call-to-action) yang relevan dan mudah dijawab oleh klien.`
             });
             parts.push(imagePart);
         } else if (imagePart) {
@@ -428,6 +469,13 @@ Catatan konteks admin marketing: "${inputText.trim()}".
 - Susun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang menjawab pertanyaan terakhir tersebut secara tepat konteks, ramah, transparan, dan profesional sesuai SOP dan data resmi ${activeBrand?.brandName || ''}.`
             });
             parts.push(imagePart);
+        } else if (isExplicitDirective) {
+            parts.push({
+                text: `PERINTAH STRATEGIS DARI ADMIN MARKETING:
+"${inputText.trim()}"
+
+TUGAS: Susun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang secara tepat sasaran, santun, dan solutif menjalankan perintah admin di atas sesuai SOP dan data resmi ${activeBrand?.brandName || ''}.`
+            });
         } else {
             parts.push({
                 text: `<untrusted_customer_message>\n${inputText ? inputText.trim() : ''}\n</untrusted_customer_message>\n\nSusun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang menjawab pesan klien di atas secara tepat sasaran, ramah, dan sesuai SOP resmi ${activeBrand?.brandName || ''}.`
