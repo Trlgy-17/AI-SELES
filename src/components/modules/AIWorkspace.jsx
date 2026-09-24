@@ -9,6 +9,7 @@ import { copyToClipboard } from '../../js/utils/clipboard.js';
 import { optimizeImageForAI } from '../../js/utils/image.js';
 import { DEFAULT_GEMINI_API_KEY, DEFAULT_GEMINI_MODEL, AI_RESPONSE_MODES } from '../../js/constants.js';
 import { buildWaLink, formatDisplayPhone } from '../../js/utils/phone.js';
+import { TelemetryService } from '../../js/services/telemetry.js';
 
 export const AIWorkspace = ({ 
     activeBrand, 
@@ -21,6 +22,8 @@ export const AIWorkspace = ({
     const [imagePreview, setImagePreview] = useState(null);
     const [optimizedImagePart, setOptimizedImagePart] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [streamingReply, setStreamingReply] = useState('');
+    const [feedbackGiven, setFeedbackGiven] = useState(null);
     const [aiResponse, setAiResponse] = useState(null);
     const [copiedKey, setCopiedKey] = useState(null);
     const [aiError, setAiError] = useState(null);
@@ -250,6 +253,8 @@ export const AIWorkspace = ({
         setIsLoading(true);
         setAiError(null);
         setAiResponse(null);
+        setStreamingReply('');
+        setFeedbackGiven(null);
 
         try {
             const imagePart = optimizedImagePart || (imagePreview ? {
@@ -271,6 +276,10 @@ export const AIWorkspace = ({
                 activeBrand,
                 clientMemory: Object.keys(filteredMemory).length > 0 ? filteredMemory : null,
                 responseMode: selectedMode,
+                onStreamChunk: ({ partialReply, isDone }) => {
+                    if (partialReply) setStreamingReply(partialReply);
+                    if (isDone) setStreamingReply('');
+                },
                 customApiKey: activeGeminiKey,
                 selectedModel,
                 customProxyUrl: proxyUrl,
@@ -290,12 +299,14 @@ export const AIWorkspace = ({
                 setClientMemory(prev => ({ ...prev, budget: result.clientAnalysis.extractedBudget }));
             }
 
-            showToast("Rekomendasi balasan WhatsApp & analisis strategis berhasil diracik!");
+            const latencyLabel = result.metrics?.formattedSummary || '';
+            showToast(`Rekomendasi balasan berhasil diracik! ${latencyLabel}`);
         } catch (error) {
             console.error("[AI Workspace] Error:", error);
             setAiError(error.message);
         } finally {
             setIsLoading(false);
+            setStreamingReply('');
         }
     };
 
@@ -305,10 +316,30 @@ export const AIWorkspace = ({
         if (success) {
             setCopiedKey(replyKey);
             showToast("Balasan WhatsApp berhasil disalin!");
+            TelemetryService.logEvent('AI_REPLY_COPIED', {
+                brandId: activeBrand?.id,
+                brandName: activeBrand?.brandName,
+                replyKey,
+                intent: aiResponse?.clientAnalysis?.intent
+            });
             setTimeout(() => setCopiedKey(null), 2500);
         } else {
             setAiError("Gagal menyalin teks ke clipboard.");
         }
+    };
+
+    const handleGiveFeedback = (feedbackType) => {
+        setFeedbackGiven(feedbackType);
+        TelemetryService.logEvent('AI_FEEDBACK_GIVEN', {
+            brandId: activeBrand?.id,
+            brandName: activeBrand?.brandName,
+            feedback: feedbackType,
+            intent: aiResponse?.clientAnalysis?.intent,
+            stage: aiResponse?.clientAnalysis?.stage,
+            responseMode: selectedMode,
+            reply: primaryReplyText
+        });
+        showToast(feedbackType === 'POSITIVE' ? 'Terima kasih! Feedback positif dicatat.' : 'Feedback dicatat untuk perbaikan AI.');
     };
 
     // Helper untuk warna suhu prospek (HOT / WARM / COLD)
@@ -695,18 +726,36 @@ export const AIWorkspace = ({
             {/* SISI KANAN: REKOMENDASI UTAMA BALASAN & SMART CONTEXT PANEL */}
             <div className="lg:col-span-6 space-y-6">
                 {isLoading ? (
-                    <div className="glass-panel rounded-3xl p-8 shadow-2xl h-full flex flex-col justify-center items-center text-zinc-500 border border-[#26262d] min-h-[480px]">
-                        <div className="relative w-20 h-20 mb-6">
-                            <div className="absolute inset-0 bg-[#c5a059]/20 rounded-full animate-ping"></div>
-                            <div className="relative bg-[#18181e] rounded-2xl p-5 shadow-2xl border border-[#c5a059]/30 text-[#c5a059] flex items-center justify-center">
-                                <Icons.Brain />
+                    streamingReply ? (
+                        <div className="bg-[#15151a] rounded-3xl shadow-2xl border border-[#26262d] overflow-hidden flex flex-col animate-fade-in p-6 min-h-[360px]">
+                            <div className="flex items-center justify-between pb-4 border-b border-[#26262d]">
+                                <span className="px-2.5 py-1 rounded-xl bg-[#c5a059]/20 text-[#c5a059] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
+                                    <span className="w-2 h-2 rounded-full bg-[#c5a059]"></span>
+                                    ⚡ Sedang Mengetik Balasan WhatsApp...
+                                </span>
+                                <span className="text-[11px] text-zinc-400 font-mono">Live Stream</span>
+                            </div>
+                            <div className="bg-[#1b1b22] border border-[#26262d] rounded-2xl p-5 mt-4 relative">
+                                <p className="text-zinc-100 text-sm md:text-base leading-relaxed whitespace-pre-wrap font-medium">
+                                    {streamingReply}
+                                    <span className="inline-block w-2 h-4 ml-1 bg-[#c5a059] animate-pulse align-middle"></span>
+                                </p>
                             </div>
                         </div>
-                        <h3 className="serif-font text-lg font-bold text-white">{brandName} AI Copilot Sedang Bekerja...</h3>
-                        <p className="text-sm mt-2 text-center max-w-sm text-zinc-400">
-                            Mencocokkan knowledge base 3-layer, mengaudit integritas harga 2026, dan merumuskan rekomendasi balasan WhatsApp terbaik.
-                        </p>
-                    </div>
+                    ) : (
+                        <div className="glass-panel rounded-3xl p-8 shadow-2xl h-full flex flex-col justify-center items-center text-zinc-500 border border-[#26262d] min-h-[480px]">
+                            <div className="relative w-20 h-20 mb-6">
+                                <div className="absolute inset-0 bg-[#c5a059]/20 rounded-full animate-ping"></div>
+                                <div className="relative bg-[#18181e] rounded-2xl p-5 shadow-2xl border border-[#c5a059]/30 text-[#c5a059] flex items-center justify-center">
+                                    <Icons.Brain />
+                                </div>
+                            </div>
+                            <h3 className="serif-font text-lg font-bold text-white">{brandName} AI Copilot Sedang Bekerja...</h3>
+                            <p className="text-sm mt-2 text-center max-w-sm text-zinc-400">
+                                Mencocokkan knowledge base 3-layer, mengaudit integritas harga 2026, dan merumuskan rekomendasi balasan WhatsApp terbaik.
+                            </p>
+                        </div>
+                    )
                 ) : aiResponse ? (
                     <div className="space-y-6">
                         {/* KARTU REKOMENDASI UTAMA BALASAN */}
@@ -718,11 +767,25 @@ export const AIWorkspace = ({
                                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                                         🌟 Rekomendasi Utama
                                     </span>
-                                    <span className="text-xs text-zinc-400 font-medium hidden sm:inline">
-                                        (Standard SOP & Persuasif)
-                                    </span>
+                                    {aiResponse.metrics?.formattedSummary && (
+                                        <span className="px-2 py-0.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 text-[10px] font-mono font-semibold hidden sm:inline">
+                                            {aiResponse.metrics.formattedSummary}
+                                        </span>
+                                    )}
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    {/* Tombol Buka WA Web */}
+                                    <a 
+                                        href={`https://web.whatsapp.com/send?text=${encodeURIComponent(primaryReplyText)}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30"
+                                        title="Buka WhatsApp Web dan kirimkan teks balasan ini"
+                                    >
+                                        <Icons.ExternalLink /> WA Web
+                                    </a>
+
+                                    {/* Tombol Copy Balasan */}
                                     <button 
                                         onClick={() => handleCopy('primary', primaryReplyText)}
                                         className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
@@ -737,6 +800,32 @@ export const AIWorkspace = ({
                                             <React.Fragment><Icons.Copy /> Copy Balasan</React.Fragment>
                                         )}
                                     </button>
+
+                                    {/* Quick Feedback Rating 👍 / 👎 */}
+                                    <div className="flex items-center gap-1 bg-[#15151a] p-1 rounded-xl border border-[#2e2e38] ml-1">
+                                        <button 
+                                            onClick={() => handleGiveFeedback('POSITIVE')}
+                                            className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
+                                                feedbackGiven === 'POSITIVE' 
+                                                    ? 'bg-emerald-500 text-white' 
+                                                    : 'text-zinc-400 hover:text-emerald-400 hover:bg-[#202028]'
+                                            }`}
+                                            title="Balasan Akurat & Tepat Sasaran"
+                                        >
+                                            👍 Akurat
+                                        </button>
+                                        <button 
+                                            onClick={() => handleGiveFeedback('NEGATIVE')}
+                                            className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
+                                                feedbackGiven === 'NEGATIVE' 
+                                                    ? 'bg-rose-500 text-white' 
+                                                    : 'text-zinc-400 hover:text-rose-400 hover:bg-[#202028]'
+                                            }`}
+                                            title="Kurang Tepat / Perlu Koreksi"
+                                        >
+                                            👎 Koreksi
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 

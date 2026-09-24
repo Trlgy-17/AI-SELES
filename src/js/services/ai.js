@@ -1,6 +1,10 @@
 // File: src/js/services/ai.js
 import { DEFAULT_GEMINI_API_KEY, DEFAULT_GEMINI_MODEL } from '../constants.js';
-import { KnowledgeService } from './knowledge.js';
+import { KnowledgeRetriever } from './ai/KnowledgeRetriever.js';
+import { CustomerMemoryEngine } from './ai/CustomerMemoryEngine.js';
+import { SalesStrategyEngine } from './ai/SalesStrategyEngine.js';
+import { ResponseParser } from './ai/ResponseParser.js';
+import { TelemetryService } from './telemetry.js';
 
 export const AIService = {
     // Membangun prompt modular 7-layer berdasarkan Active Brand, Resolved Knowledge, dan Client Memory
@@ -71,7 +75,7 @@ Jangan memaksakan berbicara tentang hal yang tidak ditanyakan klien. Kenali maks
 9. SATU PESAN SATU TUJUAN & GAYA WHATSAPP:
    - Santun, personal (sapaan "Kak" atau sesuai sapaan klien), hangat, mengalir seperti manusia profesional (bukan bot).
    - Gunakan format *bold* pada angka harga atau poin penting agar nyaman dibaca sekilas.
-   - Paragraf pendek (1-3 baris) dipisahkan baris baru (\n\n).
+   - Paragraf pendek (1-3 baris) dipisahkan baris baru (\\n\\n).
    - Akhiri dengan 1 micro-commitment ringan yang relevan dengan pertanyaan klien.`;
 
         // 3. BRAND CONTEXT (DYNAMIC FROM AUTHENTICATED SESSION)
@@ -93,81 +97,12 @@ ${signature}`;
 ${knowledgeContent || 'Gunakan pricelist standar Bandung & Jabodetabek: Multipleks Plywood HPL Rp 2,5jt - 3,2jt/m, PVC Waterproof Rp 4,0jt - 4,8jt/m.'}`;
 
         // 5. CLIENT CONTEXT & MEMORY (ANTI-TANYA ULANG ENFORCEMENT)
-        let clientContext = '# CLIENT CONTEXT & MEMORY (DATA TERKONFIRMASI — DILARANG DITANYAKAN ULANG)\n';
-        if (clientMemory && Object.keys(clientMemory).length > 0) {
-            if (clientMemory.name) clientContext += `- Nama Klien: ${clientMemory.name} (Gunakan sapaan sopan dengan nama ini jika cocok)\n`;
-            if (clientMemory.location) clientContext += `- Lokasi Terkonfirmasi: ${clientMemory.location} (SUDAH DIKETAHUI, JANGAN TANYAKAN LAGI!) — Gunakan pricelist yang cocok dengan wilayah ini\n`;
-            if (clientMemory.dimensions) clientContext += `- Dimensi Ruangan: ${clientMemory.dimensions} (SUDAH DIKETAHUI, JANGAN TANYAKAN LAGI!) — Langsung hitung estimasi totalnya\n`;
-            if (clientMemory.budget) clientContext += `- Alokasi Budget Klien: ${clientMemory.budget} (Sesuaikan rekomendasi agar masuk range ini)\n`;
-            if (clientMemory.projectType) clientContext += `- Tipe Rencana Proyek: ${clientMemory.projectType} (Fokus ke kebutuhan ini)\n`;
-            if (clientMemory.notes) clientContext += `- Catatan Tambahan Admin: ${clientMemory.notes}\n`;
-        } else {
-            clientContext += 'Belum ada memori spesifik tersimpan. Gali informasi lokasi dan ukuran secara santun hanya jika relevan.';
-        }
+        const clientContext = CustomerMemoryEngine.buildMemoryPromptBlock(clientMemory);
 
-        // Response mode specific deep tactical playbooks
-        let modeGuidance = '';
-        if (responseMode === 'PRICE_EXPLANATION') {
-            modeGuidance = `# STRATEGIC MODE: TRANSPARANSI HARGA & VALUE EDUCATION
-TUGAS UTAMA: Mengedukasi harga secara transparan, akurat, dan menonjolkan value material tanpa membuat klien kaget.
-LANGKAH EKSEKUSI WAJIB:
-1. Berikan angka estimasi kisaran per meter lari/m2 yang jelas sesuai produk yang ditanyakan:
-   - Jika lokasi klien di Bandung/Tasikmalaya, gunakan PL DK (Kitchen Set Rp 2,5jt - 3,2jt/m, Wardrobe Rp 2,5jt - 3,2jt/m).
-   - Jika lokasi di Jabodetabek/Luar Kota, gunakan PL LK (Kitchen Set Rp 2,8jt - 3,6jt/m, Wardrobe Rp 2,8jt - 3,6jt/m).
-   - Jika lokasi belum diketahui, sebutkan kisaran standar dan tanyakan kotanya.
-2. Edukasi kombinasi bahan grade A: Multipleks Plywood Meranti 18mm kokoh + PVC Board 100% anti air di area basah/sink + Engsel rel slow motion.
-3. Sebutkan bahwa estimasi ini sudah termasuk: Konsultasi gratis, Survei pengukuran gratis, dan Desain 3D gratis tanpa komitmen.
-4. Call to Action: Tanyakan perkiraan ukuran ruangan atau tawarkan survei ukur langsung agar bisa dibuatkan estimasi RAB presisi.`;
-        } else if (responseMode === 'SURVEY_INVITATION') {
-            modeGuidance = `# STRATEGIC MODE: AJAK SURVEI GRATIS & UKUR LOKASI
-TUGAS UTAMA: Mengarahkan calon klien untuk booking jadwal survei fisik dan ukur ruangan ke lokasi tanpa beban psikologis.
-LANGKAH EKSEKUSI WAJIB:
-1. Beri apresiasi antusias atas rencana interior klien.
-2. Jelaskan kemudahan survei: Tim konsultan kami datang langsung ke lokasi membawa koper sampel fisik (contoh ketebalan Multipleks, PVC board waterproof, dan katalog motif HPL) agar Kakak bisa melihat dan meraba bahannya langsung di ruangan asli.
-3. Tegaskan prinsip NO RISK: "Survei pengukuran dan pembuatan desain layout 3D ini 100% GRATIS dan tanpa ikatan komitmen apapun ya Kak."
-4. Gunakan Alternative Choice Closing: Jangan tanya "mau survei atau tidak?", melainkan tawarkan opsi waktu:
-   - "Kira-kira Kakak lebih nyaman dijadwalkan di hari kerja (Rabu/Kamis) atau di akhir pekan (Sabtu/Minggu)?"
-5. Minta info alamat/lokasi perumahan dan nomor kontak WhatsApp aktif.`;
-        } else if (responseMode === 'OBJECTION_HANDLING') {
-            modeGuidance = `# STRATEGIC MODE: TANGANI KEBERATAN & BANDING VENDOR
-TUGAS UTAMA: Menjawab keraguan klien terkait harga mahal, perbandingan dengan tukang/vendor lain, atau keterbatasan budget dengan elegan dan solutif.
-LANGKAH EKSEKUSI WAJIB:
-1. Validasi dengan empati: Pahami bahwa pembuatan interior adalah investasi hunian jangka panjang keluarga, wajar jika klien ingin hitungan yang paling efisien.
-2. Bongkar perbedaan kualitas (The Reality Check):
-   - Jangan terjebak vendor murah yang memakai serbuk kayu MDF/Particle Board yang gampang lapuk/mengembang kena air dan rayap.
-   - Standar kami menggunakan full Multipleks 18mm padat + PVC Board 100% anti air di area sink, serta aksesoris slow-motion anti bantingan.
-3. Tawarkan Solusi Win-Win: Tawarkan penyesuaian desain layout atau pemilihan alternatif motif HPL/aksesoris agar total RAB pas di anggaran klien tanpa mengurangi kekuatan struktur.
-4. Tegaskan jaminan Garansi Resmi pemeliharaan unit setelah serah terima.`;
-        } else if (responseMode === 'FOLLOW_UP') {
-            modeGuidance = `# STRATEGIC MODE: FOLLOW-UP HALUS (ANTI-GHOSTING)
-TUGAS UTAMA: Menyapa kembali klien yang belum membalas atau membaca saja tanpa membuat klien merasa terdesak atau risih.
-LANGKAH EKSEKUSI WAJIB:
-1. Sapaan hangat dan santai: Mulai dengan ramah mendoakan kelancaran aktivitas klien.
-2. Tawarkan Nilai Tambah (Value-Add):
-   - Informasikan update slot jadwal tim survei yang kebetulan sedang melintas di area kota/perumahan klien minggu ini.
-   - Atau tawarkan referensi portofolio terbaru yang serupa dengan rencana ruangan klien.
-3. No-Pressure Reassurance: Tegaskan jika klien masih tahap persiapan atau menunggu renovasi/kunci rumah, tidak masalah sama sekali, kami siap membantu kapan pun Kakak butuh konsultasi.`;
-        } else if (responseMode === 'CLOSING') {
-            modeGuidance = `# STRATEGIC MODE: DORONG DP / KUNCI ANTRIAN WORKSHOP
-TUGAS UTAMA: Membantu klien yang sudah cocok harga & desain untuk segera mengunci slot antrian produksi workshop.
-LANGKAH EKSEKUSI WAJIB:
-1. Rekapitulasi Rencana: Konfirmasikan draft desain atau rincian interior yang telah dibahas.
-2. Jelaskan Kemudahan Proses DP:
-   - Untuk mengunci antrian perakitan workshop dan pengadaan material, cukup komitmen DP 50%.
-   - Termin pembayaran sangat aman: 50% DP fabrikasi, 40% setelah barang siap kirim/inspeksi, dan 10% pelunasan setelah instalasi terpasang rapi di rumah.
-3. Urgency Beretika: Informasikan kapasitas slot pengerjaan workshop bulan ini agar tanggal serah terima unit tidak bergeser dari rencana hunian klien.
-4. Minta data untuk invoice resmi & SPK (Surat Perintah Kerja).`;
-        } else {
-            modeGuidance = `# STRATEGIC MODE: SMART AUTO REPLY (CONTEXT-DRIVEN INTELLIGENCE)
-TUGAS UTAMA: Analisis percakapan atau screenshot secara menyeluruh, kenali intensi klien saat ini, dan berikan respon paling tepat, solutif, dan natural khas admin manusia.
-LANGKAH EKSEKUSI WAJIB:
-1. Jawab pertanyaan TERAKHIR klien secara langsung dan presisi (jangan berbelit-belit).
-2. Tampilkan keramahan dan otoritas profesional mewakili brand ${brandName}.
-3. Terapkan prinsip Zero-Repetition: Jangan menanyakan kembali data yang sudah tertera di pesan atau screenshot.
-4. Berikan 1 Call-to-Action ringan dan relevan untuk mengalirkan percakapan ke tahap berikutnya (konsultasi/survei).`;
-        }
+        // 6. STRATEGIC MODE GUIDANCE (DEEP TACTICAL PLAYBOOK)
+        const modeGuidance = SalesStrategyEngine.getModePlaybook(responseMode, brandName);
 
-        // 6. TASK CONTEXT & STRUCTURED OUTPUT (MODE: ${responseMode})
+        // 7. TASK CONTEXT & STRUCTURED OUTPUT
         const taskContext = `# TASK CONTEXT & STRUCTURED OUTPUT (MODE: ${responseMode})
 ${modeGuidance}
 
@@ -198,118 +133,17 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
         return [systemCore, salesPolicy, brandContext, knowledgeContext, clientContext, taskContext].join('\n\n---\n\n');
     },
 
-    // Parsing JSON tangguh yang mendukung skema 1 balasan utama & fallback darurat
+    // Parsing JSON tangguh via ResponseParser module
     parseJsonResponse: (text, activeBrand) => {
-        const defaultBrandName = activeBrand?.brandName || 'Nacira Studio';
-        if (!text) {
-            const defaultReply = `Halo Kak! Terima kasih sudah menghubungi *${defaultBrandName}*. Ada yang bisa kami bantu untuk kebutuhan interior impian Kakak hari ini? 😊`;
-            return {
-                clientAnalysis: {
-                    intent: "CONSULTATION",
-                    stage: "NEW_LEAD",
-                    temperature: "WARM",
-                    missingInformation: ["Ukuran ruangan", "Lokasi rumah"],
-                    nextBestAction: "Tanyakan lokasi dan ukuran perkiraan ruangan."
-                },
-                reply: defaultReply,
-                replies: {
-                    recommended: defaultReply,
-                    alternativeSoft: defaultReply,
-                    alternativeDirect: defaultReply
-                },
-                principlesUsed: ["Sapaan Ramah Konsultatif"],
-                internalSources: ["Master SOP Sales v2026"],
-                confidence: 0.9
-            };
-        }
-
-        try {
-            const parsed = JSON.parse(text);
-            return AIService.normalizeStructuredOutput(parsed, activeBrand);
-        } catch (e) {
-            // Bersihkan markdown code block jika model membungkus dengan ```json ... ```
-            const start = text.indexOf('{');
-            const end = text.lastIndexOf('}');
-            if (start !== -1 && end !== -1 && end > start) {
-                try {
-                    const parsed = JSON.parse(text.slice(start, end + 1));
-                    return AIService.normalizeStructuredOutput(parsed, activeBrand);
-                } catch (e2) {}
-            }
-
-            // Ekstraksi darurat regex jika JSON terpotong di tengah jalan
-            let extractedReply = "";
-            const replyMatch = text.match(/"(?:reply|recommended)"\s*:\s*"((?:[^"\\]|\\.)*)"/s);
-            if (replyMatch && replyMatch[1]) {
-                extractedReply = replyMatch[1]
-                    .replace(/\\n/g, '\n')
-                    .replace(/\\r/g, '')
-                    .replace(/\\"/g, '"')
-                    .replace(/\\\\/g, '\\')
-                    .trim();
-            } else {
-                extractedReply = text.trim()
-                    .replace(/^```json\s*/i, '')
-                    .replace(/^```\s*/i, '')
-                    .replace(/```$/i, '')
-                    .trim();
-            }
-
-            return {
-                clientAnalysis: {
-                    intent: "ASK_PRICE",
-                    stage: "CONSULTATION",
-                    temperature: "WARM",
-                    missingInformation: ["Ukuran panjang ruangan", "Lokasi detail"],
-                    nextBestAction: "Gali informasi lokasi dan ukuran ruangan sebelum estimasi akhir."
-                },
-                reply: extractedReply,
-                replies: {
-                    recommended: extractedReply,
-                    alternativeSoft: extractedReply,
-                    alternativeDirect: extractedReply
-                },
-                principlesUsed: ["Transparansi Harga Langsung", "Edukasi Material"],
-                internalSources: ["Master Price List 2026"],
-                confidence: 0.85
-            };
-        }
+        return ResponseParser.parse(text, activeBrand);
     },
 
-    // Menormalkan output agar selalu memiliki format 1 rekomendasi utama (dengan backward compatibility)
+    // Normalisasi output via ResponseParser module
     normalizeStructuredOutput: (raw, activeBrand) => {
-        const brandName = activeBrand?.brandName || 'Nacira Studio';
-        
-        const singleReply = raw.reply || raw.recommended || raw.replies?.recommended || (typeof raw.replies === 'string' ? raw.replies : "") || `Halo Kak! Ada yang bisa kami bantu dari *${brandName}*?`;
-        
-        const replies = {
-            recommended: singleReply,
-            alternativeSoft: raw.replies?.alternativeSoft || raw.alternativeSoft || singleReply,
-            alternativeDirect: raw.replies?.alternativeDirect || raw.alternativeDirect || singleReply
-        };
-
-        const clientAnalysis = raw.clientAnalysis || {
-            intent: raw.intent || "CONSULTATION",
-            stage: raw.stage || "DISCOVERY",
-            temperature: raw.temperature || "WARM",
-            projectType: raw.projectType || "Interior Custom",
-            extractedLocation: raw.extractedLocation || null,
-            extractedBudget: raw.extractedBudget || null,
-            missingInformation: raw.missingInformation || ["Ukuran ruangan", "Lokasi"],
-            nextBestAction: raw.explanation || raw.recommendedAction || "Arahkan klien untuk survei pengukuran gratis."
-        };
-
-        return {
-            clientAnalysis,
-            reply: singleReply,
-            replies,
-            principlesUsed: Array.isArray(raw.principlesUsed) ? raw.principlesUsed : ["Transparansi Harga", "Micro-Commitment"],
-            internalSources: Array.isArray(raw.internalSources) ? raw.internalSources : ["Master Price List 2026"],
-            confidence: raw.confidence || 0.95
-        };
+        return ResponseParser.normalizeOutput(raw, activeBrand);
     },
 
-    // Fungsi utama eksekusi balasan WhatsApp
+    // Fungsi utama eksekusi balasan WhatsApp dengan instrumentasi latensi & streaming
     generateWhatsAppReply: async ({ 
         provider = 'gemini',
         inputText, 
@@ -317,6 +151,7 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
         activeBrand,
         clientMemory,
         responseMode = 'SMART_REPLY',
+        onStreamChunk, // Callback opsional: ({ partialReply, rawText, isDone })
         // Gemini Config
         customApiKey, 
         selectedModel, 
@@ -326,11 +161,16 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
         openaiApiKey,
         openaiModel
     }) => {
+        const tracker = TelemetryService.createLatencyTracker();
+
         // 1. Jalankan Knowledge Retrieval (RAG) untuk brand aktif
-        const { formattedContent, citations } = KnowledgeService.resolveKnowledge({
+        tracker.markRetrievalStart();
+        const { formattedContent, citations } = KnowledgeRetriever.retrieveForPrompt({
             brandId: activeBrand?.id || 'brand_nacira',
-            queryText: inputText || ''
+            queryText: inputText || '',
+            clientMemory
         });
+        tracker.markRetrievalEnd();
 
         // 2. Susun prompt modular 7-layer
         const systemPromptText = AIService.buildModularPrompt({
@@ -341,30 +181,70 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
             responseMode
         });
 
-        if (provider === 'openai') {
-            return await AIService.generateOpenAIReply({
-                inputText,
-                imagePart,
-                systemPrompt: systemPromptText,
-                activeBrand,
-                baseUrl: openaiBaseUrl,
-                apiKey: openaiApiKey,
-                model: openaiModel
-            });
+        let result;
+        tracker.markLlmStart();
+
+        try {
+            if (provider === 'openai') {
+                result = await AIService.generateOpenAIReply({
+                    inputText,
+                    imagePart,
+                    systemPrompt: systemPromptText,
+                    activeBrand,
+                    baseUrl: openaiBaseUrl,
+                    apiKey: openaiApiKey,
+                    model: openaiModel,
+                    tracker,
+                    onStreamChunk
+                });
+            } else {
+                result = await AIService.generateGeminiReply({
+                    inputText,
+                    imagePart,
+                    systemPrompt: systemPromptText,
+                    activeBrand,
+                    customApiKey,
+                    selectedModel,
+                    customProxyUrl,
+                    tracker,
+                    onStreamChunk
+                });
+            }
+        } finally {
+            tracker.markLlmEnd();
         }
 
-        return await AIService.generateGeminiReply({
-            inputText,
-            imagePart,
-            systemPrompt: systemPromptText,
-            activeBrand,
-            customApiKey,
-            selectedModel,
-            customProxyUrl
+        // Lampirkan metrics latensi ke objek response
+        const metrics = tracker.getMetrics();
+        result.metrics = metrics;
+
+        // Catat telemetry event
+        TelemetryService.logEvent('AI_REPLY_GENERATED', {
+            brandId: activeBrand?.id,
+            brandName: activeBrand?.brandName,
+            latency: metrics,
+            intent: result.clientAnalysis?.intent,
+            stage: result.clientAnalysis?.stage,
+            responseMode,
+            provider,
+            model: provider === 'openai' ? openaiModel : selectedModel,
+            reply: result.reply
         });
+
+        return result;
     },
 
-    generateOpenAIReply: async ({ inputText, imagePart, systemPrompt, activeBrand, baseUrl, apiKey, model }) => {
+    generateOpenAIReply: async ({ 
+        inputText, 
+        imagePart, 
+        systemPrompt, 
+        activeBrand, 
+        baseUrl, 
+        apiKey, 
+        model, 
+        tracker, 
+        onStreamChunk 
+    }) => {
         let cleanBaseUrl = (baseUrl || 'https://api.openai.com/v1').trim().replace(/\/+$/, '');
         const endpoint = cleanBaseUrl.endsWith('/chat/completions') 
             ? cleanBaseUrl 
@@ -413,6 +293,8 @@ Catatan konteks admin marketing: "${inputText.trim()}".
             userContent = userPrompt;
         }
 
+        const supportsStreaming = typeof onStreamChunk === 'function';
+
         const bodyPayload = {
             model: effectiveModel,
             messages: [
@@ -421,11 +303,15 @@ Catatan konteks admin marketing: "${inputText.trim()}".
             ],
             temperature: 0.25,
             max_tokens: 500,
-            response_format: { type: 'json_object' }
+            stream: supportsStreaming
         };
 
+        if (!supportsStreaming) {
+            bodyPayload.response_format = { type: 'json_object' };
+        }
+
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 20000);
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
 
         let response;
         try {
@@ -436,7 +322,7 @@ Catatan konteks admin marketing: "${inputText.trim()}".
                 body: JSON.stringify(bodyPayload)
             });
 
-            if (!response.ok && (response.status === 400 || response.status === 422)) {
+            if (!response.ok && (response.status === 400 || response.status === 422) && bodyPayload.response_format) {
                 delete bodyPayload.response_format;
                 response = await fetch(endpoint, {
                     method: 'POST',
@@ -460,12 +346,62 @@ Catatan konteks admin marketing: "${inputText.trim()}".
             throw new Error(`[OpenAI API Error] ${errMsg}`);
         }
 
+        if (supportsStreaming && response.body) {
+            let accumulated = '';
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    if (tracker) tracker.markFirstToken();
+
+                    const chunkStr = decoder.decode(value, { stream: true });
+                    const lines = chunkStr.split('\n');
+
+                    for (const line of lines) {
+                        const trimmed = line.trim();
+                        if (trimmed.startsWith('data: ') && trimmed !== 'data: [DONE]') {
+                            try {
+                                const parsedChunk = JSON.parse(trimmed.slice(6));
+                                const delta = parsedChunk.choices?.[0]?.delta?.content || '';
+                                if (delta) {
+                                    accumulated += delta;
+                                    const preview = ResponseParser.extractStreamingPreview(accumulated);
+                                    onStreamChunk({ partialReply: preview, rawText: accumulated, isDone: false });
+                                }
+                            } catch (_) {}
+                        }
+                    }
+                }
+            } finally {
+                reader.releaseLock();
+            }
+
+            if (onStreamChunk) {
+                onStreamChunk({ partialReply: ResponseParser.extractStreamingPreview(accumulated), rawText: accumulated, isDone: true });
+            }
+
+            return ResponseParser.parse(accumulated, activeBrand);
+        }
+
         const data = await response.json();
         const rawContent = data.choices?.[0]?.message?.content;
-        return AIService.parseJsonResponse(rawContent, activeBrand);
+        return ResponseParser.parse(rawContent, activeBrand);
     },
 
-    generateGeminiReply: async ({ inputText, imagePart, systemPrompt, activeBrand, customApiKey, selectedModel, customProxyUrl }) => {
+    generateGeminiReply: async ({ 
+        inputText, 
+        imagePart, 
+        systemPrompt, 
+        activeBrand, 
+        customApiKey, 
+        selectedModel, 
+        customProxyUrl,
+        tracker,
+        onStreamChunk 
+    }) => {
         const apiKey = customApiKey || DEFAULT_GEMINI_API_KEY;
         const requestedModel = selectedModel || DEFAULT_GEMINI_MODEL;
 
@@ -521,6 +457,7 @@ Catatan konteks admin marketing: "${inputText.trim()}".
         ].filter((m, idx, arr) => arr.indexOf(m) === idx);
 
         let lastError = null;
+        const supportsStreaming = typeof onStreamChunk === 'function';
 
         for (const model of candidateModels) {
             const controller = new AbortController();
@@ -537,7 +474,8 @@ Catatan konteks admin marketing: "${inputText.trim()}".
                         headers["x-goog-api-key"] = apiKey;
                     }
                 } else {
-                    endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+                    const method = supportsStreaming ? 'streamGenerateContent?alt=sse' : 'generateContent';
+                    endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:${method}`;
                     headers["x-goog-api-key"] = apiKey;
                 }
 
@@ -572,11 +510,53 @@ Catatan konteks admin marketing: "${inputText.trim()}".
                     continue;
                 }
 
+                // Jika streaming didukung dan response body tersedia
+                if (supportsStreaming && response.body) {
+                    let accumulated = '';
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder('utf-8');
+
+                    try {
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+                            if (tracker) tracker.markFirstToken();
+
+                            const chunkStr = decoder.decode(value, { stream: true });
+                            const lines = chunkStr.split('\n');
+
+                            for (const line of lines) {
+                                const trimmed = line.trim();
+                                if (trimmed.startsWith('data: ')) {
+                                    try {
+                                        const parsedSse = JSON.parse(trimmed.slice(6));
+                                        const textDelta = parsedSse.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                                        if (textDelta) {
+                                            accumulated += textDelta;
+                                            const preview = ResponseParser.extractStreamingPreview(accumulated);
+                                            onStreamChunk({ partialReply: preview, rawText: accumulated, isDone: false });
+                                        }
+                                    } catch (_) {}
+                                }
+                            }
+                        }
+                    } finally {
+                        reader.releaseLock();
+                    }
+
+                    if (accumulated) {
+                        if (onStreamChunk) {
+                            onStreamChunk({ partialReply: ResponseParser.extractStreamingPreview(accumulated), rawText: accumulated, isDone: true });
+                        }
+                        return ResponseParser.parse(accumulated, activeBrand);
+                    }
+                }
+
                 const result = await response.json();
                 const textContent = result.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (!textContent) continue;
 
-                return AIService.parseJsonResponse(textContent, activeBrand);
+                return ResponseParser.parse(textContent, activeBrand);
             } catch (err) {
                 lastError = err;
             } finally {

@@ -1,7 +1,10 @@
-// File: scripts/run_acceptance_tests.mjs
 import { AuthService } from '../src/js/services/auth.js';
 import { KnowledgeService } from '../src/js/services/knowledge.js';
 import { AIService } from '../src/js/services/ai.js';
+import { TelemetryService } from '../src/js/services/telemetry.js';
+import { ResponseParser } from '../src/js/services/ai/ResponseParser.js';
+import { CustomerMemoryEngine } from '../src/js/services/ai/CustomerMemoryEngine.js';
+import { ConversationAnalyzer } from '../src/js/services/ai/ConversationAnalyzer.js';
 import { INITIAL_BRANDS, INITIAL_USERS, GLOBAL_CORE_KNOWLEDGE, DEFAULT_BRAND_OVERRIDES } from '../src/js/constants.js';
 
 let passedTests = 0;
@@ -189,6 +192,69 @@ const sopResolved = KnowledgeService.resolveKnowledge({
     queryText: 'jadwal survei dan garansi pengerjaan'
 });
 assert(sopResolved.resolvedChunks.some(c => c.category === 'SOP_SALES'), 'SOP Sales knowledge resolved for survey/guarantee query');
+
+// ----------------------------------------------------
+// TEST 12: Telemetry & Latency Instrumentation
+// ----------------------------------------------------
+console.log('\n🧪 TEST 12: Telemetry & Latency Instrumentation');
+const rawSensitiveText = 'Kontak klien Ibu Maya: 081234567890 di Jl. Gandapura No. 10 Bandung';
+const maskedText = TelemetryService.maskPII(rawSensitiveText);
+assert(maskedText.includes('0812****7890'), 'Customer phone number correctly masked');
+assert(!maskedText.includes('081234567890'), 'Raw phone number completely scrubbed');
+
+const tracker = TelemetryService.createLatencyTracker();
+tracker.markRetrievalStart();
+tracker.markRetrievalEnd();
+tracker.markLlmStart();
+tracker.markFirstToken();
+tracker.markLlmEnd();
+const metrics = tracker.getMetrics();
+assert(typeof metrics.totalDurationMs === 'number', 'Total duration calculated');
+assert(typeof metrics.retrievalDurationMs === 'number', 'Retrieval duration calculated');
+assert(metrics.formattedSummary.startsWith('⚡'), 'Formatted latency summary generated');
+
+// ----------------------------------------------------
+// TEST 13: ResponseParser & Streaming Engine
+// ----------------------------------------------------
+console.log('\n🧪 TEST 13: ResponseParser & Streaming Engine');
+const partialChunk = '{"clientAnalysis": {}, "reply": "Halo Kak Budi! Estimasi kitchen set multipleks HPL mulai Rp 2,5jt/m';
+const streamingPreview = ResponseParser.extractStreamingPreview(partialChunk);
+assert(streamingPreview.includes('Halo Kak Budi! Estimasi kitchen set multipleks HPL'), 'Live streaming preview accurately extracted');
+
+const unclosedJson = '```json\n{"reply": "Siap Kak, tim survei kami bisa hadir hari Sabtu ini jam 10 pagi."\n';
+const parsedUnclosed = ResponseParser.parse(unclosedJson, homeputraBrand);
+assert(parsedUnclosed.reply.includes('tim survei kami bisa hadir hari Sabtu'), 'Broken or unclosed JSON gracefully recovered');
+assert(parsedUnclosed.replies.recommended === parsedUnclosed.reply, 'Backward compatible recommended reply mapped');
+
+// ----------------------------------------------------
+// TEST 14: CustomerMemoryEngine & Regional Intelligence
+// ----------------------------------------------------
+console.log('\n🧪 TEST 14: CustomerMemoryEngine & Regional Intelligence');
+assert(CustomerMemoryEngine.detectCityCategory('Bandung Timur, Arcamanik') === 'PL_DK', 'Bandung correctly categorized as PL DK');
+assert(CustomerMemoryEngine.detectCityCategory('BSD City Tangerang Selatan') === 'PL_LK', 'Jabodetabek correctly categorized as PL LK');
+assert(CustomerMemoryEngine.detectCityCategory('Semarang Barat') === 'PL_LK', 'Luar kota correctly categorized as PL LK');
+
+const baseMemory = { name: 'Pak Rudi', location: '', budget: '' };
+const mergedMemory = CustomerMemoryEngine.mergeExtractedData(baseMemory, {
+    extractedLocation: 'Cimahi Bandung',
+    extractedBudget: 'Rp 45.000.000',
+    projectType: 'Kitchen Set & Minibar'
+});
+assert(mergedMemory.location === 'Cimahi Bandung', 'Location merged into customer memory');
+assert(mergedMemory.cityCategory === 'PL_DK', 'City category automatically classified upon merge');
+assert(mergedMemory.budget === 'Rp 45.000.000', 'Budget merged into customer memory');
+
+// ----------------------------------------------------
+// TEST 15: ConversationAnalyzer Heuristics
+// ----------------------------------------------------
+console.log('\n🧪 TEST 15: ConversationAnalyzer Heuristics');
+const analysis1 = ConversationAnalyzer.heuristicAnalyze('Berapa estimasi harga kitchen set bahan pvc di Buah Batu Bandung?');
+assert(analysis1.detectedIntent === 'ASK_PRICE_KITCHEN', 'Kitchen set price inquiry intent correctly identified');
+assert(analysis1.extractedLocation === 'Bandung (PL DK)', 'Bandung PL DK location heuristically extracted');
+
+const analysis2 = ConversationAnalyzer.heuristicAnalyze('Kira-kira bisa minta jadwal survei pengukuran lokasi kapan ya?');
+assert(analysis2.detectedIntent === 'ASK_SURVEY_SCHEDULE', 'Survey schedule intent correctly identified');
+assert(analysis2.detectedTemperature === 'HOT', 'Survey intent flagged as HOT temperature');
 
 console.log('\n========================================================');
 console.log(`🎉 ALL ${passedTests}/${totalTests} ACCEPTANCE TESTS PASSED SUCCESSFULLY!`);
