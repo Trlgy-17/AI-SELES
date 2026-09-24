@@ -53,14 +53,25 @@ assert(heyaFiltered.length === 1 && heyaFiltered[0].name === 'Klien Heya', 'Heya
 assert(!heyaFiltered.some(l => l.brandId === 'brand_homeputra'), 'Heya admin CANNOT see Homeputra leads');
 
 // ----------------------------------------------------
-// TEST 3: Knowledge Hierarchy Resolution (3-Layer Engine)
+// TEST 3: Knowledge Hierarchy Resolution (3-Layer Engine & PL DK vs PL LK)
 // ----------------------------------------------------
-console.log('\n🧪 TEST 3: Knowledge Hierarchy Resolution (Override vs Global)');
+console.log('\n🧪 TEST 3: Knowledge Hierarchy Resolution (PL DK vs PL LK & Override)');
+const dkResolved = KnowledgeService.resolveKnowledge({
+    brandId: 'brand_homeputra',
+    queryText: 'kitchen set multipleks di Bandung (PL DK)'
+});
+assert(dkResolved.resolvedChunks.some(c => c.id === 'core_kitchen_dk'), 'PL DK Kitchen Set (Bandung) accurately resolved');
+
+const lkResolved = KnowledgeService.resolveKnowledge({
+    brandId: 'brand_homeputra',
+    queryText: 'kitchen set multipleks di Jakarta Jabodetabek (PL LK)'
+});
+assert(lkResolved.resolvedChunks.some(c => c.id === 'core_kitchen_lk'), 'PL LK Kitchen Set (Jabodetabek) accurately resolved');
+
 const putraResolved = KnowledgeService.resolveKnowledge({
     brandId: 'brand_putra',
     queryText: 'kitchen set workshop'
 });
-
 const putraChunk = putraResolved.resolvedChunks.find(c => c.brandId === 'brand_putra');
 assert(Boolean(putraChunk), 'Putra Interior brand override chunk is resolved');
 assert(putraChunk?.priority === 50, 'Putra brand override has priority 50 (> global 10)');
