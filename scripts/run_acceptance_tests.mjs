@@ -5,6 +5,7 @@ import { TelemetryService } from '../src/js/services/telemetry.js';
 import { ResponseParser } from '../src/js/services/ai/ResponseParser.js';
 import { CustomerMemoryEngine } from '../src/js/services/ai/CustomerMemoryEngine.js';
 import { ConversationAnalyzer } from '../src/js/services/ai/ConversationAnalyzer.js';
+import { calculateEstimate, formatEstimateForWhatsApp } from '../src/js/services/calculatorData.js';
 import { INITIAL_BRANDS, INITIAL_USERS, GLOBAL_CORE_KNOWLEDGE, DEFAULT_BRAND_OVERRIDES } from '../src/js/constants.js';
 
 let passedTests = 0;
@@ -287,6 +288,59 @@ const femaleMemoryPrompt = AIService.buildModularPrompt({
 assert(femaleMemoryPrompt.includes('GENDER WANITA'), 'Gender guidance embedded in client memory prompt');
 assert(femaleMemoryPrompt.includes('FOLLOW-UP HALUS (SURVEI & AMANKAN RUTE AKHIR PEKAN)'), 'Weekend survey follow-up playbook active');
 assert(femaleMemoryPrompt.includes('Mengingat jadwal weekend ini kebetulan peminatnya cukup tinggi'), 'Exact consultative template present in playbook');
+
+// ----------------------------------------------------
+// TEST 18: Estimator Calculator & Master Pricelist 2026
+// ----------------------------------------------------
+console.log('\n🧪 TEST 18: Estimator Calculator & Master Pricelist 2026');
+
+// 1. Kitchen Set Bandung 4 meter Multipleks Minimalis (4 x 2.500.000 = 10.000.000 -> Free Ongkir)
+const estKitchenDk = calculateEstimate({
+    region: 'dalam_kota',
+    category: 'KITCHEN_SET',
+    material: 'MULTIPLEKS',
+    style: 'MINIMALIS',
+    p: 4
+});
+assert(estKitchenDk.subtotal === 10000000, 'Kitchen Set DK 4m subtotal is 10.000.000');
+assert(estKitchenDk.isFreeOngkir === true, 'Kitchen Set DK >= 10jt has free ongkir');
+assert(estKitchenDk.grandTotal === 10000000, 'Grand total DK is 10.000.000');
+
+// 2. Kitchen Set Luar Kota 3 meter Multipleks Minimalis (3 x 2.600.000 = 7.800.000 < 15jt -> +500rb Ongkir)
+const estKitchenLk = calculateEstimate({
+    region: 'luar_kota',
+    category: 'KITCHEN_SET',
+    material: 'MULTIPLEKS',
+    style: 'MINIMALIS',
+    p: 3
+});
+assert(estKitchenLk.subtotal === 7800000, 'Kitchen Set LK 3m subtotal is 7.800.000');
+assert(estKitchenLk.isFreeOngkir === false, 'Kitchen Set LK < 15jt incurs ongkir');
+assert(estKitchenLk.grandTotal === 8300000, 'Kitchen Set LK grand total includes 500k ongkir');
+
+// 3. Lemari Bawah Tangga (Formula P x T x 0.8 x Harga)
+const estBawahTangga = calculateEstimate({
+    region: 'dalam_kota',
+    category: 'LEMARI_BAWAH_TANGGA',
+    material: 'MULTIPLEKS',
+    style: 'MINIMALIS',
+    p: 3,
+    t: 2,
+    bawahTanggaKedalamanGt60: false
+});
+// 3 x 2 x 0.8 x 2.500.000 = 12.000.000
+assert(estBawahTangga.subtotal === 12000000, 'Lemari Bawah Tangga 3m x 2m x 0.8 correctly calculated as 12.000.000');
+
+// 4. Format WhatsApp Output
+const waFormatted = formatEstimateForWhatsApp(estKitchenDk, 'PUTRA INTERIOR');
+assert(waFormatted.includes('PUTRA INTERIOR'), 'WhatsApp output includes brand name');
+assert(waFormatted.includes('Rp 10.000.000'), 'WhatsApp output includes formatted total');
+assert(waFormatted.includes('100% GRATIS'), 'WhatsApp output includes free survey reassurance');
+
+// 5. Knowledge Base Master Pricelist 2026 Chunk Verification
+const calcKnowledge = GLOBAL_CORE_KNOWLEDGE.find(k => k.id === 'core_estimator_master_pricelist_2026');
+assert(calcKnowledge !== undefined, 'Master Pricelist 2026 knowledge chunk exists in GLOBAL_CORE_KNOWLEDGE');
+assert(calcKnowledge.content.includes('MASTER PRICELIST 2026 LENGKAP'), 'Master Pricelist 2026 content verified');
 
 console.log('\n========================================================');
 console.log(`🎉 ALL ${passedTests}/${totalTests} ACCEPTANCE TESTS PASSED SUCCESSFULLY!`);

@@ -351,6 +351,11 @@ export function App() {
                 <KnowledgeBase 
                     activeBrand={activeBrand}
                     currentUser={currentUser}
+                    onApplyToAI={(calcData) => {
+                        setActiveTab('workspace');
+                        showToast(`Hasil hitungan ${calcData.projectType} (${calcData.budget}) siap digunakan di AI Copilot!`);
+                    }}
+                    showToast={showToast}
                 />
             )}
 

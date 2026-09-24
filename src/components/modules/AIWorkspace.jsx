@@ -10,6 +10,7 @@ import { optimizeImageForAI } from '../../js/utils/image.js';
 import { DEFAULT_GEMINI_API_KEY, DEFAULT_GEMINI_MODEL, AI_RESPONSE_MODES } from '../../js/constants.js';
 import { buildWaLink, formatDisplayPhone } from '../../js/utils/phone.js';
 import { TelemetryService } from '../../js/services/telemetry.js';
+import { EstimatorCalculator } from './EstimatorCalculator.jsx';
 
 const ADMIN_DIRECTIVE_SHORTCUTS = [
     { label: 'Follow Up Survei Weekend', text: 'follow up rencana interior klien ini dan tawarkan slot rute survei akhir pekan (Sabtu & Minggu) dengan sapaan sopan Ibu/Bapak', icon: '📍', mode: 'FOLLOW_UP' },
@@ -33,6 +34,7 @@ export const AIWorkspace = ({
     const [isLoading, setIsLoading] = useState(false);
     const [streamingReply, setStreamingReply] = useState('');
     const [feedbackGiven, setFeedbackGiven] = useState(null);
+    const [showCalculatorModal, setShowCalculatorModal] = useState(false);
     const [aiResponse, setAiResponse] = useState(null);
     const [copiedKey, setCopiedKey] = useState(null);
     const [aiError, setAiError] = useState(null);
@@ -153,6 +155,19 @@ export const AIWorkspace = ({
 
         setShowApiKeyModal(false);
         showToast("Pengaturan AI Provider & API berhasil disimpan!");
+    };
+
+    const handleApplyCalculatorEstimate = (calcData) => {
+        setClientMemory(prev => ({
+            ...prev,
+            dimensions: calcData.dimensions || prev.dimensions,
+            budget: calcData.budget || prev.budget,
+            projectType: calcData.projectType || prev.projectType,
+            notes: calcData.notes ? `${prev.notes ? prev.notes + '\n' : ''}${calcData.notes}` : prev.notes
+        }));
+        setShowMemoryDrawer(true);
+        setShowCalculatorModal(false);
+        showToast?.("Hasil kalkulator estimasi berhasil disinkronkan ke Memori Klien AI!");
     };
 
     const processImageFile = async (file) => {
@@ -407,14 +422,26 @@ export const AIWorkspace = ({
                             </div>
                         </div>
 
-                        <button 
-                            onClick={() => setShowApiKeyModal(true)}
-                            className="text-xs font-semibold px-3 py-1.5 bg-[#202028] hover:bg-[#282832] text-[#c5a059] rounded-full border border-[#33333d] flex items-center gap-1.5 transition-colors shadow-sm"
-                            title={aiProvider === 'openai' ? `OpenAI Base: ${openaiBaseUrl} | Model: ${openaiModel}` : `Google Gemini | Model: ${selectedModel}`}
-                        >
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                            <Icons.Key /> {aiProvider === 'openai' ? `OpenAI (${openaiModel})` : `Gemini (${selectedModel})`}
-                        </button>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                                type="button"
+                                onClick={() => setShowCalculatorModal(true)}
+                                className="text-xs font-semibold px-3 py-1.5 bg-[#202028] hover:bg-[#c5a059] hover:text-black text-zinc-300 rounded-full border border-[#33333d] flex items-center gap-1.5 transition-all shadow-sm"
+                                title="Buka Kalkulator Estimasi Biaya RAB Master 2026"
+                            >
+                                <span>🧮</span>
+                                <span>Kalkulator RAB</span>
+                            </button>
+
+                            <button 
+                                onClick={() => setShowApiKeyModal(true)}
+                                className="text-xs font-semibold px-3 py-1.5 bg-[#202028] hover:bg-[#282832] text-[#c5a059] rounded-full border border-[#33333d] flex items-center gap-1.5 transition-colors shadow-sm"
+                                title={aiProvider === 'openai' ? `OpenAI Base: ${openaiBaseUrl} | Model: ${openaiModel}` : `Google Gemini | Model: ${selectedModel}`}
+                            >
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <Icons.Key /> {aiProvider === 'openai' ? `OpenAI (${openaiModel})` : `Gemini (${selectedModel})`}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Mode Respon Selector */}
@@ -1032,6 +1059,38 @@ export const AIWorkspace = ({
                 currentOpenaiApiKey={openaiApiKey}
                 currentOpenaiModel={openaiModel}
             />
+
+            {showCalculatorModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
+                    <div className="relative w-full max-w-5xl my-auto bg-[#121216] border border-[#2a2a35] rounded-3xl p-5 md:p-7 shadow-2xl max-h-[92vh] overflow-y-auto custom-scrollbar">
+                        <div className="flex items-center justify-between pb-4 mb-4 border-b border-[#26262d]">
+                            <div className="flex items-center gap-2.5">
+                                <span className="text-2xl">🧮</span>
+                                <div>
+                                    <h3 className="serif-font font-bold text-white text-base md:text-lg">
+                                        Kalkulator RAB Estimasi Cepat (Pricelist Master 2026)
+                                    </h3>
+                                    <p className="text-[11px] text-zinc-400">
+                                        Pilih spesifikasi untuk hitung estimasi harga resmi dan transfer otomatis ke Memori Klien AI.
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowCalculatorModal(false)}
+                                className="w-8 h-8 rounded-full bg-[#1e1e24] hover:bg-[#2a2a35] text-zinc-400 hover:text-white flex items-center justify-center text-sm transition-colors"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <EstimatorCalculator 
+                            activeBrand={activeBrand} 
+                            showToast={showToast} 
+                            onApplyToAI={handleApplyCalculatorEstimate} 
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

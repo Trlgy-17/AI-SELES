@@ -604,6 +604,90 @@ export const GLOBAL_CORE_KNOWLEDGE = [
         priority: 10,
         version: '2026.2',
         isActive: true
+    },
+    {
+        id: 'core_estimator_master_pricelist_2026',
+        scope: 'GLOBAL',
+        category: 'PRICELIST_CALCULATOR_2026',
+        subCategory: 'all_regions',
+        title: 'Master Price List 2026 & Rumus Kalkulator Estimasi Lengkap (Putra Corporation)',
+        content: `• MASTER PRICELIST 2026 LENGKAP (24 HALAMAN DOKUMEN RESMI):
+
+1. KITCHENSET (PL DK: Bandung & Tasikmalaya / PL LK: Luar Kota & Jabodetabek):
+   - Blockboard Minimalis: DK Rp 2.000.000/m | LK Rp 2.300.000/m
+   - Blockboard Semi Klasik: DK Rp 2.500.000/m | LK Rp 2.600.000/m
+   - Blockboard Klasik: DK Rp 2.900.000/m | LK Rp 3.000.000/m
+   - Multiplek Minimalis: DK Rp 2.500.000/m | LK Rp 2.600.000/m
+   - Multiplek Semi Klasik: DK Rp 2.700.000/m | LK Rp 2.800.000/m
+   - Multiplek Klasik: DK Rp 3.200.000/m | LK Rp 3.300.000/m
+   - Multiplek Duco Luxury: DK Rp 4.000.000/m (Minimalis) - Rp 4.700.000/m (Klasik) | LK Rp 4.000.000/m - Rp 4.800.000/m
+   - Duco Klasik (Double Profil): DK Rp 6.100.000/m | LK Rp 6.200.000/m
+   - Industrial: DK Rp 2.000.000 - Rp 2.300.000/m (Rangka Besi +Rp 1.800.000/m DK, Rp 2.100.000/m LK | +Wire Mesh Rp 2.000.000/m DK, Rp 2.300.000/m LK)
+   - Kabinet Atas Full Plafon: Tingkat 2 (T < 50cm): Rp 1.800.000 - Rp 2.400.000/m | Tingkat 2 (T 50-70cm): Rp 1.950.000 - Rp 2.600.000/m
+   - Pintu Kusen Bawah: Minimalis Rp 1.450.000/m | Klasik Rp 1.650.000/m
+
+2. LEMARI BAWAH TANGGA:
+   - Rumus Standar (Kedalaman 60cm): Panjang x Tinggi x 0,8 x Harga
+   - Jika Kedalaman > 60cm: Panjang x Tinggi x Harga
+   - Blockboard: DK Minimalis Rp 2.300.000/m, Semi Klasik Rp 2.700.000/m, Klasik Rp 2.950.000/m | LK Minimalis Rp 2.400.000/m, Semi Klasik Rp 2.850.000/m, Klasik Rp 3.050.000/m
+   - Multipleks: DK Minimalis Rp 2.500.000/m, Semi Klasik Rp 2.750.000/m, Klasik Rp 3.000.000/m | LK Minimalis Rp 2.600.000/m, Semi Klasik Rp 2.850.000/m, Klasik Rp 3.100.000/m
+   - Multipleks Cat Duco: Minimalis Rp 4.800.000/m (DK) / Rp 4.100.000/m (LK), Klasik Rp 6.300.000/m (DK) / Rp 5.500.000/m (LK)
+
+3. LEMARI WARDROBE (Standar Kedalaman 60cm):
+   - Rumus: Panjang x Tinggi x Harga per m2
+   - Blockboard: DK Rp 2.300.000 - Rp 2.950.000/m2 | LK Rp 2.400.000 - Rp 3.050.000/m2
+   - Multipleks: DK Rp 2.500.000 - Rp 3.000.000/m2 | LK Rp 2.600.000 - Rp 3.100.000/m2
+   - Add-on Pintu Kaca: Kaca Polos Rp 650.000 - Rp 750.000/m2 | Kaca Riben Rp 1.250.000/m2 | Cermin Biasa Rp 750.000 - Rp 850.000/m2 | Cermin Bronze / Grey Rp 1.850.000/m2
+
+4. BACKDROP TV:
+   - Rumus: Panjang x Tinggi x Harga per m2
+   - Blockboard: DK Rp 2.100.000 - Rp 2.500.000/m2 | LK Rp 2.100.000 - Rp 2.600.000/m2
+   - Multipleks HPL: DK Rp 2.300.000 - Rp 2.800.000/m2 | LK Rp 2.400.000 - Rp 2.900.000/m2
+   - Multipleks Duco: Rp 4.600.000 - Rp 6.100.000/m2
+
+5. MINI BAR & MEJA ISLAND:
+   - Rumus: (Panjang : 0,6) x Harga per unit
+   - Blockboard: DK Rp 2.100.000 - Rp 2.500.000 | LK Rp 2.300.000 - Rp 2.700.000
+   - Multipleks: DK Rp 2.500.000 - Rp 2.700.000 | LK Rp 2.500.000 - Rp 2.700.000
+
+6. TOPI BAR, BOX ELEKTRONIK & HAMBALAN:
+   - Topi Bar: Blockboard Rp 1.250.000 - Rp 1.350.000/m | Multiplek Rp 1.450.000/m | Duco Rp 2.100.000/m
+   - Box Elektronik (P < 1m): Tinggi x Rp 2.100.000 - Rp 2.600.000 | (P > 1m): P x T x Rp 2.200.000 - Rp 2.700.000
+   - Hambalan: Lampu Rp 500.000 - Rp 600.000 / pcs | Tanpa Lampu Rp 450.000 - Rp 550.000 / pcs
+
+7. DIPAN, HEADBOARD & NAKAS:
+   - Dipan Blockboard HPL: P x L x Rp 2.100.000 (DK) / Rp 2.200.000 (LK)
+   - Dipan Multiplek HPL: P x L x Rp 2.500.000 (DK) / Rp 2.600.000 (LK) | Duco: P x L x Rp 3.100.000
+   - Headboard (Tinggi Standar 70cm): Blockboard Rp 1.350.000/m | Multipleks Rp 1.600.000/m | +Busa Rp 1.850.000 - Rp 2.100.000/m
+   - Rangka Dipan Tingkat (Besi Hollow Lapis HPL): 90x200 (Rp 2jt DK / Rp 2,5jt LK), 120x200 (Rp 2,25jt DK / Rp 2,75jt LK), 160x200 (Rp 2,75jt DK / Rp 3,25jt LK), 180x200 (Rp 3jt DK / Rp 3,5jt LK), 200x200 (Rp 3,25jt DK / Rp 3,75jt LK)
+
+8. CRADIENZA / KREDENSA:
+   - Rumus: Panjang x Harga
+   - Blockboard: Minimalis Rp 1.900.000/m | Semi Klasik Rp 2.200.000/m | Klasik Rp 2.400.000/m
+   - Multipleks: Minimalis Rp 2.100.000/m | Semi Klasik Rp 2.450.000/m | Klasik Rp 2.600.000/m | Duco: Rp 2.600.000 - Rp 3.600.000/m
+
+9. WALLPANEL & KACA CERMIN BEVEL:
+   - Wallpanel Multiplek: Minimalis Rp 1.350.000/m2 | Semi Klasik Rp 1.500.000/m2 | Klasik Rp 1.650.000/m2 | Duco Rp 2.750.000/m2
+   - Kaca Bevel: Cermin Biasa Rp 1.850.000/m2 | Cermin Bronze / Grey Rp 1.950.000/m2
+
+10. PARTISI & BENCH:
+    - Partisi Multipleks: Minimalis Rp 2.400.000/m2 | Duco Rp 4.500.000/m2
+    - Bench: Blockboard Rp 2.100.000/m | Multipleks Rp 2.600.000/m
+
+11. SOFA CUSTOM:
+    - Rumus: (Panjang : 0,60) x Harga
+    - Minimalis: Rp 1.650.000 | Klasik: Rp 2.000.000
+    - Upgrade Cover: Kulit Oscar +Rp 100.000/m | Kulit MBtech +Rp 175.000/m | Corduroy Premium +Rp 150.000/m
+    - Gratis bantal jika pembelian > 2 seat | Ongkir luar kota Rp 750.000,-
+
+• KETENTUAN PROYEK & FREE ONGKIR:
+- Finishing HPL Luar & Dalam: Tambahan Rp 700.000,- / meter
+- Dalam Kota (Bandung & Tasik): Order < Rp 10.000.000 dikenakan Ongkir Rp 500.000,- dan biaya penambahan Rak Bumbu & Piring. Order >= Rp 10.000.000 GRATIS Ongkir Bandung & sekitarnya.
+- Luar Kota (Jabodetabek, Pantura, Jateng, Jatim): Order < Rp 15.000.000 dikenakan Ongkir Rp 500.000,-. Order >= Rp 15.000.000 GRATIS Ongkir.`,
+        keywords: ['kalkulator', 'estimasi', 'rab', 'pricelist 2026', 'kitchen', 'lemari', 'backdrop', 'bawah tangga', 'sofa', 'dipan', 'cradienza', 'wallpanel', 'partisi', 'minibar', 'dk', 'lk'],
+        priority: 15,
+        version: '2026.2',
+        isActive: true
     }
 ];
 

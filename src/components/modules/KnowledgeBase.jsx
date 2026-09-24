@@ -1,12 +1,13 @@
-// File: src/components/modules/KnowledgeBase.jsx
 import React, { useState, useMemo } from 'react';
 import { KnowledgeService } from '../../js/services/knowledge.js';
 import { Icons } from '../Icons.jsx';
+import { EstimatorCalculator } from './EstimatorCalculator.jsx';
 
-export const KnowledgeBase = ({ activeBrand, currentUser }) => {
+export const KnowledgeBase = ({ activeBrand, currentUser, onApplyToAI, showToast }) => {
     const currentBrandId = activeBrand?.id || 'brand_nacira';
     const brandName = activeBrand?.brandName || 'NACIRA STUDIO';
 
+    const [viewMode, setViewMode] = useState('CALCULATOR'); // 'CALCULATOR' | 'CATALOG'
     const [activeLayerFilter, setActiveLayerFilter] = useState('ALL');
     const [searchQuery, setSearchQuery] = useState('');
     
@@ -108,8 +109,44 @@ export const KnowledgeBase = ({ activeBrand, currentUser }) => {
                 </div>
             </div>
 
-            {/* RAG PLAYGROUND / KNOWLEDGE RESOLUTION TESTER */}
-            <div className="bg-[#15151a] rounded-3xl p-6 md:p-8 shadow-2xl border border-[#26262d] space-y-4">
+            {/* VIEW MODE TABS: KALKULATOR ESTIMASI vs KATALOG KNOWLEDGE */}
+            <div className="flex items-center gap-2 p-1.5 bg-[#15151a] rounded-2xl border border-[#26262d] w-fit flex-wrap">
+                <button
+                    type="button"
+                    onClick={() => setViewMode('CALCULATOR')}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                        viewMode === 'CALCULATOR'
+                            ? 'bg-[#c5a059] text-black shadow-lg shadow-[#c5a059]/20'
+                            : 'text-zinc-400 hover:text-white'
+                    }`}
+                >
+                    <span className="text-base">🧮</span>
+                    <span>Kalkulator Estimasi Biaya (RAB Master 2026)</span>
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setViewMode('CATALOG')}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                        viewMode === 'CATALOG'
+                            ? 'bg-[#c5a059] text-black shadow-lg shadow-[#c5a059]/20'
+                            : 'text-zinc-400 hover:text-white'
+                    }`}
+                >
+                    <span className="text-base">📚</span>
+                    <span>Katalog Knowledge Base & SOP ({filteredItems.length})</span>
+                </button>
+            </div>
+
+            {viewMode === 'CALCULATOR' ? (
+                <EstimatorCalculator 
+                    activeBrand={activeBrand} 
+                    onApplyToAI={onApplyToAI} 
+                    showToast={showToast} 
+                />
+            ) : (
+                <React.Fragment>
+                    {/* RAG PLAYGROUND / KNOWLEDGE RESOLUTION TESTER */}
+                    <div className="bg-[#15151a] rounded-3xl p-6 md:p-8 shadow-2xl border border-[#26262d] space-y-4">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2.5">
                         <div className="p-2 bg-[#202028] text-[#c5a059] rounded-xl">
@@ -262,6 +299,8 @@ export const KnowledgeBase = ({ activeBrand, currentUser }) => {
                     </div>
                 ))}
             </div>
+            </React.Fragment>
+            )}
         </div>
     );
 };
