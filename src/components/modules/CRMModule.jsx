@@ -11,7 +11,21 @@ import { getAsiaJakartaIso } from '../../js/utils/date.js';
 import { addTombstone } from '../../js/services/migration.js';
 import { LEAD_STATUS_OPTIONS } from '../../js/constants.js';
 
-export const CRMModule = ({ crmLeads = [], setCrmLeads, followUpTasks = [], setFollowUpTasks, userId, showToast }) => {
+export const CRMModule = ({ 
+    crmLeads = [], 
+    setCrmLeads, 
+    followUpTasks = [], 
+    setFollowUpTasks, 
+    userId, 
+    showToast,
+    activeBrand,
+    currentUser,
+    onConsultLeadInAI
+}) => {
+    const currentBrandId = activeBrand?.id || 'brand_nacira';
+    const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+
+    const [showAllBrands, setShowAllBrands] = useState(false);
     const [crmSearch, setCrmSearch] = useState('');
     const [crmStatusFilter, setCrmStatusFilter] = useState('Semua');
     const [crmSortOption, setCrmSortOption] = useState('terbaru');
@@ -19,6 +33,7 @@ export const CRMModule = ({ crmLeads = [], setCrmLeads, followUpTasks = [], setF
     const [newLeadName, setNewLeadName] = useState('');
     const [newLeadPhone, setNewLeadPhone] = useState('');
     const [newLeadProject, setNewLeadProject] = useState('');
+    const [newLeadLocation, setNewLeadLocation] = useState('');
     const [newLeadValue, setNewLeadValue] = useState('');
     const [newLeadStatus, setNewLeadStatus] = useState('Prospek / Survey');
 
@@ -29,19 +44,28 @@ export const CRMModule = ({ crmLeads = [], setCrmLeads, followUpTasks = [], setF
     const [isDeletingLead, setIsDeletingLead] = useState(false);
     const [editingLead, setEditingLead] = useState(null);
 
+    // Filter Leads Berdasarkan Brand Sesi Aktif (Multi-Tenant Isolation)
+    const brandScopedLeads = useMemo(() => {
+        return crmLeads.filter(l => {
+            const leadBrand = l.brandId || 'brand_nacira'; // Data warisan otomatis dianggap milik Nacira Studio
+            if (isSuperAdmin && showAllBrands) return true;
+            return leadBrand === currentBrandId;
+        });
+    }, [crmLeads, isSuperAdmin, showAllBrands, currentBrandId]);
+
     useEffect(() => {
         const norm = normalizePhone(newLeadPhone);
         if (norm && norm.length >= 8) {
-            const match = crmLeads.find(l => l.phoneNormalized === norm);
+            const match = brandScopedLeads.find(l => l.phoneNormalized === norm);
             if (match) {
-                setDuplicateWarning(`Perhatian: Nomor WhatsApp ini sudah terdaftar atas nama klien "${match.name}".`);
+                setDuplicateWarning(`Perhatian: Nomor WhatsApp ini sudah terdaftar di brand ${activeBrand?.brandName || 'ini'} atas nama "${match.name}".`);
             } else {
                 setDuplicateWarning(null);
             }
         } else {
             setDuplicateWarning(null);
         }
-    }, [newLeadPhone, crmLeads]);
+    }, [newLeadPhone, brandScopedLeads, activeBrand]);
 
     const handleAddLead = async () => {
         const trimmedName = newLeadName.trim().slice(0, 100);
@@ -70,10 +94,14 @@ export const CRMModule = ({ crmLeads = [], setCrmLeads, followUpTasks = [], setF
         const leadData = {
             id: docId,
             schemaVersion: 2,
+            brandId: currentBrandId, // Wajib terikat ke brand aktif
             name: trimmedName,
             phoneRaw: phoneRaw,
             phoneNormalized: phoneNormalized,
             project: newLeadProject.trim().slice(0, 200),
+            location: newLeadLocation.trim().slice(0, 150),
+            dimensions: '',
+            notes: '',
             value: cleanVal,
             status: newLeadStatus,
             createdAt: getAsiaJakartaIso(),
@@ -88,18 +116,19 @@ export const CRMModule = ({ crmLeads = [], setCrmLeads, followUpTasks = [], setF
             try {
                 const { db, appId, doc, setDoc } = window.firebaseServices;
                 await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'crmLeads', docId), leadData);
-                showToast("Prospek berhasil ditambahkan & disinkronkan ke Cloud!");
+                showToast(`Prospek ${trimmedName} berhasil ditambahkan ke ${activeBrand?.brandName}!`);
             } catch (e) {
                 console.warn("[CRM] Cloud save failed:", e);
                 showToast("Tersimpan di perangkat lokal. (Sinkronisasi cloud tertunda)", "warning");
             }
         } else {
-            showToast("Prospek berhasil ditambahkan ke database lokal!");
+            showToast(`Prospek berhasil ditambahkan ke ${activeBrand?.brandName}!`);
         }
 
         setNewLeadName('');
         setNewLeadPhone('');
         setNewLeadProject('');
+        setNewLeadLocation('');
         setNewLeadValue('');
         setNewLeadStatus('Prospek / Survey');
         setIsAddingLead(false);
@@ -112,13 +141,13 @@ export const CRMModule = ({ crmLeads = [], setCrmLeads, followUpTasks = [], setF
             try {
                 const { db, appId, doc, setDoc } = window.firebaseServices;
                 await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'crmLeads', updatedLead.id), updatedLead);
-                showToast("Data klien berhasil diperbarui di cloud!");
+                showToast("Data klien berhasil diperbarui!");
             } catch (e) {
                 console.warn("[CRM] Cloud update failed:", e);
                 showToast("Diperbarui lokal. (Cloud sync tertunda: " + e.message + ")", "warning");
             }
         } else {
-            showToast("Data klien berhasil diperbarui.");
+            showToast("Data klien & memori berhasil diperbarui.");
         }
         setEditingLead(null);
     };
@@ -128,7 +157,6 @@ export const CRMModule = ({ crmLeads = [], setCrmLeads, followUpTasks = [], setF
         const leadId = deleteTargetId;
         setIsDeletingLead(true);
 
-        // Putuskan tautan tugas follow-up yang terhubung (TIDAK menghapus tugas secara sepihak!)
         if (setFollowUpTasks) {
             setFollowUpTasks(prev => prev.map(t => {
                 if (t.leadId === leadId) {
@@ -148,10 +176,10 @@ export const CRMModule = ({ crmLeads = [], setCrmLeads, followUpTasks = [], setF
                 showToast("Data klien dihapus. Tugas terkait dipertahankan.");
             } catch (e) {
                 console.warn("[CRM] Cloud delete failed:", e);
-                showToast("Dihapus lokal. (Cloud delete tertunda: " + e.message + ")", "warning");
+                showToast("Dihapus lokal.", "warning");
             }
         } else {
-            showToast("Data klien dihapus. Tugas follow-up terkait dilepas (standalone).");
+            showToast("Data klien dihapus.");
         }
 
         setIsDeletingLead(false);
@@ -159,11 +187,12 @@ export const CRMModule = ({ crmLeads = [], setCrmLeads, followUpTasks = [], setF
     };
 
     const filteredLeads = useMemo(() => {
-        return crmLeads.filter(l => {
+        return brandScopedLeads.filter(l => {
             const searchLower = crmSearch.toLowerCase();
             const matchesSearch = 
                 (l.name || '').toLowerCase().includes(searchLower) || 
                 (l.project || '').toLowerCase().includes(searchLower) ||
+                (l.location || '').toLowerCase().includes(searchLower) ||
                 (l.status || '').toLowerCase().includes(searchLower) ||
                 (l.phoneRaw || '').toLowerCase().includes(searchLower) ||
                 (l.phoneNormalized || '').toLowerCase().includes(searchLower);
@@ -178,19 +207,55 @@ export const CRMModule = ({ crmLeads = [], setCrmLeads, followUpTasks = [], setF
             if (crmSortOption === 'nama_az') return (a.name || '').localeCompare(b.name || '', 'id', { sensitivity: 'base' });
             return 0;
         });
-    }, [crmLeads, crmSearch, crmStatusFilter, crmSortOption]);
+    }, [brandScopedLeads, crmSearch, crmStatusFilter, crmSortOption]);
 
-    const totalLeadsCount = crmLeads.length;
-    // Active Pipeline: Hanya status Prospek / Survey & Design Review
-    const activeLeads = useMemo(() => crmLeads.filter(l => l.status === 'Prospek / Survey' || l.status === 'Design Review'), [crmLeads]);
+    const totalLeadsCount = brandScopedLeads.length;
+    const activeLeads = useMemo(() => brandScopedLeads.filter(l => l.status === 'Prospek / Survey' || l.status === 'Design Review'), [brandScopedLeads]);
     const activePipelineValue = useMemo(() => activeLeads.reduce((acc, curr) => acc + (typeof curr.value === 'number' ? curr.value : 0), 0), [activeLeads]);
-    // Closing Revenue: Hanya status Closing / DP Masuk
-    const closingLeads = useMemo(() => crmLeads.filter(l => l.status === 'Closing / DP Masuk'), [crmLeads]);
+    const closingLeads = useMemo(() => brandScopedLeads.filter(l => l.status === 'Closing / DP Masuk'), [brandScopedLeads]);
     const closingRevenueValue = useMemo(() => closingLeads.reduce((acc, curr) => acc + (typeof curr.value === 'number' ? curr.value : 0), 0), [closingLeads]);
     const closingCount = closingLeads.length;
 
     return (
         <div className="space-y-6 pb-12 animate-fade-in">
+            {/* Header Brand Bar & Super Admin Scope Control */}
+            <div className="glass-panel rounded-3xl p-6 shadow-2xl border border-[#26262d] flex justify-between items-center flex-wrap gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-[#202028] text-[#c5a059] flex items-center justify-center font-bold text-lg border border-[#33333d]">
+                        <Icons.Users />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h2 className="serif-font text-xl font-extrabold text-white">
+                                CRM Leads Pipeline
+                            </h2>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#c5a059]/15 text-[#c5a059] border border-[#c5a059]/30">
+                                {activeBrand?.brandName || 'Nacira'}
+                            </span>
+                        </div>
+                        <p className="text-xs text-zinc-400 mt-0.5">
+                            Data prospek terisolasi untuk brand ini · Memori lokasi & preferensi material terintegrasi.
+                        </p>
+                    </div>
+                </div>
+
+                {isSuperAdmin && (
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setShowAllBrands(!showAllBrands)}
+                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                showAllBrands 
+                                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm' 
+                                    : 'bg-[#1b1b22] text-zinc-400 border-[#2e2e38] hover:text-white'
+                            }`}
+                        >
+                            👑 {showAllBrands ? 'Menampilkan Semua Brand' : 'Filter Brand Aktif Saja'}
+                        </button>
+                    </div>
+                )}
+            </div>
+
             {/* Metrik Finansial Eksplisit */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 <div className="glass-panel rounded-3xl p-6 shadow-2xl border border-[#26262d] flex items-center gap-4">
@@ -198,7 +263,7 @@ export const CRMModule = ({ crmLeads = [], setCrmLeads, followUpTasks = [], setF
                         <Icons.Users />
                     </div>
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Total Prospek</p>
+                        <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Total Prospek ({activeBrand?.brandName})</p>
                         <h3 className="serif-font text-2xl font-extrabold text-white mt-0.5">{totalLeadsCount} Klien</h3>
                     </div>
                 </div>
@@ -225,7 +290,7 @@ export const CRMModule = ({ crmLeads = [], setCrmLeads, followUpTasks = [], setF
             {/* Form Tambah Prospek Baru */}
             <div className="glass-panel rounded-3xl p-6 md:p-8 shadow-2xl border border-[#26262d]">
                 <h3 className="serif-font font-bold text-lg text-white mb-4 flex items-center gap-2">
-                    <Icons.Plus /> Tambah Prospek Klien Baru
+                    <Icons.Plus /> Tambah Prospek Klien Baru ({activeBrand?.brandName})
                 </h3>
 
                 {crmError && (
@@ -240,7 +305,7 @@ export const CRMModule = ({ crmLeads = [], setCrmLeads, followUpTasks = [], setF
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3">
                     <input 
                         type="text" 
                         placeholder="Nama Klien..." 
@@ -250,212 +315,219 @@ export const CRMModule = ({ crmLeads = [], setCrmLeads, followUpTasks = [], setF
                     />
                     <input 
                         type="text" 
-                        placeholder="No WA (08... / +62... / +65...)" 
+                        placeholder="WhatsApp (08... / +62...)" 
                         value={newLeadPhone}
                         onChange={(e) => setNewLeadPhone(e.target.value)}
                         className="bg-[#15151a] border border-[#26262d] rounded-xl px-4 py-2.5 text-sm text-white shadow-inner placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
                     />
                     <input 
                         type="text" 
-                        placeholder="Proyek (mis. Kitchen Set Minimalis)" 
+                        placeholder="Proyek (Kitchen/Wardrobe)" 
                         value={newLeadProject}
                         onChange={(e) => setNewLeadProject(e.target.value)}
                         className="bg-[#15151a] border border-[#26262d] rounded-xl px-4 py-2.5 text-sm text-white shadow-inner placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
                     />
                     <input 
+                        type="text" 
+                        placeholder="Lokasi (e.g. Bandung Kota)" 
+                        value={newLeadLocation}
+                        onChange={(e) => setNewLeadLocation(e.target.value)}
+                        className="bg-[#15151a] border border-[#26262d] rounded-xl px-4 py-2.5 text-sm text-white shadow-inner placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
+                    />
+                    <input 
                         type="number" 
-                        placeholder="Estimasi Nilai Rp (opsional)" 
+                        placeholder="Estimasi Nilai (Rp)" 
                         value={newLeadValue}
                         onChange={(e) => setNewLeadValue(e.target.value)}
                         className="bg-[#15151a] border border-[#26262d] rounded-xl px-4 py-2.5 text-sm text-white shadow-inner placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
                     />
-                    <select 
-                        value={newLeadStatus}
-                        onChange={(e) => setNewLeadStatus(e.target.value)}
-                        className="bg-[#15151a] border border-[#26262d] rounded-xl px-4 py-2.5 text-xs text-zinc-300 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
-                    >
-                        {LEAD_STATUS_OPTIONS.map(opt => (
-                            <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="mt-4 flex justify-end">
                     <button 
                         onClick={handleAddLead}
                         disabled={isAddingLead}
-                        className="gold-btn px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-[#c5a059]/20"
+                        className="gold-btn rounded-xl py-2.5 px-4 font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-[#c5a059]/20"
                     >
                         {isAddingLead ? 'Menyimpan...' : <React.Fragment><Icons.Plus /> Simpan Prospek</React.Fragment>}
                     </button>
                 </div>
             </div>
 
-            {/* Filter, Pencarian & Ekspor */}
-            <div className="glass-panel rounded-3xl p-6 shadow-2xl border border-[#26262d] space-y-4">
-                <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 flex-wrap">
-                    <div className="relative flex-1 max-w-md">
-                        <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
-                            <Icons.Search />
-                        </span>
+            {/* Filter & Search Bar */}
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-[#15151a] p-4 rounded-3xl border border-[#26262d]">
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                    <div className="relative flex-1 md:w-72">
                         <input 
-                            type="text"
-                            placeholder="Cari nama, proyek, atau nomor WhatsApp..."
+                            type="text" 
+                            placeholder="Cari nama, proyek, lokasi..." 
                             value={crmSearch}
                             onChange={(e) => setCrmSearch(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-[#15151a] border border-[#26262d] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30 text-white placeholder:text-zinc-600"
+                            className="w-full bg-[#1b1b22] border border-[#26262d] rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c5a059]"
                         />
+                        <div className="absolute left-3.5 top-3 text-zinc-500">
+                            <Icons.Search />
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-3 flex-wrap">
-                        <select 
-                            value={crmStatusFilter}
-                            onChange={(e) => setCrmStatusFilter(e.target.value)}
-                            className="bg-[#15151a] border border-[#26262d] rounded-xl px-3 py-2 text-xs text-zinc-300 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
-                        >
-                            <option value="Semua">Semua Status</option>
-                            {LEAD_STATUS_OPTIONS.map(opt => (
-                                <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                        </select>
-
-                        <select 
-                            value={crmSortOption}
-                            onChange={(e) => setCrmSortOption(e.target.value)}
-                            className="bg-[#15151a] border border-[#26262d] rounded-xl px-3 py-2 text-xs text-zinc-300 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
-                        >
-                            <option value="terbaru">Terbaru</option>
-                            <option value="terlama">Terlama</option>
-                            <option value="nilai_tinggi">Nilai: Tertinggi</option>
-                            <option value="nilai_rendah">Nilai: Terendah</option>
-                            <option value="nama_az">Nama A-Z</option>
-                        </select>
-
-                        <button 
-                            onClick={() => {
-                                const res = ExportService.exportToCsv(crmLeads);
-                                if (res.success) {
-                                    showToast("Data prospek berhasil diekspor ke CSV!");
-                                } else {
-                                    showToast("Tidak ada data prospek untuk diekspor.", "warning");
-                                }
-                            }}
-                            className="px-4 py-2 bg-[#202028] hover:bg-[#282832] text-xs font-bold text-zinc-300 rounded-xl border border-[#2e2e38] flex items-center gap-2 transition-colors"
-                        >
-                            <Icons.FileSpreadsheet /> Ekspor CSV
-                        </button>
-                    </div>
+                    <select
+                        value={crmStatusFilter}
+                        onChange={(e) => setCrmStatusFilter(e.target.value)}
+                        className="bg-[#1b1b22] border border-[#26262d] rounded-2xl px-3 py-2.5 text-xs text-zinc-300 focus:outline-none focus:border-[#c5a059]"
+                    >
+                        <option value="Semua">Semua Status</option>
+                        {LEAD_STATUS_OPTIONS.map(s => (
+                            <option key={s} value={s}>{s}</option>
+                        ))}
+                    </select>
                 </div>
 
-                {/* Tabel Data Prospek */}
-                <div className="overflow-x-auto rounded-2xl border border-[#26262d]">
-                    <table className="w-full text-left border-collapse text-sm">
-                        <thead>
-                            <tr className="border-b border-[#26262d] bg-[#121216] text-xs font-bold uppercase tracking-wider text-zinc-400">
-                                <th className="py-4 px-6">Nama Klien & WA</th>
-                                <th className="py-4 px-6">Proyek Interior</th>
-                                <th className="py-4 px-6">Estimasi Nilai</th>
-                                <th className="py-4 px-6">Status</th>
-                                <th className="py-4 px-6">Tgl Masuk</th>
-                                <th className="py-4 px-6 text-right">Aksi</th>
+                <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                    <select
+                        value={crmSortOption}
+                        onChange={(e) => setCrmSortOption(e.target.value)}
+                        className="bg-[#1b1b22] border border-[#26262d] rounded-2xl px-3 py-2.5 text-xs text-zinc-300 focus:outline-none focus:border-[#c5a059]"
+                    >
+                        <option value="terbaru">Terbaru Masuk</option>
+                        <option value="terlama">Terlama Masuk</option>
+                        <option value="nilai_tinggi">Nilai Tertinggi</option>
+                        <option value="nilai_rendah">Nilai Terendah</option>
+                        <option value="nama_az">Nama A - Z</option>
+                    </select>
+
+                    <button
+                        onClick={() => ExportService.exportLeadsToCsv(filteredLeads)}
+                        className="px-4 py-2.5 bg-[#202028] hover:bg-[#282834] text-zinc-300 rounded-2xl border border-[#33333d] text-xs font-bold flex items-center gap-2 transition-colors"
+                        title="Ekspor daftar klien ke file CSV"
+                    >
+                        <Icons.FileSpreadsheet /> Ekspor CSV
+                    </button>
+                </div>
+            </div>
+
+            {/* Tabel Data Prospek Klien */}
+            <div className="bg-[#15151a] rounded-3xl border border-[#26262d] overflow-hidden shadow-2xl">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-zinc-300">
+                        <thead className="bg-[#1b1b22] text-zinc-400 uppercase tracking-wider font-bold border-b border-[#26262d]">
+                            <tr>
+                                <th className="p-4">Klien & Memori</th>
+                                <th className="p-4">WhatsApp</th>
+                                <th className="p-4">Proyek & Lokasi</th>
+                                <th className="p-4">Estimasi Nilai</th>
+                                <th className="p-4">Status Pipeline</th>
+                                {isSuperAdmin && showAllBrands && <th className="p-4">Brand</th>}
+                                <th className="p-4 text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#202028]">
-                            {filteredLeads.length === 0 ? (
-                                <tr>
-                                    <td colSpan="6" className="py-12 text-center text-zinc-500 font-medium">
-                                        {crmLeads.length === 0 ? 'Belum ada data prospek klien.' : 'Tidak ada prospek yang sesuai filter pencarian.'}
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredLeads.map((lead) => {
-                                    const displayPhone = formatDisplayPhone(lead.phoneRaw, lead.phoneNormalized);
-                                    const waLink = buildWaLink(lead.phoneNormalized, lead.name);
-
-                                    return (
-                                        <tr key={lead.id} className="hover:bg-[#18181e]/60 transition-colors">
-                                            <td className="py-4 px-6">
-                                                <div className="font-semibold text-white">{lead.name}</div>
-                                                <div className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1.5">
-                                                    <span>{displayPhone}</span>
-                                                    {waLink && (
-                                                        <a 
-                                                            href={waLink} 
-                                                            target="_blank" 
-                                                            rel="noreferrer" 
-                                                            className="text-emerald-400 hover:underline font-bold text-[11px]"
-                                                        >
-                                                            (Chat WA)
-                                                        </a>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-6 text-zinc-300 font-medium">
-                                                {lead.project || <span className="italic text-zinc-600">Belum diisi</span>}
-                                            </td>
-                                            <td className="py-4 px-6 font-semibold">
-                                                {lead.value !== null && lead.value !== undefined ? (
-                                                    <span className="text-emerald-400">Rp {lead.value.toLocaleString('id-ID')}</span>
-                                                ) : (
-                                                    <span className="italic text-zinc-600 text-xs">Belum diestimasi</span>
-                                                )}
-                                                {lead.isLegacyFallbackCandidate && (
-                                                    <span className="block mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-800 w-max">
-                                                        ⚠️ Perlu Verifikasi
+                            {filteredLeads.length > 0 ? (
+                                filteredLeads.map((lead) => (
+                                    <tr key={lead.id} className="hover:bg-[#1a1a24] transition-colors group">
+                                        <td className="p-4 font-bold text-white">
+                                            <div className="flex items-center gap-2">
+                                                <span>{lead.name}</span>
+                                                {lead.location && (
+                                                    <span className="text-[10px] px-1.5 py-0.5 bg-[#202028] text-[#c5a059] rounded border border-[#2e2e38]" title={`Lokasi terkonfirmasi: ${lead.location}`}>
+                                                        📍
                                                     </span>
                                                 )}
+                                                {lead.dimensions && (
+                                                    <span className="text-[10px] px-1.5 py-0.5 bg-[#202028] text-purple-400 rounded border border-[#2e2e38]" title={`Dimensi: ${lead.dimensions}`}>
+                                                        📐
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="p-4">
+                                            {lead.phoneRaw ? (
+                                                <a 
+                                                    href={buildWaLink(lead.phoneNormalized || lead.phoneRaw)} 
+                                                    target="_blank" 
+                                                    rel="noreferrer"
+                                                    className="text-emerald-400 hover:underline font-medium flex items-center gap-1"
+                                                >
+                                                    <Icons.MessageSquare />
+                                                    {formatDisplayPhone(lead.phoneRaw)}
+                                                </a>
+                                            ) : (
+                                                <span className="text-zinc-600">-</span>
+                                            )}
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="font-medium text-zinc-200">{lead.project || 'Interior Custom'}</div>
+                                            {lead.location && <div className="text-[11px] text-zinc-500 mt-0.5">📍 {lead.location}</div>}
+                                        </td>
+                                        <td className="p-4 font-bold text-white">
+                                            {lead.value ? `Rp ${Number(lead.value).toLocaleString('id-ID')}` : '-'}
+                                        </td>
+                                        <td className="p-4">
+                                            <StatusBadge status={lead.status} />
+                                        </td>
+                                        {isSuperAdmin && showAllBrands && (
+                                            <td className="p-4">
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#202028] text-[#c5a059] border border-[#2e2e38]">
+                                                    {lead.brandId ? lead.brandId.replace('brand_', '') : 'nacira'}
+                                                </span>
                                             </td>
-                                            <td className="py-4 px-6">
-                                                <StatusBadge status={lead.status} />
-                                            </td>
-                                            <td className="py-4 px-6 text-zinc-500 text-xs font-medium">
-                                                {lead.createdAt ? lead.createdAt.slice(0, 10) : <span className="italic text-zinc-600">Tidak tercatat</span>}
-                                            </td>
-                                            <td className="py-4 px-6 text-right">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <button 
-                                                        onClick={() => setEditingLead(lead)}
-                                                        className="text-zinc-400 hover:text-white p-2 rounded-xl hover:bg-[#202028] transition-colors"
-                                                        aria-label={`Edit prospek klien ${lead.name}`}
+                                        )}
+                                        <td className="p-4 text-right">
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                {onConsultLeadInAI && (
+                                                    <button
+                                                        onClick={() => onConsultLeadInAI(lead)}
+                                                        className="px-2.5 py-1.5 rounded-xl bg-[#202028] hover:bg-[#c5a059] hover:text-[#0d0d0d] text-[#c5a059] font-bold text-[11px] border border-[#33333d] transition-all flex items-center gap-1"
+                                                        title="Konsultasikan chat klien ini dengan AI Copilot"
                                                     >
-                                                        <Icons.Edit />
+                                                        <Icons.Brain /> Copilot
                                                     </button>
-                                                    <button 
-                                                        onClick={() => setDeleteTargetId(lead.id)}
-                                                        className="text-zinc-500 hover:text-rose-400 p-2 rounded-xl hover:bg-rose-950/40 transition-colors"
-                                                        aria-label={`Hapus prospek klien ${lead.name}`}
-                                                    >
-                                                        <Icons.Trash />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
+                                                )}
+                                                <button
+                                                    onClick={() => setEditingLead(lead)}
+                                                    className="p-1.5 rounded-xl hover:bg-[#202028] text-zinc-400 hover:text-white transition-colors"
+                                                    title="Edit Klien & Memori"
+                                                >
+                                                    <Icons.Edit />
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeleteTargetId(lead.id)}
+                                                    className="p-1.5 rounded-xl hover:bg-rose-950/60 text-zinc-500 hover:text-rose-400 transition-colors"
+                                                    title="Hapus Klien"
+                                                >
+                                                    <Icons.Trash />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={isSuperAdmin && showAllBrands ? 7 : 6} className="p-8 text-center text-zinc-500">
+                                        Tidak ada data prospek ditemukan untuk brand ini. Tambahkan prospek baru di atas.
+                                    </td>
+                                </tr>
                             )}
                         </tbody>
                     </table>
                 </div>
             </div>
 
+            {/* Modal Edit Lead */}
             <EditLeadModal 
-                isOpen={!!editingLead}
+                isOpen={Boolean(editingLead)}
                 lead={editingLead}
                 allLeads={crmLeads}
                 onSave={handleUpdateLead}
                 onCancel={() => setEditingLead(null)}
             />
 
+            {/* Modal Konfirmasi Hapus */}
             <ConfirmModal 
-                isOpen={!!deleteTargetId}
-                title="Hapus Data Prospek"
-                message={(() => {
-                    const linkedCount = followUpTasks ? followUpTasks.filter(t => t.leadId === deleteTargetId).length : 0;
-                    return `Hapus data klien ini? ${linkedCount > 0 ? `${linkedCount} tugas follow-up akan dilepas (tidak dihapus) dan tetap bisa diakses di Follow-Up Flow.` : 'Data tidak dapat dikembalikan setelah dihapus.'}`;
-                })()}
+                isOpen={Boolean(deleteTargetId)}
+                title="Hapus Data Prospek Klien?"
+                message="Tindakan ini akan menghapus data klien dari pipeline. Tugas follow-up yang terhubung akan tetap disimpan sebagai tugas mandiri."
+                confirmText="Hapus Prospek"
+                isDestructive={true}
+                isLoading={isDeletingLead}
                 onConfirm={confirmDeleteLead}
                 onCancel={() => setDeleteTargetId(null)}
-                isLoading={isDeletingLead}
             />
         </div>
     );

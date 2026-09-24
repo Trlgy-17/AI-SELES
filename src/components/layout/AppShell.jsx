@@ -14,6 +14,12 @@ export const AppShell = ({
     overdueCount, 
     todayCount, 
     rescheduleCount, 
+    activeBrand,
+    currentUser,
+    brands = [],
+    onSwitchBrand,
+    onOpenAuthModal,
+    onOpenCommandPalette,
     children 
 }) => {
     const toggleButtonRef = useRef(null);
@@ -27,7 +33,12 @@ export const AppShell = ({
                 setActiveTab={setActiveTab} 
                 syncStatus={syncStatus}
                 onOpenCloudModal={onOpenCloudModal}
+                onOpenAuthModal={onOpenAuthModal}
                 toggleButtonRef={toggleButtonRef}
+                activeBrand={activeBrand}
+                currentUser={currentUser}
+                overdueCount={overdueCount}
+                todayCount={todayCount}
             />
             
             <main className="lg:ml-72 flex-1 p-4 sm:p-6 lg:p-10 w-full min-h-[100dvh] overflow-y-auto overflow-x-hidden">
@@ -35,6 +46,12 @@ export const AppShell = ({
                     setIsSidebarOpen={setIsSidebarOpen} 
                     activeTab={activeTab} 
                     toggleButtonRef={toggleButtonRef}
+                    activeBrand={activeBrand}
+                    currentUser={currentUser}
+                    brands={brands}
+                    onSwitchBrand={onSwitchBrand}
+                    onOpenAuthModal={onOpenAuthModal}
+                    onOpenCommandPalette={onOpenCommandPalette}
                 />
 
                 <InAppReminderBanner 

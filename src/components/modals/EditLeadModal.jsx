@@ -12,6 +12,9 @@ export const EditLeadModal = ({ isOpen, lead, allLeads = [], onSave, onCancel })
     const [project, setProject] = useState('');
     const [valueInput, setValueInput] = useState('');
     const [status, setStatus] = useState('Prospek / Survey');
+    const [location, setLocation] = useState('');
+    const [dimensions, setDimensions] = useState('');
+    const [notes, setNotes] = useState('');
     const [err, setErr] = useState(null);
     const [dupWarning, setDupWarning] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -23,6 +26,9 @@ export const EditLeadModal = ({ isOpen, lead, allLeads = [], onSave, onCancel })
             setProject(lead.project || '');
             setValueInput(lead.value !== null && lead.value !== undefined ? String(lead.value) : '');
             setStatus(lead.status || 'Prospek / Survey');
+            setLocation(lead.location || '');
+            setDimensions(lead.dimensions || '');
+            setNotes(lead.notes || '');
             setErr(null);
             setDupWarning(null);
             setIsSaving(false);
@@ -79,6 +85,9 @@ export const EditLeadModal = ({ isOpen, lead, allLeads = [], onSave, onCancel })
             project: project.trim().slice(0, 200),
             value: cleanVal,
             status: status,
+            location: location.trim(),
+            dimensions: dimensions.trim(),
+            notes: notes.trim(),
             updatedAt: getAsiaJakartaIso()
         });
         setIsSaving(false);
@@ -89,12 +98,12 @@ export const EditLeadModal = ({ isOpen, lead, allLeads = [], onSave, onCancel })
             role="dialog" 
             aria-modal="true" 
             aria-labelledby="edit-lead-title" 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in overflow-y-auto"
         >
-            <div className="bg-[#15151a] border border-[#26262d] rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+            <div className="bg-[#15151a] border border-[#26262d] rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 my-8">
                 <div className="flex justify-between items-center border-b border-[#26262d] pb-3">
                     <h3 id="edit-lead-title" className="serif-font font-bold text-lg text-white flex items-center gap-2">
-                        <Icons.Edit /> Edit Data Prospek Klien
+                        <Icons.Edit /> Edit Data Prospek & Memori Klien
                     </h3>
                     <button 
                         onClick={onCancel} 
@@ -147,8 +156,31 @@ export const EditLeadModal = ({ isOpen, lead, allLeads = [], onSave, onCancel })
                             className="w-full bg-[#1b1b22] border border-[#26262d] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
                         />
                     </FormField>
+
+                    {/* Client Memory: Lokasi & Dimensi */}
+                    <div className="grid grid-cols-2 gap-3 bg-[#111116] p-3 rounded-2xl border border-[#26262d]">
+                        <FormField label="Lokasi Terkonfirmasi" helperText="Tersimpan di Memori AI">
+                            <input 
+                                type="text" 
+                                placeholder="e.g. Podomoro Bandung"
+                                value={location} 
+                                onChange={(e) => setLocation(e.target.value)} 
+                                className="w-full bg-[#1b1b22] border border-[#26262d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
+                            />
+                        </FormField>
+                        <FormField label="Dimensi / Ukuran" helperText="Tersimpan di Memori AI">
+                            <input 
+                                type="text" 
+                                placeholder="e.g. 3m x 2.4m"
+                                value={dimensions} 
+                                onChange={(e) => setDimensions(e.target.value)} 
+                                className="w-full bg-[#1b1b22] border border-[#26262d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
+                            />
+                        </FormField>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-3">
-                        <FormField label="Estimasi Nilai Proyek (Rp)" helperText="Kosongkan jika belum ada estimasi">
+                        <FormField label="Estimasi Nilai Proyek (Rp)" helperText="Kosongkan jika belum ada">
                             <input 
                                 type="number" 
                                 placeholder="e.g. 25000000"

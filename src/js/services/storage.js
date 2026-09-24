@@ -1,6 +1,12 @@
-// File: src/js/services/storage.js
+const memoryStore = new Map();
 
 export const StorageService = {
+    // Kunci berakar pada brandId untuk isolasi tenant mutlak
+    getBrandKey: (baseKey, brandId = 'brand_nacira') => {
+        const cleanBrand = brandId || 'brand_nacira';
+        return `${baseKey}_brand_${cleanBrand}`;
+    },
+
     getUserKey: (baseKey, userId) => {
         const tenant = userId ? `user_${userId}` : 'local_default';
         return `${baseKey}_${tenant}`;
@@ -8,6 +14,9 @@ export const StorageService = {
 
     getItem: (key, fallback = null) => {
         try {
+            if (typeof localStorage === 'undefined') {
+                return memoryStore.has(key) ? memoryStore.get(key) : fallback;
+            }
             const item = localStorage.getItem(key);
             if (!item) return fallback;
             try {
@@ -17,9 +26,7 @@ export const StorageService = {
                 const recoveryKey = `${key}_corrupted_backup_${Date.now()}`;
                 try {
                     localStorage.setItem(recoveryKey, item);
-                } catch (e) {
-                    // Abaikan jika storage penuh
-                }
+                } catch (e) {}
                 console.error(`[StorageService] Gagal parse JSON key "${key}". Data rusak disimpan di: ${recoveryKey}`, parseErr);
                 return fallback;
             }
@@ -31,6 +38,10 @@ export const StorageService = {
 
     setItem: (key, value) => {
         try {
+            if (typeof localStorage === 'undefined') {
+                memoryStore.set(key, value);
+                return { success: true };
+            }
             localStorage.setItem(key, JSON.stringify(value));
             return { success: true };
         } catch (e) {
@@ -42,6 +53,10 @@ export const StorageService = {
 
     removeItem: (key) => {
         try {
+            if (typeof localStorage === 'undefined') {
+                memoryStore.delete(key);
+                return true;
+            }
             localStorage.removeItem(key);
             return true;
         } catch (e) {

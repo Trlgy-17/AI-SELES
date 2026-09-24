@@ -1,92 +1,260 @@
 // File: src/components/modules/KnowledgeBase.jsx
-import React from 'react';
-import { PRICE_MASTER } from '../../js/constants.js';
+import React, { useState, useMemo } from 'react';
+import { KnowledgeService } from '../../js/services/knowledge.js';
 import { Icons } from '../Icons.jsx';
 
-export const KnowledgeBase = () => {
-    const company = PRICE_MASTER?.company || {};
+export const KnowledgeBase = ({ activeBrand, currentUser }) => {
+    const currentBrandId = activeBrand?.id || 'brand_nacira';
+    const brandName = activeBrand?.brandName || 'NACIRA STUDIO';
 
-    const kbItems = [
-        { 
-            category: "Profil & Kontak Resmi", 
-            title: "Nacira Studio — Identitas & Kontak", 
-            desc: `Admin: ${company.admin || 'Ary'} · Website: ${company.website || 'nacirastudio.com'} · WhatsApp: ${company.phone || '+62 853-8506-9717'} · Kantor & Workshop: ${company.office || 'Citatah, Bandung Barat'}. Studio Architectural Interior Design & Build sejak 2018.` 
-        },
-        { 
-            category: "SOP & Garansi", 
-            title: "Alur Kerja End-to-End & Garansi 6 Bulan", 
-            desc: `1. Konsultasi & Estimasi Awal (Gratis) · 2. Survey & Desain 3D (Gratis Area Bandung & Jabodetabek) · 3. Fabrikasi Workshop Presisi (14-21 hari) · 4. Instalasi & Serah Terima. Skema Termin: DP 50% fabrikasi, 40% progres workshop, pelunasan instalasi. Garansi pemeliharaan 6 bulan penuh.` 
-        },
-        { 
-            category: "Coverage & Nilai Minimal", 
-            title: "Cakupan Wilayah & Minimal Order Proyek", 
-            desc: `${company.coverage || 'Bandung, Jabodetabek, dan seluruh Pulau Jawa & Bali.'} Ketentuan Minimal Project: ${company.minProject || 'Bandung 15jt, Jabodetabek 15jt, Luar Jawa Barat 100jt.'} Jam admin aktif 24 jam & survey dibuka setiap hari.` 
-        },
-        { 
-            category: "Kitchen Set (Bandung)", 
-            title: "Pricelist Kitchen Set Bandung & Tasikmalaya", 
-            desc: Array.isArray(PRICE_MASTER?.kitchenBandung) 
-                ? PRICE_MASTER.kitchenBandung.map(k => `${k.material} (${k.display})`).join(' · ')
-                : "Blockboard Rp 2jt/m, Multipleks Rp 2,5jt/m, PVC Board Rp 4jt/m, Alumunium Rp 3,3jt/m, Duco Rp 4,5jt/m"
-        },
-        { 
-            category: "Kitchen Set (Jabodetabek)", 
-            title: "Pricelist Kitchen Set Jabodetabek & Luar Kota", 
-            desc: Array.isArray(PRICE_MASTER?.kitchenJabodetabek)
-                ? PRICE_MASTER.kitchenJabodetabek.map(k => `${k.material} (${k.display})`).join(' · ')
-                : "Blockboard Rp 2,3jt/m, Multipleks Rp 2,6jt/m, PVC Board Rp 4,1jt/m, Alumunium Rp 3,5jt - 5,5jt/m, Duco Rp 4,0jt - 4,8jt/m"
-        },
-        { 
-            category: "Kamar Set & Wardrobe", 
-            title: "Pricelist Lemari, Dipan, Headboard & Meja Rias", 
-            desc: `Lemari Blockboard mulai Rp 2,3jt/m (Bandung) & Rp 2,4jt/m (Jabodetabek). Lemari Multipleks HPL Rp 2,5jt - 2,6jt/m, Cat Duco Rp 4,8jt - 6,3jt/m, Alumunium Frameless Kaca Rp 5jt - 6jt/m. Dipan mulai Rp 2,1jt/m, Headboard mulai Rp 1,35jt/m, Meja Rias mulai Rp 1,9jt/m, Rangka Tingkat Rp 2jt - 3,75jt.` 
-        },
-        { 
-            category: "Living Room & Interior", 
-            title: "Backdrop TV, Cradienza, Partisi & Wallpanel", 
-            desc: `Backdrop TV Blockboard mulai Rp 2,1jt/m, Multipleks HPL Rp 2,3jt - 2,9jt/m, Duco Rp 4,6jt - 6,1jt/m. Cradienza mulai Rp 1,9jt/m. Partisi 2 Sisi Rp 2,1jt - 2,4jt/m. Wallpanel WPC Rp 850rb - 950rb/m, Wallpanel Multipleks Cermin Bevel Rp 1,35jt - 1,95jt/m. Lemari Bawah Tangga mulai Rp 2,3jt/m.` 
-        },
-        { 
-            category: "Bengkel Las & Sipil", 
-            title: "Canopi, Pagar Besi, Coran Dapur & Keramik", 
-            desc: `Canopi Spandex / Alderon Rp 750rb - 1,8jt/m² (Atap Kaca Rp 2,8jt/m²). Pagar Besi Hollow & Wire Mesh Rp 1,8jt - 2,4jt/m² (Full Klasik Rp 4,8jt/m²). Meja Coran Dapur Beton Rp 1,9jt - 2,4jt/m, Pasang Backsplash & Keramik mulai Rp 650rb/m², Bobok lubang kompor/sink Rp 500rb - 750rb.` 
-        },
-        { 
-            category: "Material Specs", 
-            title: "Spesifikasi Material Resmi Nacira Studio", 
-            desc: PRICE_MASTER?.specifications || "Blockboard 18mm, Multipleks Plywood 18mm, PVC Board Waterproof anti air, Alumunium & ACP anti rayap tahan api, Finishing HPL & Cat Duco Klasik." 
+    const [activeLayerFilter, setActiveLayerFilter] = useState('ALL');
+    const [searchQuery, setSearchQuery] = useState('');
+    
+    // RAG Testing Console States
+    const [testQuery, setTestQuery] = useState('');
+    const [testResult, setTestResult] = useState(null);
+
+    const allKnowledgeItems = useMemo(() => {
+        return KnowledgeService.getAllItems();
+    }, []);
+
+    // Filter Knowledge Items sesuai Brand Aktif & Tab Layer
+    const filteredItems = useMemo(() => {
+        return allKnowledgeItems.filter(item => {
+            // Cek apakah relevan untuk brand aktif (GLOBAL atau milik brand aktif)
+            const isRelevantForBrand = item.scope === 'GLOBAL' || item.brandId === currentBrandId;
+            if (!isRelevantForBrand) return false;
+
+            // Filter tab layer
+            if (activeLayerFilter === 'GLOBAL' && item.scope !== 'GLOBAL') return false;
+            if (activeLayerFilter === 'BRAND_OVERRIDE' && item.scope !== 'BRAND_OVERRIDE') return false;
+            if (activeLayerFilter === 'CAMPAIGN' && item.scope !== 'CAMPAIGN') return false;
+
+            // Filter teks pencarian
+            if (searchQuery.trim()) {
+                const q = searchQuery.toLowerCase();
+                const inTitle = (item.title || '').toLowerCase().includes(q);
+                const inContent = (item.content || '').toLowerCase().includes(q);
+                const inCat = (item.category || '').toLowerCase().includes(q);
+                return inTitle || inContent || inCat;
+            }
+
+            return true;
+        });
+    }, [allKnowledgeItems, currentBrandId, activeLayerFilter, searchQuery]);
+
+    // Jalankan pengujian resolusi knowledge (RAG tester)
+    const handleRunTest = (e) => {
+        e?.preventDefault();
+        const res = KnowledgeService.resolveKnowledge({
+            brandId: currentBrandId,
+            queryText: testQuery
+        });
+        setTestResult(res);
+    };
+
+    const getScopeBadge = (scope) => {
+        if (scope === 'CAMPAIGN') {
+            return (
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                    Layer 3: Campaign Promo
+                </span>
+            );
         }
-    ];
+        if (scope === 'BRAND_OVERRIDE') {
+            return (
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                    Layer 2: Brand Override ({brandName})
+                </span>
+            );
+        }
+        return (
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                Layer 1: Global Shared Core
+            </span>
+        );
+    };
 
     return (
         <div className="space-y-6 pb-12 animate-fade-in">
+            {/* Header Brand Bar */}
             <div className="glass-panel rounded-3xl p-6 md:p-8 shadow-2xl border border-[#26262d] flex justify-between items-center flex-wrap gap-4">
-                <div>
-                    <h2 className="serif-font text-xl font-extrabold text-white">Knowledge Base & Master SOP Nacira Studio</h2>
-                    <p className="text-sm text-zinc-400 mt-1">Master database SOP WhatsApp Inbound Sales v1.2, spesifikasi material, garansi, dan tarif resmi 2026.</p>
+                <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-[#202028] text-[#c5a059] flex items-center justify-center font-bold text-lg border border-[#33333d]">
+                        <Icons.BookOpen />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h2 className="serif-font text-xl md:text-2xl font-extrabold text-white">
+                                3-Layer Knowledge Base Engine
+                            </h2>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#c5a059]/15 text-[#c5a059] border border-[#c5a059]/30">
+                                {brandName}
+                            </span>
+                        </div>
+                        <p className="text-xs text-zinc-400 mt-1 max-w-2xl leading-relaxed">
+                            Pusat pengetahuan penjualan resmi: Core Master Pricelist 2026 milik bersama, didukung Layer Override khusus untuk setiap brand interior.
+                        </p>
+                    </div>
                 </div>
+
                 <div className="flex items-center gap-2">
-                    <span className="px-4 py-2 bg-[#202028] text-[#c5a059] font-bold text-xs rounded-xl border border-[#33333d] shadow-sm">
-                        {kbItems.length} Modul Terintegrasi
+                    <span className="px-3.5 py-2 bg-[#202028] text-[#c5a059] font-bold text-xs rounded-xl border border-[#33333d] shadow-sm flex items-center gap-1.5">
+                        <Icons.Brain /> {filteredItems.length} Modul Terverifikasi
                     </span>
-                    <span className="px-3.5 py-2 bg-emerald-950 text-emerald-400 font-bold text-xs rounded-xl border border-emerald-800 flex items-center gap-1.5">
-                        <Icons.CheckCircle /> SOP v1.2 Aktif
+                    <span className="px-3 py-2 bg-emerald-950/80 text-emerald-400 font-bold text-xs rounded-xl border border-emerald-800 flex items-center gap-1.5">
+                        <Icons.CheckCircle /> SOP v2026.1 Aktif
                     </span>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {kbItems.map((item, idx) => (
-                    <div key={idx} className="bg-[#15151a] rounded-3xl p-6 border border-[#26262d] shadow-2xl flex flex-col justify-between hover:border-[#c5a059]/50 transition-all group">
-                        <div>
-                            <span className="text-xs font-extrabold px-3 py-1 bg-[#202028] text-[#c5a059] rounded-xl inline-block mb-4 border border-[#2e2e38] group-hover:border-[#c5a059]/40 transition-colors">
-                                {item.category}
-                            </span>
-                            <h3 className="serif-font font-extrabold text-white text-base group-hover:text-[#f3e7c4] transition-colors">{item.title}</h3>
-                            <p className="text-sm text-zinc-400 mt-2.5 leading-relaxed font-medium">{item.desc}</p>
+            {/* RAG PLAYGROUND / KNOWLEDGE RESOLUTION TESTER */}
+            <div className="bg-[#15151a] rounded-3xl p-6 md:p-8 shadow-2xl border border-[#26262d] space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-[#202028] text-[#c5a059] rounded-xl">
+                            <Icons.Zap />
                         </div>
+                        <div>
+                            <h3 className="serif-font font-bold text-base text-white">
+                                Knowledge Testing Console (RAG Inspector)
+                            </h3>
+                            <p className="text-xs text-zinc-400">
+                                Uji bagaimana AI mencocokkan query klien dengan urutan hierarki: Campaign &gt; Brand Override &gt; Global Core.
+                            </p>
+                        </div>
+                    </div>
+                    <span className="text-[11px] text-zinc-500 bg-[#1b1b22] px-3 py-1 rounded-xl border border-[#26262d]">
+                        Multi-Brand Resolution Mode: <strong className="text-white">{brandName}</strong>
+                    </span>
+                </div>
+
+                <form onSubmit={handleRunTest} className="flex gap-2">
+                    <input 
+                        type="text"
+                        value={testQuery}
+                        onChange={(e) => setTestQuery(e.target.value)}
+                        placeholder="Contoh query klien: 'Berapa harga kitchen set per meter di Bandung?' atau 'Ada diskon promo apa?'..."
+                        className="flex-1 bg-[#1b1b22] border border-[#26262d] rounded-2xl px-4 py-3 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c5a059]"
+                    />
+                    <button
+                        type="submit"
+                        className="gold-btn px-6 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-[#c5a059]/20 flex-shrink-0"
+                    >
+                        <Icons.Search /> Test Resolusi RAG
+                    </button>
+                </form>
+
+                {testResult && (
+                    <div className="mt-4 p-5 bg-[#1b1b22] border border-[#2e2e38] rounded-2xl space-y-4 animate-fade-in">
+                        <div className="flex items-center justify-between flex-wrap gap-2 border-b border-[#26262d] pb-3">
+                            <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                                <Icons.CheckCircle />
+                                {testResult.resolvedChunks?.length || 0} Knowledge Chunks Terpilih untuk LLM
+                            </div>
+                            <div className="text-[11px] text-zinc-400">
+                                Brand Aktif: <span className="text-[#c5a059] font-bold">{brandName}</span>
+                            </div>
+                        </div>
+
+                        {/* Visualizer Chunks */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {testResult.resolvedChunks?.map((chunk, idx) => (
+                                <div key={idx} className="bg-[#15151a] p-3.5 rounded-xl border border-[#26262d] text-xs">
+                                    <div className="flex justify-between items-center mb-1.5">
+                                        <span className="font-bold text-white truncate">{chunk.title}</span>
+                                        {getScopeBadge(chunk.scope)}
+                                    </div>
+                                    <div className="text-[11px] text-zinc-400 line-clamp-3 font-mono bg-[#111115] p-2 rounded-lg border border-[#202026]">
+                                        {chunk.content}
+                                    </div>
+                                    <div className="mt-2 text-[10px] text-zinc-500 flex justify-between">
+                                        <span>Prioritas: {chunk.priority || 10}</span>
+                                        <span>Kategori: {chunk.category}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Sitasi yang Disematkan */}
+                        <div className="pt-2">
+                            <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider block mb-1.5">
+                                Daftar Sitasi Resmi (Divalidasi Anti-Halusinasi):
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                                {testResult.citations?.map((cit, i) => (
+                                    <span key={i} className="px-2.5 py-1 rounded-lg bg-[#202028] text-[#c5a059] text-[11px] font-medium border border-[#33333d]">
+                                        📖 {cit}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* FILTER LAYER & PENCARIAN */}
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-[#15151a] p-4 rounded-3xl border border-[#26262d]">
+                <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
+                    {[
+                        { id: 'ALL', label: 'Semua Layer' },
+                        { id: 'GLOBAL', label: 'Layer 1: Global Core' },
+                        { id: 'BRAND_OVERRIDE', label: `Layer 2: Override (${brandName})` },
+                        { id: 'CAMPAIGN', label: 'Layer 3: Campaign' }
+                    ].map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveLayerFilter(tab.id)}
+                            className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap ${
+                                activeLayerFilter === tab.id
+                                    ? 'bg-[#c5a059] text-[#0d0d0d] shadow-md shadow-[#c5a059]/20'
+                                    : 'bg-[#1b1b22] text-zinc-400 hover:text-white border border-[#2a2a34]'
+                            }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="relative w-full md:w-72">
+                    <input 
+                        type="text" 
+                        placeholder="Cari modul atau materi..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-[#1b1b22] border border-[#26262d] rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c5a059]"
+                    />
+                    <div className="absolute left-3.5 top-3 text-zinc-500">
+                        <Icons.Search />
+                    </div>
+                </div>
+            </div>
+
+            {/* GRID DAFTAR KNOWLEDGE CHUNKS */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredItems.map((item, idx) => (
+                    <div 
+                        key={item.id || idx} 
+                        className="bg-[#15151a] rounded-3xl p-6 border border-[#26262d] shadow-2xl flex flex-col justify-between hover:border-[#c5a059]/50 transition-all group"
+                    >
+                        <div>
+                            <div className="flex justify-between items-center mb-3">
+                                <span className="text-xs font-extrabold px-3 py-1 bg-[#202028] text-[#c5a059] rounded-xl border border-[#2e2e38]">
+                                    {item.category}
+                                </span>
+                                {getScopeBadge(item.scope)}
+                            </div>
+
+                            <h3 className="serif-font font-extrabold text-white text-base group-hover:text-[#f3e7c4] transition-colors mt-2">
+                                {item.title}
+                            </h3>
+                            <p className="text-xs text-zinc-400 mt-2.5 leading-relaxed font-medium line-clamp-5">
+                                {item.content}
+                            </p>
+                        </div>
+
                         <div className="mt-6 pt-4 border-t border-[#26262d] flex justify-between items-center text-xs">
-                            <span className="text-zinc-500 font-medium">Terhubung ke Gemini AI Engine</span>
+                            <span className="text-zinc-500 font-medium">Prioritas Resolusi: {item.priority || 10}</span>
                             <span className="text-emerald-400 font-bold flex items-center gap-1 bg-emerald-950 px-2.5 py-1 rounded-lg border border-emerald-800">
                                 <Icons.CheckCircle /> Terverifikasi
                             </span>
@@ -97,5 +265,3 @@ export const KnowledgeBase = () => {
         </div>
     );
 };
-
-export default KnowledgeBase;

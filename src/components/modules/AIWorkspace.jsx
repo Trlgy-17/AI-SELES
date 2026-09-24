@@ -7,21 +7,42 @@ import { StorageService } from '../../js/services/storage.js';
 import { AIService } from '../../js/services/ai.js';
 import { copyToClipboard } from '../../js/utils/clipboard.js';
 import { optimizeImageForAI } from '../../js/utils/image.js';
-import { DEFAULT_GEMINI_API_KEY, DEFAULT_GEMINI_MODEL } from '../../js/constants.js';
+import { DEFAULT_GEMINI_API_KEY, DEFAULT_GEMINI_MODEL, AI_RESPONSE_MODES } from '../../js/constants.js';
+import { buildWaLink, formatDisplayPhone } from '../../js/utils/phone.js';
 
-export const AIWorkspace = ({ showToast }) => {
+export const AIWorkspace = ({ 
+    activeBrand, 
+    currentUser, 
+    crmLeads = [], 
+    showToast 
+}) => {
     const [inputText, setInputText] = useState('');
     const [selectedImage, setSelectedImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [optimizedImagePart, setOptimizedImagePart] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [aiResponse, setAiResponse] = useState(null);
-    const [copySuccess, setCopySuccess] = useState(false);
+    const [copiedKey, setCopiedKey] = useState(null);
     const [aiError, setAiError] = useState(null);
     
+    // Mode Respon AI
+    const [selectedMode, setSelectedMode] = useState('SMART_REPLY');
+    const [activeReplyTab, setActiveReplyTab] = useState('recommended');
+
+    // Client Memory State
+    const [selectedLeadId, setSelectedLeadId] = useState('');
+    const [clientMemory, setClientMemory] = useState({
+        name: '',
+        location: '',
+        dimensions: '',
+        budget: '',
+        projectType: '',
+        notes: ''
+    });
+    const [showMemoryDrawer, setShowMemoryDrawer] = useState(false);
+
+    // AI Provider States
     const [aiProvider, setAiProvider] = useState(() => StorageService.getItem('nacira_ai_provider', 'gemini'));
-    
-    // Gemini States
     const [customApiKey, setCustomApiKey] = useState(() => {
         const storedKey = sessionStorage.getItem('nacira_session_gemini_key') || StorageService.getItem('nacira_gemini_api_key', '');
         return storedKey || DEFAULT_GEMINI_API_KEY;
@@ -48,6 +69,31 @@ export const AIWorkspace = ({ showToast }) => {
 
     const [showApiKeyModal, setShowApiKeyModal] = useState(false);
     const fileInputRef = useRef(null);
+
+    const brandName = activeBrand?.brandName || 'HOMEPUTRA INTERIOR';
+    const adminName = activeBrand?.adminName || 'Admin Marketing';
+    const serviceArea = activeBrand?.serviceArea || 'Bandung & Jabodetabek';
+
+    // Sinkronkan memori klien jika lead dipilih dari dropdown
+    const handleSelectLead = (e) => {
+        const leadId = e.target.value;
+        setSelectedLeadId(leadId);
+        if (!leadId) {
+            setClientMemory({ name: '', location: '', dimensions: '', budget: '', projectType: '', notes: '' });
+            return;
+        }
+        const found = crmLeads.find(l => l.id === leadId);
+        if (found) {
+            setClientMemory(prev => ({
+                ...prev,
+                name: found.name || '',
+                projectType: found.project || '',
+                budget: found.value ? `Rp ${found.value.toLocaleString('id-ID')}` : prev.budget
+            }));
+            setShowMemoryDrawer(true);
+            showToast(`Memori klien "${found.name}" dimuat.`);
+        }
+    };
 
     const handleSaveKeySettings = ({ 
         provider, 
@@ -110,7 +156,7 @@ export const AIWorkspace = ({ showToast }) => {
         setSelectedImage(file);
 
         try {
-            // Kompresi & downscale cerdas (mengurangi ukuran 95% tanpa mengurangi keterbacaan teks chat)
+            // Kompresi Canvas cerdas (~95% penghematan ukuran tanpa mengurangi teks WA)
             const optimized = await optimizeImageForAI(file, 1200, 0.85);
             setImagePreview(optimized.dataUrl);
             setOptimizedImagePart({
@@ -186,14 +232,14 @@ export const AIWorkspace = ({ showToast }) => {
 
         if (aiProvider === 'gemini') {
             if (!activeGeminiKey && !proxyUrl) {
-                setAiError("API Key Gemini atau Custom Proxy URL belum diatur. Klik 'Atur API Key' di atas.");
+                setAiError("API Key Gemini belum diatur. Klik 'Atur API Key' di atas.");
                 setShowApiKeyModal(true);
                 return;
             }
         } else if (aiProvider === 'openai') {
             const cleanBase = (openaiBaseUrl || '').trim();
             if (!cleanBase) {
-                setAiError("Base URL OpenAI belum diisi. Klik 'Atur API Key' di atas untuk mengatur Base URL.");
+                setAiError("Base URL OpenAI belum diisi. Klik 'Atur API Key' untuk mengonfigurasi.");
                 setShowApiKeyModal(true);
                 return;
             }
@@ -213,10 +259,18 @@ export const AIWorkspace = ({ showToast }) => {
                 }
             } : null);
 
+            // Filter memori klien yang terisi
+            const filteredMemory = Object.fromEntries(
+                Object.entries(clientMemory).filter(([_, v]) => typeof v === 'string' && v.trim() !== '')
+            );
+
             const result = await AIService.generateWhatsAppReply({
                 provider: aiProvider,
                 inputText: inputText.trim(),
                 imagePart,
+                activeBrand,
+                clientMemory: Object.keys(filteredMemory).length > 0 ? filteredMemory : null,
+                responseMode: selectedMode,
                 customApiKey: activeGeminiKey,
                 selectedModel,
                 customProxyUrl: proxyUrl,
@@ -224,7 +278,19 @@ export const AIWorkspace = ({ showToast }) => {
                 openaiApiKey,
                 openaiModel
             });
+
             setAiResponse(result);
+            setActiveReplyTab('recommended');
+
+            // Auto-update extracted memory jika ada informasi baru terdeteksi
+            if (result.clientAnalysis?.extractedLocation && !clientMemory.location) {
+                setClientMemory(prev => ({ ...prev, location: result.clientAnalysis.extractedLocation }));
+            }
+            if (result.clientAnalysis?.extractedBudget && !clientMemory.budget) {
+                setClientMemory(prev => ({ ...prev, budget: result.clientAnalysis.extractedBudget }));
+            }
+
+            showToast("3 Alternatif balasan WhatsApp & analisis strategis berhasil diracik!");
         } catch (error) {
             console.error("[AI Workspace] Error:", error);
             setAiError(error.message);
@@ -233,37 +299,179 @@ export const AIWorkspace = ({ showToast }) => {
         }
     };
 
-    const handleCopy = async () => {
-        if (!aiResponse?.reply) return;
-        const success = await copyToClipboard(aiResponse.reply);
+    const handleCopy = async (replyKey, textToCopy) => {
+        if (!textToCopy) return;
+        const success = await copyToClipboard(textToCopy);
         if (success) {
-            setCopySuccess(true);
+            setCopiedKey(replyKey);
             showToast("Balasan WhatsApp berhasil disalin!");
-            setTimeout(() => setCopySuccess(false), 2000);
+            setTimeout(() => setCopiedKey(null), 2500);
         } else {
-            setAiError("Gagal menyalin teks secara otomatis.");
+            setAiError("Gagal menyalin teks ke clipboard.");
         }
     };
 
+    // Helper untuk warna suhu prospek (HOT / WARM / COLD)
+    const getTemperatureBadge = (temp) => {
+        const t = (temp || 'WARM').toUpperCase();
+        if (t === 'HOT') {
+            return (
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center gap-1 animate-pulse">
+                    🔥 HOT PROSPECT
+                </span>
+            );
+        }
+        if (t === 'COLD') {
+            return (
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center gap-1">
+                    ❄️ COLD / GHOSTING
+                </span>
+            );
+        }
+        return (
+            <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center gap-1">
+                ⚡ WARM LEAD
+            </span>
+        );
+    };
+
+    const currentReplyText = aiResponse?.replies?.[activeReplyTab] || aiResponse?.replies?.recommended || '';
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12 animate-fade-in">
+            {/* SISI KIRI: INPUT CHAT & SCREENSHOT */}
             <div className="lg:col-span-6 space-y-6">
                 <div className="glass-panel rounded-3xl p-6 md:p-8 shadow-2xl border border-[#26262d]">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="serif-font text-lg font-bold text-white flex items-center gap-2">
-                            <div className="p-2 bg-[#202028] text-[#c5a059] rounded-xl">
+                    {/* Brand Banner Header */}
+                    <div className="flex items-center justify-between mb-5 flex-wrap gap-3 pb-4 border-b border-[#26262d]">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-[#202028] text-[#c5a059] flex items-center justify-center font-bold text-sm border border-[#33333d]">
                                 <Icons.MessageSquare />
                             </div>
-                            WhatsApp Lead & Chat Input
-                        </h2>
+                            <div>
+                                <div className="text-xs text-zinc-400 font-medium">Workspace Brand Aktif:</div>
+                                <div className="text-sm font-bold text-white flex items-center gap-2">
+                                    <span className="text-[#c5a059]">{brandName}</span>
+                                    <span className="text-[10px] text-zinc-400 px-2 py-0.5 rounded-full bg-[#1b1b22] border border-[#2e2e38]">
+                                        Admin: {adminName}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
                         <button 
                             onClick={() => setShowApiKeyModal(true)}
                             className="text-xs font-semibold px-3 py-1.5 bg-[#202028] hover:bg-[#282832] text-[#c5a059] rounded-full border border-[#33333d] flex items-center gap-1.5 transition-colors shadow-sm"
-                            title={aiProvider === 'openai' ? `Provider: OpenAI API | Base URL: ${openaiBaseUrl} | Model: ${openaiModel}` : `Provider: Google Gemini | Model: ${selectedModel}`}
+                            title={aiProvider === 'openai' ? `OpenAI Base: ${openaiBaseUrl} | Model: ${openaiModel}` : `Google Gemini | Model: ${selectedModel}`}
                         >
                             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                            <Icons.Key /> {aiProvider === 'openai' ? `OpenAI API (${openaiModel})` : `Gemini (${selectedModel})`}
+                            <Icons.Key /> {aiProvider === 'openai' ? `OpenAI (${openaiModel})` : `Gemini (${selectedModel})`}
                         </button>
+                    </div>
+
+                    {/* Mode Respon Selector */}
+                    <div className="mb-5">
+                        <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 block mb-2">
+                            Mode Respon Strategis:
+                        </label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            {AI_RESPONSE_MODES.map((mode) => (
+                                <button
+                                    key={mode.id}
+                                    type="button"
+                                    onClick={() => setSelectedMode(mode.id)}
+                                    className={`p-2.5 rounded-2xl text-left border transition-all flex flex-col justify-between ${
+                                        selectedMode === mode.id
+                                            ? 'bg-[#c5a059]/15 border-[#c5a059] text-white shadow-lg shadow-[#c5a059]/10'
+                                            : 'bg-[#15151a] border-[#26262d] text-zinc-400 hover:border-[#383844] hover:text-zinc-200'
+                                    }`}
+                                >
+                                    <span className="text-xs font-bold block">{mode.label}</span>
+                                    <span className="text-[10px] text-zinc-500 mt-0.5 line-clamp-1">{mode.desc}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Tautkan Klien & Client Memory Drawer Toggle */}
+                    <div className="mb-5 bg-[#15151a] border border-[#26262d] rounded-2xl p-3.5">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <span className="text-[#c5a059]"><Icons.Brain /></span>
+                                <span className="text-xs font-bold text-zinc-200">Memori Klien (Anti-Tanya Ulang)</span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowMemoryDrawer(!showMemoryDrawer)}
+                                className="text-xs text-[#c5a059] hover:underline font-semibold"
+                            >
+                                {showMemoryDrawer ? 'Tutup Memori' : (clientMemory.location || clientMemory.name ? '✏️ Edit Memori' : '+ Tambah Memori')}
+                            </button>
+                        </div>
+
+                        {/* CRM Lead Selector Dropdown */}
+                        {crmLeads && crmLeads.length > 0 && (
+                            <div className="mt-2.5">
+                                <select
+                                    value={selectedLeadId}
+                                    onChange={handleSelectLead}
+                                    className="w-full bg-[#1b1b22] border border-[#2a2a34] rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-[#c5a059]"
+                                >
+                                    <option value="">-- Hubungkan dengan Data Klien CRM (Opsional) --</option>
+                                    {crmLeads.map(lead => (
+                                        <option key={lead.id} value={lead.id}>
+                                            {lead.name} {lead.project ? `(${lead.project})` : ''} - {lead.status}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {/* Drawer Input Memori Klien */}
+                        {showMemoryDrawer && (
+                            <div className="mt-3 pt-3 border-t border-[#26262d] grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs animate-fade-in">
+                                <div>
+                                    <label className="text-[10px] text-zinc-400 font-bold block mb-1">Nama Klien</label>
+                                    <input
+                                        type="text"
+                                        value={clientMemory.name}
+                                        onChange={(e) => setClientMemory({ ...clientMemory, name: e.target.value })}
+                                        placeholder="Contoh: Ibu Rina"
+                                        className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-2.5 py-1.5 text-xs text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] text-zinc-400 font-bold block mb-1">Lokasi Terkonfirmasi</label>
+                                    <input
+                                        type="text"
+                                        value={clientMemory.location}
+                                        onChange={(e) => setClientMemory({ ...clientMemory, location: e.target.value })}
+                                        placeholder="Contoh: Podomoro Park Bandung"
+                                        className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-2.5 py-1.5 text-xs text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] text-zinc-400 font-bold block mb-1">Ukuran / Dimensi</label>
+                                    <input
+                                        type="text"
+                                        value={clientMemory.dimensions}
+                                        onChange={(e) => setClientMemory({ ...clientMemory, dimensions: e.target.value })}
+                                        placeholder="Contoh: 3 meter lari (L-Shape)"
+                                        className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-2.5 py-1.5 text-xs text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] text-zinc-400 font-bold block mb-1">Estimasi Budget</label>
+                                    <input
+                                        type="text"
+                                        value={clientMemory.budget}
+                                        onChange={(e) => setClientMemory({ ...clientMemory, budget: e.target.value })}
+                                        placeholder="Contoh: Rp 25jt - 30jt"
+                                        className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-2.5 py-1.5 text-xs text-white"
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {aiError && (
@@ -272,17 +480,19 @@ export const AIWorkspace = ({ showToast }) => {
                         </div>
                     )}
 
+                    {/* Chat Text Input */}
                     <div className="space-y-5">
                         <FormField label="Pesan / Pertanyaan Klien" helperText="Opsional jika melampirkan screenshot chat">
                             <textarea 
                                 className="w-full bg-[#15151a] border border-[#26262d] rounded-2xl p-4 text-sm focus:ring-2 focus:ring-[#c5a059]/30 focus:border-[#c5a059] transition-all resize-none shadow-inner text-zinc-100 placeholder:text-zinc-600"
                                 rows="4"
-                                placeholder="Contoh: 'Min, mau tanya bikin kitchen set multipleks minimalis 3 meter di Bandung berapa ya? Apakah sudah termasuk survey dan desain 3D?'"
+                                placeholder={`Contoh: 'Halo ${brandName}, mau tanya bikin kitchen set multipleks minimalis 3 meter di Bandung berapa ya? Apakah sudah termasuk survey dan desain 3D?'`}
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
                             ></textarea>
                         </FormField>
 
+                        {/* Screenshot Input */}
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">Screenshot Chat WhatsApp</label>
@@ -305,7 +515,7 @@ export const AIWorkspace = ({ showToast }) => {
                                         <Icons.Image />
                                     </div>
                                     <p className="text-sm font-semibold text-zinc-200">Klik untuk unggah atau <span className="text-[#c5a059] underline underline-offset-2">Paste (Ctrl+V)</span></p>
-                                    <p className="text-xs text-zinc-500 mt-1">PNG, JPG, WEBP (Maksimal 5MB)</p>
+                                    <p className="text-xs text-zinc-500 mt-1">PNG, JPG, WEBP (Otomatis dikompresi cepat)</p>
                                     <input 
                                         type="file" 
                                         ref={fileInputRef} 
@@ -318,7 +528,7 @@ export const AIWorkspace = ({ showToast }) => {
                                 <div className="relative rounded-2xl border border-[#33333d] overflow-hidden bg-black group shadow-lg">
                                     <img src={imagePreview} alt="Preview Screenshot" className="w-full h-52 object-cover object-top opacity-90 group-hover:opacity-100 transition-opacity" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-between p-4">
-                                        <span className="text-xs font-medium text-white bg-black/70 px-2.5 py-1 rounded-lg backdrop-blur-md">Screenshot Terlampir</span>
+                                        <span className="text-xs font-medium text-white bg-black/70 px-2.5 py-1 rounded-lg backdrop-blur-md">Screenshot WhatsApp Terlampir</span>
                                         <button 
                                             onClick={removeImage}
                                             className="bg-black/80 hover:bg-black text-rose-400 p-2 rounded-xl shadow-lg transition-transform hover:scale-105"
@@ -331,12 +541,13 @@ export const AIWorkspace = ({ showToast }) => {
                             )}
                         </div>
 
+                        {/* Generate Button */}
                         <div className="pt-2">
                             <button 
                                 onClick={generateReply}
                                 disabled={isLoading}
                                 className={`w-full flex items-center justify-center gap-2.5 py-4 px-6 rounded-2xl font-bold shadow-xl transition-all ${
-                                    isLoading ? 'bg-[#2a2a30] text-zinc-500 cursor-not-allowed' : 'gold-btn shadow-[#c5a059]/25'
+                                    isLoading ? 'bg-[#2a2a30] text-zinc-500 cursor-not-allowed' : 'gold-btn shadow-[#c5a059]/25 hover:scale-[1.01]'
                                 }`}
                             >
                                 {isLoading ? (
@@ -345,11 +556,12 @@ export const AIWorkspace = ({ showToast }) => {
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
-                                        Meracik Balasan Strategis...
+                                        <span>Meracik 3 Balasan & Analisis Penjualan...</span>
                                     </React.Fragment>
                                 ) : (
                                     <React.Fragment>
-                                        <Icons.Zap /> Generate Balasan WhatsApp AI ({aiProvider === 'openai' ? (openaiModel || 'Custom OpenAI') : selectedModel})
+                                        <Icons.Zap /> 
+                                        <span>Generate 3 Alternatif Balasan ({brandName})</span>
                                     </React.Fragment>
                                 )}
                             </button>
@@ -358,72 +570,213 @@ export const AIWorkspace = ({ showToast }) => {
                 </div>
             </div>
 
-            <div className="lg:col-span-6">
+            {/* SISI KANAN: 3 ALTERNATIF BALASAN & SMART CONTEXT PANEL */}
+            <div className="lg:col-span-6 space-y-6">
                 {isLoading ? (
-                    <div className="glass-panel rounded-3xl p-8 shadow-2xl h-full flex flex-col justify-center items-center text-zinc-500 border border-[#26262d] min-h-[450px]">
+                    <div className="glass-panel rounded-3xl p-8 shadow-2xl h-full flex flex-col justify-center items-center text-zinc-500 border border-[#26262d] min-h-[480px]">
                         <div className="relative w-20 h-20 mb-6">
                             <div className="absolute inset-0 bg-[#c5a059]/20 rounded-full animate-ping"></div>
                             <div className="relative bg-[#18181e] rounded-2xl p-5 shadow-2xl border border-[#c5a059]/30 text-[#c5a059] flex items-center justify-center">
                                 <Icons.Brain />
                             </div>
                         </div>
-                        <h3 className="serif-font text-lg font-bold text-white">Nacira AI Sedang Bekerja...</h3>
-                        <p className="text-sm mt-2 text-center max-w-sm text-zinc-400">Menganalisis master pricelist kitchen, wardrobe & living room.</p>
+                        <h3 className="serif-font text-lg font-bold text-white">{brandName} AI Copilot Sedang Bekerja...</h3>
+                        <p className="text-sm mt-2 text-center max-w-sm text-zinc-400">
+                            Mencocokkan knowledge base 3-layer, mengaudit integritas harga 2026, dan merumuskan 3 opsi respon closing.
+                        </p>
                     </div>
                 ) : aiResponse ? (
-                    <div className="bg-[#15151a] rounded-3xl shadow-2xl border border-[#26262d] overflow-hidden flex flex-col h-full animate-fade-in">
-                        <div className="bg-[#1b1b22] text-white px-6 py-5 flex justify-between items-center flex-wrap gap-3 border-b border-[#26262d]">
-                            <div className="flex items-center gap-2.5 font-bold text-sm">
-                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
-                                Balasan WhatsApp Siap Dikirim
+                    <div className="space-y-6">
+                        {/* KARTU 3 ALTERNATIF BALASAN */}
+                        <div className="bg-[#15151a] rounded-3xl shadow-2xl border border-[#26262d] overflow-hidden flex flex-col animate-fade-in">
+                            {/* Tab Switcher untuk 3 Alternatif */}
+                            <div className="bg-[#1a1a22] border-b border-[#26262d] p-3 flex gap-2 flex-wrap sm:flex-nowrap">
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveReplyTab('recommended')}
+                                    className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                                        activeReplyTab === 'recommended'
+                                            ? 'bg-[#c5a059] text-[#0d0d0d] shadow-md'
+                                            : 'bg-[#202028] text-zinc-400 hover:text-white'
+                                    }`}
+                                >
+                                    <span>🌟</span>
+                                    <span>Rekomendasi Utama</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveReplyTab('alternativeSoft')}
+                                    className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                                        activeReplyTab === 'alternativeSoft'
+                                            ? 'bg-[#c5a059] text-[#0d0d0d] shadow-md'
+                                            : 'bg-[#202028] text-zinc-400 hover:text-white'
+                                    }`}
+                                >
+                                    <span>🕊️</span>
+                                    <span>Alternatif Soft</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveReplyTab('alternativeDirect')}
+                                    className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                                        activeReplyTab === 'alternativeDirect'
+                                            ? 'bg-[#c5a059] text-[#0d0d0d] shadow-md'
+                                            : 'bg-[#202028] text-zinc-400 hover:text-white'
+                                    }`}
+                                >
+                                    <span>⚡</span>
+                                    <span>Alternatif Direct</span>
+                                </button>
                             </div>
-                            <div className="flex flex-wrap gap-1.5">
-                                {aiResponse.principlesUsed?.map((p, i) => (
-                                    <span key={i} className="px-2.5 py-1 rounded-lg bg-[#26262d] text-[#c5a059] text-xs font-bold uppercase tracking-wider border border-[#383842]">
-                                        {p}
-                                    </span>
-                                ))}
+
+                            {/* Teks Pesan WhatsApp */}
+                            <div className="p-6 space-y-4">
+                                <div className="flex justify-between items-center">
+                                    <div className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                        {activeReplyTab === 'recommended' && 'Rekomendasi Utama (Standard SOP & Persuasif)'}
+                                        {activeReplyTab === 'alternativeSoft' && 'Alternatif Soft (Santai, Edukatif & Ramah)'}
+                                        {activeReplyTab === 'alternativeDirect' && 'Alternatif Direct (To The Point & Jadwal Survei)'}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button 
+                                            onClick={() => handleCopy(activeReplyTab, currentReplyText)}
+                                            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
+                                                copiedKey === activeReplyTab 
+                                                    ? 'bg-emerald-500 text-white' 
+                                                    : 'bg-[#202028] hover:bg-[#c5a059] hover:text-[#0d0d0d] text-zinc-200 border border-[#2e2e38]'
+                                            }`}
+                                        >
+                                            {copiedKey === activeReplyTab ? (
+                                                <React.Fragment><Icons.CheckCircle /> Disalin!</React.Fragment>
+                                            ) : (
+                                                <React.Fragment><Icons.Copy /> Copy Balasan Ini</React.Fragment>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-[#1b1b22] border border-[#26262d] rounded-2xl p-5 relative group">
+                                    <p className="text-zinc-100 text-sm md:text-base leading-relaxed whitespace-pre-wrap font-medium">
+                                        {currentReplyText}
+                                    </p>
+                                </div>
+
+                                {/* Prinsip & Anti Halusinasi Badge */}
+                                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 text-xs">
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {aiResponse.principlesUsed?.map((p, i) => (
+                                            <span key={i} className="px-2.5 py-1 rounded-lg bg-[#202028] text-[#c5a059] text-[11px] font-bold uppercase tracking-wider border border-[#33333d]">
+                                                {p}
+                                            </span>
+                                        ))}
+                                    </div>
+                                    <div className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+                                        <Icons.Shield /> Anti-Halusinasi Terverifikasi
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        
-                        <div className="p-6 md:p-8 flex-1 flex flex-col justify-between space-y-6">
-                            <div>
-                                <div className="flex justify-between items-center mb-3">
-                                    <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Draf Teks WhatsApp</h3>
-                                    <button 
-                                        onClick={handleCopy}
-                                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
-                                            copySuccess ? 'bg-emerald-500 text-white' : 'bg-[#202028] hover:bg-[#c5a059] hover:text-[#0d0d0d] text-zinc-300 border border-[#2e2e38]'
-                                        }`}
-                                    >
-                                        {copySuccess ? <React.Fragment><Icons.CheckCircle /> Disalin!</React.Fragment> : <React.Fragment><Icons.Copy /> Copy Teks</React.Fragment>}
-                                    </button>
+
+                        {/* SMART CONTEXT PANEL (INTERNAL SALES INTELLIGENCE) */}
+                        <div className="glass-panel rounded-3xl p-6 md:p-8 shadow-2xl border border-[#26262d] space-y-5 animate-fade-in">
+                            <div className="flex items-center justify-between border-b border-[#26262d] pb-4">
+                                <h3 className="serif-font text-base font-bold text-white flex items-center gap-2">
+                                    <div className="p-2 bg-[#202028] text-[#c5a059] rounded-xl">
+                                        <Icons.Brain />
+                                    </div>
+                                    Smart Context Panel & Internal Intelligence
+                                </h3>
+                                {getTemperatureBadge(aiResponse.clientAnalysis?.temperature)}
+                            </div>
+
+                            {/* Grid Parameter Analisis */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                                <div className="bg-[#15151a] p-3 rounded-2xl border border-[#26262d]">
+                                    <span className="text-[10px] text-zinc-500 uppercase font-bold block">Intent Klien</span>
+                                    <span className="font-bold text-white mt-1 block">
+                                        {aiResponse.clientAnalysis?.intent || 'CONSULTATION'}
+                                    </span>
                                 </div>
-                                <div className="bg-[#1b1b22] border border-[#26262d] rounded-2xl p-5">
-                                    <p className="text-zinc-200 text-sm md:text-base leading-relaxed whitespace-pre-wrap font-medium">
-                                        {aiResponse.reply}
-                                    </p>
+                                <div className="bg-[#15151a] p-3 rounded-2xl border border-[#26262d]">
+                                    <span className="text-[10px] text-zinc-500 uppercase font-bold block">Pipeline Stage</span>
+                                    <span className="font-bold text-[#c5a059] mt-1 block">
+                                        {aiResponse.clientAnalysis?.stage || 'NEW_LEAD'}
+                                    </span>
+                                </div>
+                                <div className="bg-[#15151a] p-3 rounded-2xl border border-[#26262d]">
+                                    <span className="text-[10px] text-zinc-500 uppercase font-bold block">Tipe Proyek</span>
+                                    <span className="font-bold text-white mt-1 block truncate">
+                                        {aiResponse.clientAnalysis?.projectType || 'Kitchen / Interior'}
+                                    </span>
+                                </div>
+                                <div className="bg-[#15151a] p-3 rounded-2xl border border-[#26262d]">
+                                    <span className="text-[10px] text-zinc-500 uppercase font-bold block">Wilayah Layanan</span>
+                                    <span className="font-bold text-white mt-1 block truncate">
+                                        {serviceArea}
+                                    </span>
                                 </div>
                             </div>
 
-                            <div className="pt-4 border-t border-[#26262d]">
-                                <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2.5 flex items-center gap-2">
-                                    <Icons.Brain /> Analisis Strategi Penjualan
-                                </h3>
-                                <div className="bg-[#1b1b22] rounded-2xl p-4 text-xs md:text-sm text-zinc-400 leading-relaxed border border-[#26262d] font-medium">
-                                    {aiResponse.explanation}
+                            {/* Missing Information Chips */}
+                            {aiResponse.clientAnalysis?.missingInformation && aiResponse.clientAnalysis.missingInformation.length > 0 && (
+                                <div>
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400 block mb-2">
+                                        ⚠️ Data Klien yang Masih Kurang (Perlu Digali):
+                                    </span>
+                                    <div className="flex flex-wrap gap-2">
+                                        {aiResponse.clientAnalysis.missingInformation.map((info, idx) => (
+                                            <span key={idx} className="px-3 py-1 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/30 text-xs font-semibold">
+                                                {info}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Next Best Action Callout */}
+                            {aiResponse.clientAnalysis?.nextBestAction && (
+                                <div className="bg-gradient-to-r from-[#202028] to-[#1a1a24] border border-[#c5a059]/40 rounded-2xl p-4">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 bg-[#c5a059]/20 text-[#c5a059] rounded-xl flex-shrink-0 mt-0.5">
+                                            <Icons.Zap />
+                                        </div>
+                                        <div>
+                                            <span className="text-[11px] font-bold uppercase tracking-wider text-[#c5a059] block">
+                                                Rekomendasi Tindakan Sales (Next Best Action):
+                                            </span>
+                                            <p className="text-zinc-200 text-xs md:text-sm mt-1 font-medium leading-relaxed">
+                                                {aiResponse.clientAnalysis.nextBestAction}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* 3-Layer Internal Sources / Citations */}
+                            <div className="pt-2 border-t border-[#26262d]">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-2">
+                                    Rujukan Knowledge Base 3-Layer:
+                                </span>
+                                <div className="flex flex-wrap gap-2">
+                                    {aiResponse.internalSources?.map((source, i) => (
+                                        <span key={i} className="px-2.5 py-1 rounded-xl bg-[#1b1b22] text-zinc-400 border border-[#2e2e38] text-[11px] font-medium flex items-center gap-1.5">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                            {source}
+                                        </span>
+                                    ))}
                                 </div>
                             </div>
                         </div>
                     </div>
                 ) : (
-                    <div className="glass-panel rounded-3xl p-8 shadow-2xl h-full flex flex-col justify-center items-center text-zinc-500 border border-[#26262d] min-h-[450px] border-dashed text-center">
+                    <div className="glass-panel rounded-3xl p-8 shadow-2xl h-full flex flex-col justify-center items-center text-zinc-500 border border-[#26262d] min-h-[480px] border-dashed text-center">
                         <div className="w-16 h-16 bg-[#1a1a20] rounded-2xl flex items-center justify-center text-zinc-400 mb-4 shadow-inner">
                             <Icons.Send />
                         </div>
                         <h3 className="serif-font font-bold text-white text-base">Belum Ada Balasan Dibuat</h3>
                         <p className="text-sm mt-1 text-zinc-400 max-w-sm">
-                            Masukkan chat atau screenshot pelanggan di sebelah kiri, lalu klik Generate untuk membuat balasan AI resmi.
+                            Masukkan chat atau screenshot pelanggan {brandName} di sebelah kiri, lalu klik Generate untuk membuat 3 alternatif balasan AI.
                         </p>
                     </div>
                 )}

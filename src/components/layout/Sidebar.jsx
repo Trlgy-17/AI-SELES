@@ -1,3 +1,4 @@
+// File: src/components/layout/Sidebar.jsx
 import React, { useRef, useEffect, useCallback } from 'react';
 import { Icons } from '../Icons.jsx';
 
@@ -8,10 +9,17 @@ export const Sidebar = ({
     setActiveTab, 
     syncStatus, 
     onOpenCloudModal,
-    toggleButtonRef 
+    onOpenAuthModal,
+    toggleButtonRef,
+    activeBrand,
+    currentUser,
+    overdueCount = 0,
+    todayCount = 0
 }) => {
     const sidebarRef = useRef(null);
     const closeBtnRef = useRef(null);
+
+    const brandName = activeBrand?.brandName || 'NACIRA STUDIO';
 
     const closeSidebar = useCallback(() => {
         setIsSidebarOpen(false);
@@ -58,14 +66,23 @@ export const Sidebar = ({
                         : '-translate-x-full invisible lg:visible lg:translate-x-0 lg:pointer-events-auto'
                 }`}
             >
+                {/* Brand Header */}
                 <div className="p-6 flex items-center justify-between border-b border-[#26262d]">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-[#c5a059]/20 border border-[#c5a059]/40 bg-[#141418] flex items-center justify-center p-0.5">
-                            <img src="/logo-badge.png" alt="Nacira Studio" className="w-full h-full object-contain rounded-lg" />
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-[#c5a059]/20 border border-[#c5a059]/40 bg-[#141418] flex items-center justify-center p-0.5 flex-shrink-0">
+                            <img 
+                                src={activeBrand?.id === 'brand_nacira' ? '/logo-badge.png' : '/logo-nacira.png'} 
+                                alt={brandName} 
+                                className="w-full h-full object-contain rounded-lg"
+                                onError={(e) => { e.target.style.display = 'none'; }}
+                            />
                         </div>
-                        <div>
-                            <h2 className="serif-font font-bold text-base tracking-wider text-white">NACIRA STUDIO</h2>
-                            <span className="text-[10px] uppercase tracking-widest text-[#c5a059] font-semibold">Sales AI v2026</span>
+                        <div className="overflow-hidden">
+                            <h2 className="serif-font font-bold text-sm tracking-wider text-white truncate">{brandName}</h2>
+                            <span className="text-[10px] uppercase tracking-widest text-[#c5a059] font-semibold flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#c5a059]"></span>
+                                Multi-Brand Sales AI
+                            </span>
                         </div>
                     </div>
                     <button 
@@ -78,68 +95,93 @@ export const Sidebar = ({
                     </button>
                 </div>
 
-                <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
-                    <div className="px-3 pb-2 text-[11px] font-bold uppercase tracking-widest text-zinc-500">Core Engine</div>
+                {/* User Profile Card */}
+                <div className="px-4 pt-4 pb-1">
+                    <button
+                        onClick={onOpenAuthModal}
+                        className="w-full bg-[#181820] hover:bg-[#20202a] border border-[#2a2a36] rounded-2xl p-3 flex items-center justify-between text-left transition-colors"
+                        title="Klik untuk ganti akun atau profil"
+                    >
+                        <div className="flex items-center gap-2.5 overflow-hidden">
+                            <div className="w-8 h-8 rounded-xl bg-[#c5a059]/20 text-[#c5a059] flex items-center justify-center font-bold text-xs border border-[#c5a059]/30 flex-shrink-0">
+                                {currentUser?.fullName ? currentUser.fullName.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                            <div className="overflow-hidden">
+                                <div className="text-xs font-bold text-white truncate">{currentUser?.fullName || 'Ary'}</div>
+                                <div className="text-[10px] text-zinc-400 truncate">{currentUser?.role === 'SUPER_ADMIN' ? '👑 Super Admin' : 'Staf Marketing'}</div>
+                            </div>
+                        </div>
+                        <span className="text-xs text-zinc-500">⇄</span>
+                    </button>
+                </div>
+
+                {/* Navigation Links */}
+                <nav className="flex-1 py-4 px-4 space-y-1.5 overflow-y-auto">
+                    <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Modul Operasional</div>
+                    
                     <button 
                         onClick={() => { setActiveTab('workspace'); closeSidebar(); }} 
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium ${activeTab === 'workspace' ? 'bg-[#c5a059] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/25' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
+                        className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${activeTab === 'workspace' ? 'bg-gradient-to-r from-[#c5a059] to-[#b8972e] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/20' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
                     >
-                        <Icons.MessageSquare />
-                        <span>AI Workspace</span>
+                        <div className="flex items-center gap-3">
+                            <Icons.MessageSquare />
+                            <span>AI Sales Copilot</span>
+                        </div>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-bold">3 OPSI</span>
                     </button>
+
                     <button 
                         onClick={() => { setActiveTab('crm'); closeSidebar(); }} 
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium ${activeTab === 'crm' ? 'bg-[#c5a059] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/25' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
+                        className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${activeTab === 'crm' ? 'bg-gradient-to-r from-[#c5a059] to-[#b8972e] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/20' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
                     >
                         <Icons.Users />
-                        <span>CRM Data</span>
+                        <span>CRM Leads {brandName.split(' ')[0]}</span>
                     </button>
+
                     <button 
                         onClick={() => { setActiveTab('followup'); closeSidebar(); }} 
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium ${activeTab === 'followup' ? 'bg-[#c5a059] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/25' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
+                        className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${activeTab === 'followup' ? 'bg-gradient-to-r from-[#c5a059] to-[#b8972e] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/20' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
                     >
-                        <Icons.LayoutDashboard />
-                        <span>Follow-Up Flow</span>
+                        <div className="flex items-center gap-3">
+                            <Icons.Calendar />
+                            <span>Follow-Up AI</span>
+                        </div>
+                        {(overdueCount > 0 || todayCount > 0) && (
+                            <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse">
+                                {overdueCount + todayCount}
+                            </span>
+                        )}
                     </button>
+
+                    <div className="pt-3 px-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Basis Pengetahuan</div>
+
                     <button 
                         onClick={() => { setActiveTab('knowledge'); closeSidebar(); }} 
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium ${activeTab === 'knowledge' ? 'bg-[#c5a059] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/25' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
+                        className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${activeTab === 'knowledge' ? 'bg-gradient-to-r from-[#c5a059] to-[#b8972e] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/20' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
                     >
                         <Icons.BookOpen />
-                        <span>Knowledge Base</span>
+                        <span>Knowledge & Override</span>
                     </button>
                 </nav>
 
-                <div className="p-4 border-t border-[#26262d]">
-                    <button 
-                        onClick={onOpenCloudModal}
-                        className="w-full text-left p-3 bg-[#18181e] hover:bg-[#202028] rounded-xl border border-[#26262d] flex items-center justify-between transition-colors group"
-                        aria-label="Buka Pengaturan Cloud dan Database"
-                    >
-                        <div className="flex items-center gap-3">
-                            <div className={`w-2.5 h-2.5 rounded-full ${
-                                syncStatus === 'synced' ? 'bg-emerald-400 animate-pulse' : 
-                                syncStatus === 'checking' ? 'bg-amber-400 animate-pulse' : 
-                                syncStatus === 'error' ? 'bg-rose-500' : 'bg-zinc-500'
-                            }`}></div>
-                            <div className="text-xs">
-                                <p className="font-semibold text-zinc-200 flex items-center gap-1.5">
-                                    <Icons.CloudSync /> 
-                                    {syncStatus === 'synced' ? 'Cloud Synced' : 
-                                     syncStatus === 'checking' ? 'Memeriksa koneksi...' : 
-                                     syncStatus === 'error' ? 'Gagal Sinkron' : 'Mode Lokal (Storage)'}
-                                </p>
-                                <p className="text-[11px] text-zinc-400">
-                                    {syncStatus === 'synced' ? 'Firestore aktif' : 
-                                     syncStatus === 'checking' ? 'Menghubungkan...' : 
-                                     syncStatus === 'error' ? 'Perlu perbaikan izin' : 'Data tersimpan di browser'}
-                                </p>
-                            </div>
-                        </div>
-                        <span className="text-zinc-500 group-hover:text-white transition-colors">
-                            <Icons.Settings />
+                {/* Footer Sync & Brand Status */}
+                <div className="p-4 border-t border-[#26262d] bg-[#0e0e12]/80 space-y-2">
+                    <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                        <span className="flex items-center gap-1.5">
+                            <span className={`w-2 h-2 rounded-full ${syncStatus === 'synced' ? 'bg-emerald-400' : syncStatus === 'error' ? 'bg-rose-500' : 'bg-amber-400'}`}></span>
+                            {syncStatus === 'synced' ? 'Cloud Terhubung' : 'Penyimpanan Lokal'}
                         </span>
-                    </button>
+                        <button 
+                            onClick={onOpenCloudModal} 
+                            className="text-zinc-400 hover:text-[#c5a059] transition-colors p-1"
+                            title="Pengaturan Database Cloud"
+                        >
+                            <Icons.Settings />
+                        </button>
+                    </div>
+                    <div className="text-[10px] text-zinc-500 text-center font-mono">
+                        Multi-Brand Core v2026.1
+                    </div>
                 </div>
             </aside>
         </React.Fragment>

@@ -9,6 +9,9 @@ import { CRMModule } from '../components/modules/CRMModule.jsx';
 import { FollowUpModule } from '../components/modules/FollowUpModule.jsx';
 import { KnowledgeBase } from '../components/modules/KnowledgeBase.jsx';
 import { CloudSettingsModal } from '../components/modals/CloudSettingsModal.jsx';
+import { AuthModal } from '../components/modals/AuthModal.jsx';
+import { CommandPalette } from '../components/layout/CommandPalette.jsx';
+import { AuthService } from './services/auth.js';
 import { StorageService } from './services/storage.js';
 import { 
     BASE_KEYS, 
@@ -73,6 +76,11 @@ export function App() {
     const [toast, setToast] = useState(null);
     const toastTimerRef = useRef(null);
 
+    // Multi-Brand Auth Session & Modal States
+    const [authSession, setAuthSession] = useState(() => AuthService.getCurrentSession());
+    const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showCommandPalette, setShowCommandPalette] = useState(false);
+
     const [userId, setUserId] = useState(null);
     const [syncStatus, setSyncStatus] = useState(() => {
         return window.firebaseServices?.isConfigured ? 'checking' : 'local';
@@ -90,11 +98,48 @@ export function App() {
         }, 3500);
     }, []);
 
+    // Listen event ganti auth dan command palette
+    useEffect(() => {
+        const handleAuthChanged = (e) => {
+            if (e.detail) {
+                setAuthSession(e.detail);
+            }
+        };
+        const handleOpenPalette = () => {
+            setShowCommandPalette(true);
+        };
+        window.addEventListener('auth-changed', handleAuthChanged);
+        window.addEventListener('open-command-palette', handleOpenPalette);
+        return () => {
+            window.removeEventListener('auth-changed', handleAuthChanged);
+            window.removeEventListener('open-command-palette', handleOpenPalette);
+        };
+    }, []);
+
     useEffect(() => {
         return () => {
             if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
         };
     }, []);
+
+    const activeBrand = authSession?.activeBrand;
+    const currentUser = authSession?.user;
+    const allBrands = useMemo(() => AuthService.getBrands(), [authSession]);
+
+    const handleSwitchBrand = (brandId) => {
+        try {
+            const updated = AuthService.switchWorkspace(brandId);
+            setAuthSession(updated);
+            showToast(`Beralih ke workspace ${updated.activeBrand?.brandName}`, 'info');
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    const handleLoginSuccess = (session) => {
+        setAuthSession(session);
+        showToast(`Sesi aktif: ${session.user?.fullName} (${session.activeBrand?.brandName})`, 'info');
+    };
 
     const [crmLeads, setCrmLeads] = useState(() => {
         const { leads } = loadUserData(null);
@@ -258,13 +303,56 @@ export function App() {
             overdueCount={overdueCount}
             todayCount={todayCount}
             rescheduleCount={rescheduleCount}
+            activeBrand={activeBrand}
+            currentUser={currentUser}
+            brands={allBrands}
+            onSwitchBrand={handleSwitchBrand}
+            onOpenAuthModal={() => setShowAuthModal(true)}
+            onOpenCommandPalette={() => setShowCommandPalette(true)}
         >
             <Toast toast={toast} />
 
-            {activeTab === 'workspace' && <AIWorkspace showToast={showToast} />}
-            {activeTab === 'crm' && <CRMModule crmLeads={crmLeads} setCrmLeads={setCrmLeads} followUpTasks={followUpTasks} setFollowUpTasks={setFollowUpTasks} userId={userId} showToast={showToast} />}
-            {activeTab === 'followup' && <FollowUpModule followUpTasks={followUpTasks} setFollowUpTasks={setFollowUpTasks} crmLeads={crmLeads} userId={userId} showToast={showToast} />}
-            {activeTab === 'knowledge' && <KnowledgeBase />}
+            {activeTab === 'workspace' && (
+                <AIWorkspace 
+                    activeBrand={activeBrand} 
+                    currentUser={currentUser} 
+                    crmLeads={crmLeads} 
+                    showToast={showToast} 
+                />
+            )}
+            {activeTab === 'crm' && (
+                <CRMModule 
+                    crmLeads={crmLeads} 
+                    setCrmLeads={setCrmLeads} 
+                    followUpTasks={followUpTasks} 
+                    setFollowUpTasks={setFollowUpTasks} 
+                    userId={userId} 
+                    showToast={showToast}
+                    activeBrand={activeBrand}
+                    currentUser={currentUser}
+                    onConsultLeadInAI={(lead) => {
+                        setActiveTab('workspace');
+                        showToast(`Membuka AI Copilot untuk klien ${lead.name}`, 'info');
+                    }}
+                />
+            )}
+            {activeTab === 'followup' && (
+                <FollowUpModule 
+                    followUpTasks={followUpTasks} 
+                    setFollowUpTasks={setFollowUpTasks} 
+                    crmLeads={crmLeads} 
+                    userId={userId} 
+                    showToast={showToast}
+                    activeBrand={activeBrand}
+                    currentUser={currentUser}
+                />
+            )}
+            {activeTab === 'knowledge' && (
+                <KnowledgeBase 
+                    activeBrand={activeBrand}
+                    currentUser={currentUser}
+                />
+            )}
 
             <CloudSettingsModal 
                 isOpen={showCloudModal}
@@ -273,6 +361,24 @@ export function App() {
                 currentConfig={firebaseConfigState}
                 syncStatus={syncStatus}
                 onForceLocalMode={handleForceLocal}
+            />
+
+            <AuthModal
+                isOpen={showAuthModal}
+                onClose={() => setShowAuthModal(false)}
+                currentUser={currentUser}
+                activeBrand={activeBrand}
+                onLoginSuccess={handleLoginSuccess}
+            />
+
+            <CommandPalette
+                isOpen={showCommandPalette}
+                onClose={() => setShowCommandPalette(false)}
+                onNavigate={(tab) => setActiveTab(tab)}
+                brands={allBrands}
+                currentUser={currentUser}
+                onSwitchBrand={handleSwitchBrand}
+                onOpenAuthModal={() => setShowAuthModal(true)}
             />
         </AppShell>
     );

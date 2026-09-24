@@ -9,7 +9,19 @@ import { generateId } from '../../js/utils/id.js';
 import { getAsiaJakartaDate, getAsiaJakartaIso, addDaysToDate } from '../../js/utils/date.js';
 import { addTombstone } from '../../js/services/migration.js';
 
-export const FollowUpModule = ({ followUpTasks = [], setFollowUpTasks, crmLeads = [], userId, showToast }) => {
+export const FollowUpModule = ({ 
+    followUpTasks = [], 
+    setFollowUpTasks, 
+    crmLeads = [], 
+    userId, 
+    showToast,
+    activeBrand,
+    currentUser
+}) => {
+    const currentBrandId = activeBrand?.id || 'brand_nacira';
+    const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+
+    const [showAllBrands, setShowAllBrands] = useState(false);
     const [followUpSearch, setFollowUpSearch] = useState('');
     const [taskFilter, setTaskFilter] = useState('Semua');
 
@@ -28,11 +40,28 @@ export const FollowUpModule = ({ followUpTasks = [], setFollowUpTasks, crmLeads 
 
     const todayStr = getAsiaJakartaDate();
 
+    // Data Isolation: Filter tugas dan prospek CRM berdasarkan Brand Sesi Aktif
+    const brandScopedTasks = useMemo(() => {
+        return followUpTasks.filter(t => {
+            const taskBrand = t.brandId || 'brand_nacira';
+            if (isSuperAdmin && showAllBrands) return true;
+            return taskBrand === currentBrandId;
+        });
+    }, [followUpTasks, isSuperAdmin, showAllBrands, currentBrandId]);
+
+    const brandScopedLeads = useMemo(() => {
+        return crmLeads.filter(l => {
+            const leadBrand = l.brandId || 'brand_nacira';
+            if (isSuperAdmin && showAllBrands) return true;
+            return leadBrand === currentBrandId;
+        });
+    }, [crmLeads, isSuperAdmin, showAllBrands, currentBrandId]);
+
     const handleLeadSelect = (e) => {
         const leadId = e.target.value;
         setSelectedLeadId(leadId);
         if (leadId) {
-            const found = crmLeads.find(l => l.id === leadId);
+            const found = brandScopedLeads.find(l => l.id === leadId);
             if (found) {
                 setNewFollowClient(found.name);
                 setNewFollowPhone(found.phoneRaw || found.phoneNormalized || '');
@@ -57,6 +86,7 @@ export const FollowUpModule = ({ followUpTasks = [], setFollowUpTasks, crmLeads 
         const taskData = {
             id: taskId,
             schemaVersion: 2,
+            brandId: currentBrandId, // Terikat ke brand aktif
             leadId: selectedLeadId || null,
             client: clientName.slice(0, 100),
             phoneRaw: phoneRaw.slice(0, 30),
@@ -77,13 +107,13 @@ export const FollowUpModule = ({ followUpTasks = [], setFollowUpTasks, crmLeads 
             try {
                 const { db, appId, doc, setDoc } = window.firebaseServices;
                 await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'followUpTasks', taskId), taskData);
-                showToast("Tugas follow-up berhasil dijadwalkan & disinkronkan ke Cloud!");
+                showToast(`Tugas follow-up (${activeBrand?.brandName}) berhasil dijadwalkan & disinkronkan!`);
             } catch (e) {
                 console.warn("[FollowUp] Cloud save failed:", e);
-                showToast("Tersimpan lokal. (Sinkronisasi cloud tertunda)", "warning");
+                showToast("Tersimpan lokal.", "warning");
             }
         } else {
-            showToast("Tugas follow-up berhasil dijadwalkan!");
+            showToast(`Tugas follow-up (${activeBrand?.brandName}) berhasil dijadwalkan!`);
         }
 
         setSelectedLeadId('');
@@ -115,7 +145,7 @@ export const FollowUpModule = ({ followUpTasks = [], setFollowUpTasks, crmLeads 
                 showToast(`Tugas ditandai sebagai ${newStatus}!`);
             } catch (e) {
                 console.warn("[FollowUp] Status toggle cloud failed:", e);
-                showToast(`Status diubah lokal ke ${newStatus}. (Cloud sync tertunda)`, "warning");
+                showToast(`Status diubah lokal ke ${newStatus}.`, "warning");
             }
         } else {
             showToast(`Status diubah ke ${newStatus}!`);
@@ -138,7 +168,7 @@ export const FollowUpModule = ({ followUpTasks = [], setFollowUpTasks, crmLeads 
                 showToast("Tugas follow-up berhasil diperbarui di cloud!");
             } catch (e) {
                 console.warn("[FollowUp] Update cloud failed:", e);
-                showToast("Diperbarui lokal. (Cloud sync tertunda)", "warning");
+                showToast("Diperbarui lokal.", "warning");
             }
         } else {
             showToast("Tugas follow-up diperbarui.");
@@ -158,10 +188,10 @@ export const FollowUpModule = ({ followUpTasks = [], setFollowUpTasks, crmLeads 
             try {
                 const { db, appId, doc, deleteDoc } = window.firebaseServices;
                 await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'followUpTasks', String(taskId)));
-                showToast("Tugas dihapus dari lokal & cloud.");
+                showToast("Tugas dihapus dari cloud.");
             } catch (e) {
                 console.warn("[FollowUp] Delete cloud failed:", e);
-                showToast("Dihapus lokal. (Cloud delete tertunda)", "warning");
+                showToast("Dihapus lokal.", "warning");
             }
         } else {
             showToast("Tugas follow-up dihapus.");
@@ -172,7 +202,7 @@ export const FollowUpModule = ({ followUpTasks = [], setFollowUpTasks, crmLeads 
     };
 
     const filteredTasks = useMemo(() => {
-        return followUpTasks.filter(task => {
+        return brandScopedTasks.filter(task => {
             const searchLower = followUpSearch.toLowerCase();
             const matchesSearch = 
                 (task.client || '').toLowerCase().includes(searchLower) ||
@@ -191,14 +221,52 @@ export const FollowUpModule = ({ followUpTasks = [], setFollowUpTasks, crmLeads 
 
             return matchesSearch && matchesFilter;
         });
-    }, [followUpTasks, followUpSearch, taskFilter, todayStr]);
+    }, [brandScopedTasks, followUpSearch, taskFilter, todayStr]);
 
     return (
         <div className="space-y-6 pb-12 animate-fade-in">
+            {/* Header Brand Bar & Scope Control */}
+            <div className="glass-panel rounded-3xl p-6 shadow-2xl border border-[#26262d] flex justify-between items-center flex-wrap gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-[#202028] text-[#c5a059] flex items-center justify-center font-bold text-lg border border-[#33333d]">
+                        <Icons.Calendar />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h2 className="serif-font text-xl font-extrabold text-white">
+                                Pipeline Follow-Up & Jadwal
+                            </h2>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#c5a059]/15 text-[#c5a059] border border-[#c5a059]/30">
+                                {activeBrand?.brandName || 'Nacira'}
+                            </span>
+                        </div>
+                        <p className="text-xs text-zinc-400 mt-0.5">
+                            Pengingat follow-up terjadwal, respon survei, dan re-engagement klien {activeBrand?.brandName}.
+                        </p>
+                    </div>
+                </div>
+
+                {isSuperAdmin && (
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setShowAllBrands(!showAllBrands)}
+                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                showAllBrands 
+                                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm' 
+                                    : 'bg-[#1b1b22] text-zinc-400 border-[#2e2e38] hover:text-white'
+                            }`}
+                        >
+                            👑 {showAllBrands ? 'Menampilkan Semua Brand' : 'Filter Brand Aktif Saja'}
+                        </button>
+                    </div>
+                )}
+            </div>
+
             {/* Form Tambah Tugas Follow-Up */}
             <div className="glass-panel rounded-3xl p-6 md:p-8 shadow-2xl border border-[#26262d]">
                 <h3 className="serif-font font-bold text-lg text-white mb-4 flex items-center gap-2">
-                    <Icons.Plus /> Jadwalkan Tugas Follow-Up Baru
+                    <Icons.Plus /> Jadwalkan Tugas Follow-Up Baru ({activeBrand?.brandName})
                 </h3>
 
                 {followUpError && (
@@ -213,8 +281,8 @@ export const FollowUpModule = ({ followUpTasks = [], setFollowUpTasks, crmLeads 
                         onChange={handleLeadSelect}
                         className="bg-[#15151a] border border-[#26262d] rounded-xl px-3 py-2.5 text-xs text-zinc-300 sm:col-span-1 md:col-span-1 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
                     >
-                        <option value="">-- Pilih dari CRM --</option>
-                        {crmLeads.map(l => (
+                        <option value="">-- Pilih dari CRM {activeBrand?.brandName} --</option>
+                        {brandScopedLeads.map(l => (
                             <option key={l.id} value={l.id}>{l.name} {l.project ? `(${l.project})` : ''}</option>
                         ))}
                     </select>
@@ -348,105 +416,119 @@ export const FollowUpModule = ({ followUpTasks = [], setFollowUpTasks, crmLeads 
                             <Icons.CheckCircle />
                         </div>
                         <h4 className="serif-font font-bold text-white text-base">Tidak Ada Tugas Follow-Up</h4>
-                        <p className="text-sm mt-1 max-w-sm mx-auto text-zinc-400">
-                            Semua tugas follow-up telah selesai atau tidak cocok dengan filter pencarian yang Anda pilih.
+                        <p className="text-sm mt-1 text-zinc-400 max-w-sm mx-auto">
+                            Semua follow-up untuk brand ini berstatus rapi atau filter tidak menemukan hasil yang cocok.
                         </p>
                     </div>
                 ) : (
                     filteredTasks.map((task) => {
-                        const displayPhone = formatDisplayPhone(task.phoneRaw, task.phoneNormalized);
-                        const hasValidWa = !!task.phoneNormalized;
                         const isOverdue = task.status !== 'Selesai' && task.dueDate && task.dueDate < todayStr;
-                        const isToggling = togglingTaskIds.has(task.id);
+                        const isToday = task.status !== 'Selesai' && task.dueDate === todayStr;
+                        const isReschedule = task.needsReschedule || (!task.dueDate && task.status !== 'Selesai');
+                        const isDone = task.status === 'Selesai';
 
                         return (
                             <div 
-                                key={task.id} 
-                                className={`bg-[#15151a] rounded-3xl p-6 border shadow-2xl flex flex-col justify-between transition-all ${
-                                    isOverdue ? 'border-rose-900/60 bg-rose-950/10' : 'border-[#26262d]'
+                                key={task.id}
+                                className={`rounded-3xl p-6 border transition-all flex flex-col justify-between ${
+                                    isDone 
+                                        ? 'bg-[#121216]/60 border-[#202026] opacity-75' 
+                                        : isOverdue 
+                                            ? 'bg-[#181214] border-rose-900/60 shadow-xl shadow-rose-950/20' 
+                                            : isToday 
+                                                ? 'bg-[#1a1712] border-amber-900/60 shadow-xl shadow-amber-950/20' 
+                                                : 'bg-[#15151a] border-[#26262d] shadow-xl hover:border-[#c5a059]/40'
                                 }`}
                             >
                                 <div>
-                                    <div className="flex justify-between items-center mb-4">
-                                        {task.needsReschedule || !task.dueDate ? (
-                                            <span className="text-xs font-bold px-3 py-1 bg-purple-950 text-purple-300 rounded-xl border border-purple-800">
-                                                ⚠️ Perlu dijadwalkan ulang
-                                            </span>
-                                        ) : (
-                                            <span className={`text-xs font-bold px-3 py-1 rounded-xl border ${
-                                                isOverdue ? 'bg-rose-950 text-rose-300 border-rose-800' : 'bg-[#202028] text-[#c5a059] border-[#2e2e38]'
-                                            }`}>
-                                                📅 {task.dueDate} {isOverdue && '(TERLAMBAT)'}
-                                            </span>
-                                        )}
-                                        <StatusBadge status={task.status} />
-                                    </div>
-                                    
-                                    <h3 className="serif-font font-extrabold text-white text-lg flex items-center justify-between">
-                                        {task.client}
-                                        <div className="flex items-center gap-1">
-                                            {task.leadId && (
-                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#202028] text-zinc-400 border border-[#2e2e38]">
-                                                    CRM Linked
+                                    <div className="flex justify-between items-start mb-3 gap-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            {isOverdue && (
+                                                <span className="px-2 py-0.5 rounded-lg text-[10px] font-extrabold uppercase bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                                                    ⚠️ Terlambat
                                                 </span>
                                             )}
-                                            {task.isDetachedFromDeletedLead && (
-                                                <span 
-                                                    className="text-[10px] font-bold px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700" 
-                                                    title="Data klien telah dihapus dari CRM, tugas tetap disimpan secara mandiri"
-                                                >
-                                                    Standalone
+                                            {isToday && (
+                                                <span className="px-2 py-0.5 rounded-lg text-[10px] font-extrabold uppercase bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                                    ⏰ Hari Ini
+                                                </span>
+                                            )}
+                                            {isReschedule && (
+                                                <span className="px-2 py-0.5 rounded-lg text-[10px] font-extrabold uppercase bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                                                    📅 Tanpa Tanggal
+                                                </span>
+                                            )}
+                                            {isDone && (
+                                                <span className="px-2 py-0.5 rounded-lg text-[10px] font-extrabold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                                    ✓ Selesai
+                                                </span>
+                                            )}
+                                            {isSuperAdmin && showAllBrands && task.brandId && (
+                                                <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase bg-[#202028] text-[#c5a059] border border-[#2e2e38]">
+                                                    {task.brandId.replace('brand_', '')}
                                                 </span>
                                             )}
                                         </div>
-                                    </h3>
-                                    <p className="text-xs text-zinc-400 mt-0.5">WA: {displayPhone}</p>
-                                    <p className="text-sm text-zinc-300 mt-2.5 font-semibold bg-[#1b1b22] p-3 rounded-xl border border-[#26262d]">{task.type}</p>
-                                </div>
-
-                                <div className="mt-6 pt-4 border-t border-[#26262d] flex justify-between items-center gap-2">
-                                    <button 
-                                        onClick={() => handleToggleTaskStatus(task)}
-                                        disabled={isToggling}
-                                        className="text-xs font-bold text-[#c5a059] hover:underline bg-[#202028] px-3 py-1.5 rounded-xl border border-[#2e2e38] transition-colors disabled:opacity-50"
-                                    >
-                                        {isToggling ? 'Menyimpan...' : task.status === 'Selesai' ? 'Tandai Pending' : 'Tandai Selesai'}
-                                    </button>
-
-                                    <div className="flex items-center gap-1.5">
-                                        {hasValidWa ? (
-                                            <a 
-                                                href={buildWaLink(task.phoneNormalized, task.client)}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="text-xs font-bold text-emerald-300 bg-emerald-950 px-3 py-1.5 rounded-xl border border-emerald-800 hover:bg-emerald-900 transition-colors flex items-center gap-1"
-                                            >
-                                                WA
-                                            </a>
-                                        ) : (
-                                            <button 
-                                                disabled
-                                                className="text-xs font-bold text-zinc-600 bg-[#1b1b22] px-3 py-1.5 rounded-xl border border-[#26262d] cursor-not-allowed opacity-50"
-                                                title="Nomor WhatsApp belum diisi atau tidak valid"
-                                            >
-                                                WA
-                                            </button>
-                                        )}
-                                        <button 
-                                            onClick={() => setEditingTask(task)}
-                                            className="text-zinc-400 hover:text-white text-xs font-semibold p-1.5 rounded-lg hover:bg-[#202028]"
-                                            aria-label={`Edit tugas ${task.client}`}
+                                        <button
+                                            onClick={() => handleToggleTaskStatus(task)}
+                                            disabled={togglingTaskIds.has(task.id)}
+                                            className={`p-1.5 rounded-xl text-xs font-bold transition-all border ${
+                                                isDone 
+                                                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/30' 
+                                                    : 'bg-[#202028] text-zinc-400 border-[#2e2e38] hover:text-white hover:border-[#383844]'
+                                            }`}
+                                            title={isDone ? "Tandai Belum Selesai" : "Tandai Selesai"}
                                         >
-                                            <Icons.Edit />
-                                        </button>
-                                        <button 
-                                            onClick={() => setDeleteTaskId(task.id)}
-                                            className="text-zinc-500 hover:text-rose-400 text-xs font-semibold p-1.5 rounded-lg hover:bg-rose-950/40"
-                                            aria-label={`Hapus tugas ${task.client}`}
-                                        >
-                                            <Icons.Trash />
+                                            <Icons.CheckCircle />
                                         </button>
                                     </div>
+
+                                    <h4 className={`serif-font font-bold text-base ${isDone ? 'line-through text-zinc-500' : 'text-white'}`}>
+                                        {task.client}
+                                    </h4>
+                                    <p className="text-xs text-[#c5a059] font-medium mt-0.5">
+                                        {task.type}
+                                    </p>
+
+                                    <div className="mt-4 pt-3 border-t border-[#202026] text-xs text-zinc-400 space-y-1.5 font-medium">
+                                        <div className="flex items-center justify-between">
+                                            <span>Jatuh Tempo:</span>
+                                            <span className={`font-bold ${isOverdue ? 'text-rose-400' : isToday ? 'text-amber-400' : 'text-zinc-300'}`}>
+                                                {task.dueDate || 'Belum diatur'}
+                                            </span>
+                                        </div>
+                                        {task.phoneRaw && (
+                                            <div className="flex items-center justify-between">
+                                                <span>WhatsApp:</span>
+                                                <a 
+                                                    href={buildWaLink(task.phoneNormalized || task.phoneRaw)} 
+                                                    target="_blank" 
+                                                    rel="noreferrer"
+                                                    className="text-emerald-400 hover:underline flex items-center gap-1 font-bold"
+                                                >
+                                                    <Icons.MessageSquare />
+                                                    {formatDisplayPhone(task.phoneRaw)}
+                                                </a>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 pt-3 border-t border-[#202026] flex justify-end gap-2">
+                                    <button
+                                        onClick={() => setEditingTask(task)}
+                                        className="p-1.5 rounded-xl hover:bg-[#202028] text-zinc-400 hover:text-white transition-colors"
+                                        title="Edit Tugas"
+                                    >
+                                        <Icons.Edit />
+                                    </button>
+                                    <button
+                                        onClick={() => setDeleteTaskId(task.id)}
+                                        className="p-1.5 rounded-xl hover:bg-rose-950/60 text-zinc-500 hover:text-rose-400 transition-colors"
+                                        title="Hapus Tugas"
+                                    >
+                                        <Icons.Trash />
+                                    </button>
                                 </div>
                             </div>
                         );
@@ -454,21 +536,24 @@ export const FollowUpModule = ({ followUpTasks = [], setFollowUpTasks, crmLeads 
                 )}
             </div>
 
+            {/* Modal Edit Task */}
             <EditTaskModal 
-                isOpen={!!editingTask}
+                isOpen={Boolean(editingTask)}
                 task={editingTask}
-                crmLeads={crmLeads}
                 onSave={handleUpdateTask}
                 onCancel={() => setEditingTask(null)}
             />
 
+            {/* Modal Konfirmasi Hapus */}
             <ConfirmModal 
-                isOpen={!!deleteTaskId}
-                title="Hapus Tugas Follow-Up"
-                message="Apakah Anda yakin ingin menghapus tugas ini secara permanen?"
+                isOpen={Boolean(deleteTaskId)}
+                title="Hapus Tugas Follow-Up?"
+                message="Tindakan ini akan menghapus tugas dari antrean follow-up."
+                confirmText="Hapus Tugas"
+                isDestructive={true}
+                isLoading={isDeletingTask}
                 onConfirm={confirmDeleteTask}
                 onCancel={() => setDeleteTaskId(null)}
-                isLoading={isDeletingTask}
             />
         </div>
     );
