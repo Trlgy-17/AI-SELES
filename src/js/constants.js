@@ -590,7 +590,9 @@ export const GLOBAL_CORE_KNOWLEDGE = [
   - GRATIS Desain 3D Spatial Layout setelah pengukuran
 
 • GARANSI RESMI:
-  - Garansi Pemeliharaan 6 Bulan Penuh Pasca Serah Terima Unit
+  - Material Blockboard: Garansi 3 Bulan pasca serah terima unit
+  - Material Multipleks & PVC: Garansi 6 Bulan penuh pasca serah terima unit
+  - Project di atas Rp 200 Juta: Garansi 1 Tahun penuh pasca serah terima unit
 
 • SKEMA TERMIN PEMBAYARAN:
   - DP 50% saat fabrikasi workshop dimulai

@@ -6,7 +6,7 @@ import { ResponseParser } from '../src/js/services/ai/ResponseParser.js';
 import { CustomerMemoryEngine } from '../src/js/services/ai/CustomerMemoryEngine.js';
 import { ConversationAnalyzer } from '../src/js/services/ai/ConversationAnalyzer.js';
 import { calculateEstimate, formatEstimateForWhatsApp } from '../src/js/services/calculatorData.js';
-import { exportEstimateToPDF } from '../src/js/utils/pdfExport.js';
+import { exportEstimateToPDF, getApplicableWarrantyText } from '../src/js/utils/pdfExport.js';
 import { INITIAL_BRANDS, INITIAL_USERS, GLOBAL_CORE_KNOWLEDGE, DEFAULT_BRAND_OVERRIDES } from '../src/js/constants.js';
 import fs from 'node:fs';
 
@@ -440,6 +440,23 @@ assert(pdfResult.doc && typeof pdfResult.doc.save === 'function', 'Generated jsP
 const pdfExportSrc = fs.readFileSync('src/js/utils/pdfExport.js', 'utf-8');
 assert(!pdfExportSrc.includes('Konsultan Marketing'), 'Admin Marketing placeholder removed from PDF signature');
 assert(!pdfExportSrc.includes('Sistem Interior Sales AI Copilot'), 'AI Copilot watermark removed from PDF signature');
+assert(!pdfExportSrc.includes('100% GRATIS tanpa komitmen'), 'Point 1 (Konsultasi & survei 100% gratis) removed from PDF terms');
+
+// Dynamic Warranty Logic Assertions
+const bbWarranty = getApplicableWarrantyText({ material: 'BLOCKBOARD', grandTotal: 25000000 });
+assert(bbWarranty.includes('3 (tiga) bulan'), 'Blockboard material yields 3 months warranty');
+assert(!bbWarranty.includes('6 (enam) bulan') && !bbWarranty.includes('1 (satu) tahun'), 'Blockboard does not emit 6 months or 1 year clause');
+
+const multWarranty = getApplicableWarrantyText({ material: 'MULTIPLEKS', grandTotal: 25000000 });
+assert(multWarranty.includes('6 (enam) bulan'), 'Multipleks material yields 6 months warranty');
+assert(!multWarranty.includes('3 (tiga) bulan') && !multWarranty.includes('1 (satu) tahun'), 'Multipleks does not emit 3 months or 1 year clause');
+
+const pvcWarranty = getApplicableWarrantyText({ material: 'PVC', grandTotal: 25000000 });
+assert(pvcWarranty.includes('6 (enam) bulan'), 'PVC material yields 6 months warranty');
+
+const bigProjectWarranty = getApplicableWarrantyText({ material: 'BLOCKBOARD', grandTotal: 250000000 });
+assert(bigProjectWarranty.includes('1 (satu) tahun'), 'Project > 200 Million yields 1 year warranty even with blockboard');
+assert(!bigProjectWarranty.includes('3 (tiga) bulan') && !bigProjectWarranty.includes('6 (enam) bulan'), 'Project > 200M does not emit 3 or 6 months clause');
 
 // ----------------------------------------------------
 // TEST 12: Follow-Up Tab Navigation Removed

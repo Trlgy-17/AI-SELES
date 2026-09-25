@@ -3,6 +3,31 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 /**
+ * Menentukan teks garansi dinamis berdasarkan spesifikasi:
+ * - Jika project di atas 200 juta: 1 tahun
+ * - Jika material blockboard: 3 bulan
+ * - Jika material multipleks & pvc (atau lainnya): 6 bulan
+ * Menghasilkan hanya satu klausul spesifik yang relevan (tidak semua dikeluarkan sekaligus).
+ */
+export const getApplicableWarrantyText = (estimate) => {
+    const total = Number(estimate?.grandTotal || 0);
+    const material = String(estimate?.material || '').toUpperCase();
+
+    // Prioritas 1: Nilai project di atas Rp 200 Juta
+    if (total > 200000000) {
+        return 'Garansi Pemeliharaan unit resmi diberikan selama 1 (satu) tahun penuh pasca serah terima pekerjaan (Project Eksklusif di atas Rp 200 Juta).';
+    }
+
+    // Prioritas 2: Material Blockboard
+    if (material.includes('BLOCKBOARD')) {
+        return 'Garansi Pemeliharaan unit resmi diberikan selama 3 (tiga) bulan pasca serah terima pekerjaan (Spesifikasi Material Blockboard).';
+    }
+
+    // Prioritas 3: Multipleks, PVC, Duco, dll.
+    return 'Garansi Pemeliharaan unit resmi diberikan selama 6 (enam) bulan penuh pasca serah terima pekerjaan (Spesifikasi Material Multipleks & PVC).';
+};
+
+/**
  * Ekspor Estimasi RAB ke File PDF Modern & Elegan
  * Disesuaikan otomatis dengan identitas brand aktif
  */
@@ -206,7 +231,7 @@ export const exportEstimateToPDF = (estimate, activeBrand = {}) => {
         const termsY = finalY + 32;
         doc.setFillColor(252, 252, 254);
         doc.setDrawColor(225, 228, 232);
-        doc.roundedRect(14, termsY, pageWidth - 28, 38, 2, 2, 'FD');
+        doc.roundedRect(14, termsY, pageWidth - 28, 34, 2, 2, 'FD');
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8.5);
@@ -217,12 +242,13 @@ export const exportEstimateToPDF = (estimate, activeBrand = {}) => {
         doc.setFontSize(7.5);
         doc.setTextColor(70, 70, 70);
 
+        const warrantyClause = getApplicableWarrantyText(estimate);
+
         const termsList = [
-            '1. Konsultasi, survei ukur lokasi presisi, dan pembuatan gambar 3D spatial layout 100% GRATIS tanpa komitmen.',
-            '2. Angka penawaran di atas adalah estimasi simulasi transparan; nilai akhir disesuaikan dengan hasil pengukuran fisik di lokasi.',
-            '3. Garansi Pemeliharaan unit resmi diberikan selama 6 (enam) bulan penuh pasca serah terima pekerjaan.',
-            '4. Skema Termin Pembayaran: DP 50% saat fabrikasi workshop, 40% progres sebelum pengiriman, 10% pelunasan setelah instalasi selesai.',
-            '5. Bebas ongkir berlaku otomatis untuk pemenuhan batas minimum nilai proyek per wilayah.'
+            '1. Angka penawaran di atas adalah estimasi simulasi transparan; nilai akhir disesuaikan dengan hasil pengukuran fisik di lokasi.',
+            `2. ${warrantyClause}`,
+            '3. Skema Termin Pembayaran: DP 50% saat fabrikasi workshop, 40% progres sebelum pengiriman, 10% pelunasan setelah instalasi selesai.',
+            '4. Bebas ongkir berlaku otomatis untuk pemenuhan batas minimum nilai proyek per wilayah.'
         ];
 
         termsList.forEach((term, tIdx) => {
@@ -230,7 +256,7 @@ export const exportEstimateToPDF = (estimate, activeBrand = {}) => {
         });
 
         // 6. Sign-off / Signature section
-        const signY = termsY + 44;
+        const signY = termsY + 40;
         if (signY + 16 < pageHeight) {
             doc.setFontSize(8);
             doc.setTextColor(90, 90, 90);
