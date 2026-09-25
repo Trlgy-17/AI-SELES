@@ -138,6 +138,14 @@ export const Sidebar = ({
                         <span>CRM Leads {brandName.split(' ')[0]}</span>
                     </button>
 
+                    <button 
+                        onClick={() => { setActiveTab('estimator'); closeSidebar(); }} 
+                        className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${activeTab === 'estimator' ? 'bg-gradient-to-r from-[#c5a059] to-[#b8972e] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/20' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
+                    >
+                        <Icons.Calculator />
+                        <span>Kalkulator Estimasi RAB</span>
+                    </button>
+
                     <div className="pt-3 px-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Basis Pengetahuan</div>
 
                     <button 

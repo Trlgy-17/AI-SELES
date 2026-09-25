@@ -6,7 +6,7 @@ import { Toast } from '../components/common/Toast.jsx';
 import { Icons } from '../components/Icons.jsx';
 import { AIWorkspace } from '../components/modules/AIWorkspace.jsx';
 import { CRMModule } from '../components/modules/CRMModule.jsx';
-import { FollowUpModule } from '../components/modules/FollowUpModule.jsx';
+import { EstimatorCalculator } from '../components/modules/EstimatorCalculator.jsx';
 import { KnowledgeBase } from '../components/modules/KnowledgeBase.jsx';
 import { CloudSettingsModal } from '../components/modals/CloudSettingsModal.jsx';
 import { AuthModal } from '../components/modals/AuthModal.jsx';
@@ -335,6 +335,35 @@ export function App() {
                         showToast(`Membuka AI Copilot untuk klien ${lead.name}`, 'info');
                     }}
                 />
+            )}
+            {activeTab === 'estimator' && (
+                <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#26262d] pb-6">
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="w-2 h-2 rounded-full bg-[#c5a059]"></span>
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-[#c5a059]">
+                                    Kalkulator Interior & Custom Furniture
+                                </span>
+                            </div>
+                            <h1 className="text-xl md:text-2xl font-black text-white tracking-wide">
+                                Estimator Anggaran Biaya (RAB) — {activeBrand?.brandName || 'Brand Aktif'}
+                            </h1>
+                            <p className="text-xs text-zinc-400 mt-1">
+                                Simulasikan rincian biaya proyek interior, ekspor dokumen PDF penawaran resmi, dan sinkronkan ke AI Sales Copilot.
+                            </p>
+                        </div>
+                    </div>
+
+                    <EstimatorCalculator 
+                        activeBrand={activeBrand} 
+                        showToast={showToast} 
+                        onApplyToAI={(calcData) => {
+                            setActiveTab('workspace');
+                            showToast(`Hasil hitungan ${calcData.projectType} (${calcData.budget}) siap digunakan di AI Copilot!`);
+                        }} 
+                    />
+                </div>
             )}
             {activeTab === 'knowledge' && (
                 <KnowledgeBase 

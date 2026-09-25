@@ -42,7 +42,8 @@ export const CommandPalette = ({
     const baseActions = [
         { id: 'workspace', title: 'AI Sales Copilot', icon: <Icons.MessageSquare />, action: () => onNavigate('workspace'), category: 'Navigasi' },
         { id: 'crm', title: 'CRM Data Leads', icon: <Icons.Users />, action: () => onNavigate('crm'), category: 'Navigasi' },
-        { id: 'knowledge', title: 'Knowledge Base & Kalkulator RAB', icon: <Icons.BookOpen />, action: () => onNavigate('knowledge'), category: 'Navigasi' },
+        { id: 'estimator', title: 'Kalkulator Estimasi RAB & Cetak PDF', icon: <Icons.Calculator />, action: () => onNavigate('estimator'), category: 'Navigasi' },
+        { id: 'knowledge', title: 'Knowledge Base & Master Pricelist', icon: <Icons.BookOpen />, action: () => onNavigate('knowledge'), category: 'Navigasi' },
         { id: 'auth', title: 'Ganti Akun Admin / Login Profil', icon: <Icons.Key />, action: () => { onClose(); onOpenAuthModal(); }, category: 'Pengguna' }
     ];
 

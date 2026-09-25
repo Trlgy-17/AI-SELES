@@ -11,7 +11,6 @@ export const exportEstimateToPDF = (estimate, activeBrand = {}) => {
 
     try {
         const brandName = (activeBrand?.brandName || 'PUTRA INTERIOR').toUpperCase();
-        const adminName = activeBrand?.adminName || 'Admin Marketing';
         const serviceArea = activeBrand?.serviceArea || estimate.regionLabel || 'Bandung & Jabodetabek';
         const cleanBrandCode = brandName.replace(/[^A-Z0-9]/g, '').slice(0, 8);
         const today = new Date();
@@ -96,9 +95,9 @@ export const exportEstimateToPDF = (estimate, activeBrand = {}) => {
         // Kolom Kanan
         const midColX = 115;
         doc.setFont('helvetica', 'bold');
-        doc.text('Konsultan / Admin', midColX, currentY + 7);
+        doc.text('Layanan Desain', midColX, currentY + 7);
         doc.setFont('helvetica', 'normal');
-        doc.text(`: ${adminName}`, midColX + 32, currentY + 7);
+        doc.text(': Free Survei & 3D', midColX + 32, currentY + 7);
 
         doc.setFont('helvetica', 'bold');
         doc.text('Bahan & Model', midColX, currentY + 14);
@@ -232,19 +231,13 @@ export const exportEstimateToPDF = (estimate, activeBrand = {}) => {
 
         // 6. Sign-off / Signature section
         const signY = termsY + 44;
-        if (signY + 22 < pageHeight) {
+        if (signY + 16 < pageHeight) {
             doc.setFontSize(8);
             doc.setTextColor(90, 90, 90);
             doc.text('Disiapkan secara resmi oleh:', 14, signY);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(30, 30, 30);
             doc.text(`${brandName}`, 14, signY + 5);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Konsultan Marketing: ${adminName}`, 14, signY + 9);
-
-            doc.setFont('helvetica', 'italic');
-            doc.setTextColor(130, 130, 130);
-            doc.text('Dokumen ini digenerate secara digital oleh Sistem Interior Sales AI Copilot.', pageWidth - 14, signY + 9, { align: 'right' });
         }
 
         // 7. Footer Bottom Stripe

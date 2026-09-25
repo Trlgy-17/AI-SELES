@@ -428,14 +428,18 @@ assert(estKitchenAddons.itemBreakdown.some(i => i.label.includes('Box Elektronik
 assert(estKitchenAddons.itemBreakdown.some(i => i.label.includes('Hambalan')), 'Item breakdown includes Hambalan');
 
 // ----------------------------------------------------
-// TEST 11: Modern Brand-Specific PDF Quotation Export
+// TEST 11: Modern Brand-Specific PDF Quotation Export (Clean Signature)
 // ----------------------------------------------------
-console.log('\n🧪 TEST 11: Modern Brand-Specific PDF Quotation Export');
+console.log('\n🧪 TEST 11: Modern Brand-Specific PDF Quotation Export (Clean Signature)');
 const naciraBrand = INITIAL_BRANDS.find(b => b.id === 'brand_nacira');
 const pdfResult = exportEstimateToPDF(estTopTableGranit, naciraBrand);
 assert(pdfResult && pdfResult.success === true, 'PDF quotation generated successfully');
 assert(pdfResult.fileName.includes('NACIRAST'), 'PDF filename contains sanitized active brand code');
 assert(pdfResult.doc && typeof pdfResult.doc.save === 'function', 'Generated jsPDF document is valid and exportable');
+
+const pdfExportSrc = fs.readFileSync('src/js/utils/pdfExport.js', 'utf-8');
+assert(!pdfExportSrc.includes('Konsultan Marketing'), 'Admin Marketing placeholder removed from PDF signature');
+assert(!pdfExportSrc.includes('Sistem Interior Sales AI Copilot'), 'AI Copilot watermark removed from PDF signature');
 
 // ----------------------------------------------------
 // TEST 12: Follow-Up Tab Navigation Removed
@@ -448,6 +452,18 @@ const appSrc = fs.readFileSync('src/js/app.jsx', 'utf-8');
 assert(!sidebarSrc.includes("'followup'"), 'Follow-Up tab removed from Sidebar');
 assert(!commandPaletteSrc.includes("'followup'"), 'Follow-Up action removed from CommandPalette');
 assert(!appSrc.includes("activeTab === 'followup'"), 'Follow-Up tab rendering removed from app.jsx');
+
+// ----------------------------------------------------
+// TEST 13: Estimator RAB in Left Panel Below CRM Leads
+// ----------------------------------------------------
+console.log('\n🧪 TEST 13: Estimator RAB in Left Panel Below CRM Leads');
+const crmIndex = sidebarSrc.indexOf("setActiveTab('crm')");
+const estimatorIndex = sidebarSrc.indexOf("setActiveTab('estimator')");
+assert(crmIndex !== -1, 'CRM tab exists in Sidebar');
+assert(estimatorIndex !== -1, 'Estimator RAB tab exists in Sidebar');
+assert(estimatorIndex > crmIndex, 'Estimator RAB is placed in left panel below CRM Leads');
+assert(appSrc.includes("activeTab === 'estimator'"), 'app.jsx routes activeTab === estimator to EstimatorCalculator');
+assert(commandPaletteSrc.includes("'estimator'"), 'CommandPalette includes estimator action');
 
 console.log('\n========================================================');
 console.log(`🎉 ALL ${passedTests}/${totalTests} ACCEPTANCE TESTS PASSED SUCCESSFULLY!`);
