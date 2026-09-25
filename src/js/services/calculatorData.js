@@ -14,7 +14,6 @@ export const ESTIMATOR_CATEGORIES = [
     { id: 'LEMARI_WARDROBE', name: 'Lemari Pakaian / Wardrobe', icon: '🚪', unit: 'P x T (m2)' },
     { id: 'BACKDROP_TV', name: 'Backdrop TV', icon: '📺', unit: 'P x T (m2)' },
     { id: 'MINIBAR_ISLAND', name: 'Mini Bar / Meja Island', icon: '🍸', unit: 'P x 0.6 / unit' },
-    { id: 'TOPI_BOX_HAMBALAN', name: 'Topi Bar, Box Elektronik & Hambalan', icon: '📦', unit: 'unit / meter' },
     { id: 'DIPAN_HEADBOARD', name: 'Dipan, Headboard & Nakas', icon: '🛏️', unit: 'P x L / meter' },
     { id: 'RANGKA_DIPAN_TINGKAT', name: 'Penambahan Rangka Dipan Tingkat', icon: '🪜', unit: 'unit' },
     { id: 'CRADIENZA', name: 'Cradienza / Kredensa', icon: '🗄️', unit: 'meter lari' },
@@ -296,6 +295,34 @@ export const PROJECT_RULES = {
 };
 
 /**
+ * DAFTAR HARGA TOP TABLE & BACKSPLASH RESMI
+ */
+export const TOP_TABLE_PRICES = {
+    AICA: { id: 'AICA', label: 'Aica (HPL / Solid Surface)', price: 1400000, desc: 'Higienis, tahan gores & mudah dibersihkan' },
+    QUADRA: { id: 'QUADRA', label: 'Quadra Sintered Stone', price: 2300000, desc: 'Batu sinter mewah, tahan panas & anti noda' },
+    GRANIT: { id: 'GRANIT', label: 'Granit Alam / Nero', price: 2800000, desc: 'Batu alam solid premium berkelas & kokoh' }
+};
+
+export const BACKSPLASH_PRICES = {
+    dalam_kota: {
+        AICA: { id: 'AICA', label: 'Aica Splash Panel', price: 1400000, desc: 'Senada dengan solid surface/HPL' },
+        QUADRA: { id: 'QUADRA', label: 'Quadra Sintered Stone', price: 2300000, desc: 'Sintered stone mewah seamless' },
+        GRANIT: { id: 'GRANIT', label: 'Granit Backsplash', price: 2800000, desc: 'Batu granit alami kokoh & mewah' },
+        KERAMIK_BEVEL: { id: 'KERAMIK_BEVEL', label: 'Keramik Bevel / Subway', price: 850000, desc: 'Motif subway tile klasik' },
+        MOZAIC: { id: 'MOZAIC', label: 'Mozaik Tile', price: 1100000, desc: 'Mozaik kotak artistik' },
+        CERMIN_GREY: { id: 'CERMIN_GREY', label: 'Cermin Bronze / Grey Bevel', price: 1850000, desc: 'Kaca cermin bevel elegan & luas' }
+    },
+    luar_kota: {
+        AICA: { id: 'AICA', label: 'Aica Splash Panel', price: 1400000, desc: 'Senada dengan solid surface/HPL' },
+        QUADRA: { id: 'QUADRA', label: 'Quadra Sintered Stone', price: 2300000, desc: 'Sintered stone mewah seamless' },
+        GRANIT: { id: 'GRANIT', label: 'Granit Backsplash', price: 2800000, desc: 'Batu granit alami kokoh & mewah' },
+        KERAMIK_BEVEL: { id: 'KERAMIK_BEVEL', label: 'Keramik Bevel / Subway', price: 1050000, desc: 'Motif subway tile klasik' },
+        MOZAIC: { id: 'MOZAIC', label: 'Mozaik Tile', price: 1500000, desc: 'Mozaik kotak artistik' },
+        CERMIN_GREY: { id: 'CERMIN_GREY', label: 'Cermin Bronze / Grey Bevel', price: 1850000, desc: 'Kaca cermin bevel elegan & luas' }
+    }
+};
+
+/**
  * Mesin kalkulasi estimasi presisi untuk interior sales
  */
 export const calculateEstimate = ({
@@ -309,6 +336,17 @@ export const calculateEstimate = ({
     cabinetBawah = undefined, // Panjang meter lari kabinet bawah
     cabinetAtas = undefined,  // Panjang meter lari kabinet atas
     isKusenBawahOnly = false, // Jika kabinet bawah hanya pintu/kusen cor beton
+    // Top Table & Backsplash Kitchen Set
+    topTableOption = 'none', // 'none' | 'AICA' | 'QUADRA' | 'GRANIT'
+    topTableLength = undefined, // default mengikuti cabinetBawah
+    backsplashOption = 'none', // 'none' | 'AICA' | 'QUADRA' | 'GRANIT' | 'KERAMIK_BEVEL' | 'MOZAIC' | 'CERMIN_GREY'
+    backsplashLength = undefined, // default mengikuti cabinetBawah
+    // Topi Bar, Box Elektronik & Hambalan (Disatukan ke Kitchen Set)
+    topiBarLength = 0, // panjang meter lari topi bar (0 jika tidak ada)
+    boxElektronikType = 'none', // 'none' | 'LT_1M' | 'GT_1M'
+    boxElektronikQty = 0, // jumlah unit box elektronik
+    hambalanQty = 0, // jumlah pcs hambalan
+    hambalanType = 'DENGAN_LAMPU', // 'DENGAN_LAMPU' | 'TANPA_LAMPU'
     plafonOption = 'none', // 'none' | 'lt_50' | '50_to_70'
     isHplLuarDalam = false,
     pintuKusen = false,
@@ -328,8 +366,11 @@ export const calculateEstimate = ({
     const numP = parseFloat(p) || 0;
     const numT = parseFloat(t) || 0;
     const numL = parseFloat(l) || 0;
+    const numTopiBar = parseFloat(topiBarLength) || 0;
+    const numBoxQty = parseInt(boxElektronikQty, 10) || 0;
+    const numHambalan = parseInt(hambalanQty, 10) || 0;
 
-    // 1. KITCHEN SET (Cabinet Bawah & Cabinet Atas)
+    // 1. KITCHEN SET (Cabinet Bawah, Cabinet Atas, Top Table, Backsplash, Topi Bar, Box Elektronik, Hambalan)
     if (category === 'KITCHEN_SET') {
         const catPrices = PRICELIST_CATALOG.KITCHEN_SET[region]?.[material] || PRICELIST_CATALOG.KITCHEN_SET[region]?.MULTIPLEKS;
         const styleData = catPrices?.[style] || catPrices?.MINIMALIS || { base: 2500000 };
@@ -413,6 +454,91 @@ export const calculateEstimate = ({
                 subtotal += kusenCost;
                 itemBreakdown.push({ label: 'Pintu Kusen Bawah', amount: kusenCost, detail: `${numP}m x Rp ${styleData.kusen.toLocaleString('id-ID')}` });
             }
+        }
+
+        // 1c. Top Table (Aica, Granit, Quadra)
+        if (topTableOption && topTableOption !== 'none') {
+            const ttData = TOP_TABLE_PRICES[topTableOption];
+            if (ttData) {
+                const ttLength = (topTableLength !== undefined && topTableLength !== '') 
+                    ? (parseFloat(topTableLength) || 0) 
+                    : (lenBawah > 0 ? lenBawah : numP);
+                if (ttLength > 0) {
+                    const ttCost = Math.round(ttLength * ttData.price);
+                    subtotal += ttCost;
+                    itemBreakdown.push({
+                        label: `Top Table (${ttData.label})`,
+                        amount: ttCost,
+                        detail: `${ttLength}m' x Rp ${ttData.price.toLocaleString('id-ID')}`
+                    });
+                }
+            }
+        }
+
+        // 1d. Backsplash (Aica, Granit, Quadra, Keramik Bevel, Mozaic, Cermin Grey)
+        if (backsplashOption && backsplashOption !== 'none') {
+            const bsCatalog = BACKSPLASH_PRICES[region] || BACKSPLASH_PRICES.dalam_kota;
+            const bsData = bsCatalog[backsplashOption];
+            if (bsData) {
+                const bsLength = (backsplashLength !== undefined && backsplashLength !== '') 
+                    ? (parseFloat(backsplashLength) || 0) 
+                    : (lenBawah > 0 ? lenBawah : numP);
+                if (bsLength > 0) {
+                    const bsCost = Math.round(bsLength * bsData.price);
+                    subtotal += bsCost;
+                    itemBreakdown.push({
+                        label: `Backsplash (${bsData.label})`,
+                        amount: bsCost,
+                        detail: `${bsLength}m' x Rp ${bsData.price.toLocaleString('id-ID')}`
+                    });
+                }
+            }
+        }
+
+        // 1e. Topi Bar (Disatukan ke Kitchen Set)
+        if (numTopiBar > 0) {
+            const tbPrices = PRICELIST_CATALOG.TOPI_BOX_HAMBALAN[region]?.TOPI_BAR || {};
+            const isDuco = material === 'DUCO_LUXURY' || material === 'DUCO';
+            const isBlock = material === 'BLOCKBOARD';
+            const tbRate = isDuco ? tbPrices.DUCO : (isBlock ? tbPrices.BLOCKBOARD : tbPrices.MULTIPLEK) || 1450000;
+            const tbCost = Math.round(numTopiBar * tbRate);
+            subtotal += tbCost;
+            itemBreakdown.push({
+                label: `Topi Bar (${material})`,
+                amount: tbCost,
+                detail: `${numTopiBar}m' x Rp ${tbRate.toLocaleString('id-ID')}`
+            });
+        }
+
+        // 1f. Box Elektronik (Disatukan ke Kitchen Set)
+        if (boxElektronikType && boxElektronikType !== 'none' && numBoxQty > 0) {
+            const isBlock = material === 'BLOCKBOARD';
+            const boxKey = isBlock ? 'BOX_ELEKTRONIK_BLOCKBOARD' : 'BOX_ELEKTRONIK_MULTIPLEKS';
+            const boxCatalog = PRICELIST_CATALOG.TOPI_BOX_HAMBALAN[region]?.[boxKey] || {};
+            const boxRate = boxCatalog[boxElektronikType] || (isBlock ? 2100000 : 2500000);
+            const boxCost = Math.round(numBoxQty * boxRate);
+            subtotal += boxCost;
+            const typeLabel = boxElektronikType === 'GT_1M' ? 'T > 1m' : 'T < 1m';
+            itemBreakdown.push({
+                label: `Box Elektronik ${typeLabel} (${material})`,
+                amount: boxCost,
+                detail: `${numBoxQty} unit x Rp ${boxRate.toLocaleString('id-ID')}`
+            });
+        }
+
+        // 1g. Hambalan (Disatukan ke Kitchen Set)
+        if (numHambalan > 0) {
+            const hbCatalog = PRICELIST_CATALOG.TOPI_BOX_HAMBALAN[region]?.HAMBALAN || {};
+            const hbKey = hambalanType === 'TANPA_LAMPU' ? 'TANPA_LAMPU' : 'DENGAN_LAMPU';
+            const hbRate = hbCatalog[hbKey] || (hbKey === 'DENGAN_LAMPU' ? 500000 : 450000);
+            const hbCost = Math.round(numHambalan * hbRate);
+            subtotal += hbCost;
+            const lightLabel = hbKey === 'DENGAN_LAMPU' ? 'Dengan LED Strip' : 'Tanpa Lampu';
+            itemBreakdown.push({
+                label: `Hambalan Floating Shelf (${lightLabel})`,
+                amount: hbCost,
+                detail: `${numHambalan} pcs x Rp ${hbRate.toLocaleString('id-ID')}`
+            });
         }
     }
 
@@ -585,7 +711,12 @@ export const calculateEstimate = ({
             t: numT,
             l: numL,
             cabinetBawah: (cabinetBawah !== undefined) ? (parseFloat(cabinetBawah) || 0) : undefined,
-            cabinetAtas: (cabinetAtas !== undefined) ? (parseFloat(cabinetAtas) || 0) : undefined
+            cabinetAtas: (cabinetAtas !== undefined) ? (parseFloat(cabinetAtas) || 0) : undefined,
+            topTable: topTableOption !== 'none' ? topTableOption : undefined,
+            backsplash: backsplashOption !== 'none' ? backsplashOption : undefined,
+            topiBarLength: numTopiBar > 0 ? numTopiBar : undefined,
+            boxElektronikQty: numBoxQty > 0 ? numBoxQty : undefined,
+            hambalanQty: numHambalan > 0 ? numHambalan : undefined
         },
         subtotal,
         isFreeOngkir,

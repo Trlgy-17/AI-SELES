@@ -376,6 +376,53 @@ assert(estKusenBawah.subtotal === 7900000, 'Kitchen Set kusen bawah 2m + CA 2m s
 assert(estKusenBawah.grandTotal === 8400000, 'Kitchen Set kusen bawah includes 500k ongkir');
 assert(estKusenBawah.itemBreakdown.some(i => i.label.includes('Pintu Kusen')), 'Item breakdown includes Pintu Kusen Meja Cor');
 
+// 8. Kitchen Set dengan Top Table Granit (2.800.000/m) & Backsplash Quadra (2.300.000/m)
+const estTopTableGranit = calculateEstimate({
+    region: 'dalam_kota',
+    category: 'KITCHEN_SET',
+    material: 'MULTIPLEKS',
+    style: 'MINIMALIS',
+    cabinetBawah: 2,
+    cabinetAtas: 2,
+    topTableOption: 'GRANIT',
+    backsplashOption: 'QUADRA'
+});
+assert(estTopTableGranit.subtotal === 20200000, 'Kitchen Set with Granit Top Table and Quadra Backsplash subtotal is 20.200.000');
+assert(estTopTableGranit.itemBreakdown.some(i => i.label.includes('Top Table') && i.amount === 5600000), 'Granit Top Table calculated at 2.8jt/m');
+assert(estTopTableGranit.itemBreakdown.some(i => i.label.includes('Backsplash') && i.amount === 4600000), 'Quadra Backsplash calculated at 2.3jt/m');
+
+// 9. Kitchen Set dengan Top Table Aica (1.400.000/m)
+const estTopTableAica = calculateEstimate({
+    region: 'dalam_kota',
+    category: 'KITCHEN_SET',
+    material: 'MULTIPLEKS',
+    style: 'MINIMALIS',
+    cabinetBawah: 3,
+    cabinetAtas: 0,
+    topTableOption: 'AICA'
+});
+assert(estTopTableAica.subtotal === 11700000, 'Kitchen Set with Aica Top Table subtotal is 11.700.000');
+assert(estTopTableAica.itemBreakdown.some(i => i.label.includes('Aica') && i.amount === 4200000), 'Aica Top Table calculated at 1.4jt/m');
+
+// 10. Kitchen Set dengan Topi Bar, Box Elektronik & Hambalan disatukan
+const estKitchenAddons = calculateEstimate({
+    region: 'dalam_kota',
+    category: 'KITCHEN_SET',
+    material: 'MULTIPLEKS',
+    style: 'MINIMALIS',
+    cabinetBawah: 2,
+    cabinetAtas: 2,
+    topiBarLength: 1.5,
+    boxElektronikType: 'LT_1M',
+    boxElektronikQty: 1,
+    hambalanQty: 2,
+    hambalanType: 'DENGAN_LAMPU'
+});
+assert(estKitchenAddons.subtotal === 15675000, 'Kitchen Set with Topi Bar, Box Elektronik & Hambalan subtotal is 15.675.000');
+assert(estKitchenAddons.itemBreakdown.some(i => i.label.includes('Topi Bar')), 'Item breakdown includes Topi Bar');
+assert(estKitchenAddons.itemBreakdown.some(i => i.label.includes('Box Elektronik')), 'Item breakdown includes Box Elektronik');
+assert(estKitchenAddons.itemBreakdown.some(i => i.label.includes('Hambalan')), 'Item breakdown includes Hambalan');
+
 console.log('\n========================================================');
 console.log(`🎉 ALL ${passedTests}/${totalTests} ACCEPTANCE TESTS PASSED SUCCESSFULLY!`);
 console.log('========================================================\n');

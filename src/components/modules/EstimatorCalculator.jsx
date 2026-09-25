@@ -5,7 +5,9 @@ import {
     ESTIMATOR_CATEGORIES, 
     calculateEstimate, 
     formatEstimateForWhatsApp,
-    PROJECT_RULES 
+    PROJECT_RULES,
+    TOP_TABLE_PRICES,
+    BACKSPLASH_PRICES
 } from '../../js/services/calculatorData.js';
 import { copyToClipboard } from '../../js/utils/clipboard.js';
 
@@ -31,6 +33,19 @@ export const EstimatorCalculator = ({
     const [cabinetBawah, setCabinetBawah] = useState(2.0);
     const [cabinetAtas, setCabinetAtas] = useState(2.0);
     const [isKusenBawahOnly, setIsKusenBawahOnly] = useState(false);
+
+    // Kitchen Set: Top Table & Backsplash
+    const [topTableOption, setTopTableOption] = useState('none'); // 'none' | 'AICA' | 'QUADRA' | 'GRANIT'
+    const [topTableLength, setTopTableLength] = useState('');
+    const [backsplashOption, setBacksplashOption] = useState('none'); // 'none' | 'AICA' | 'QUADRA' | 'GRANIT' | 'KERAMIK_BEVEL' | 'MOZAIC' | 'CERMIN_GREY'
+    const [backsplashLength, setBacksplashLength] = useState('');
+
+    // Kitchen Set: Topi Bar, Box Elektronik & Hambalan
+    const [topiBarLength, setTopiBarLength] = useState(0);
+    const [boxElektronikType, setBoxElektronikType] = useState('none'); // 'none' | 'LT_1M' | 'GT_1M'
+    const [boxElektronikQty, setBoxElektronikQty] = useState(1);
+    const [hambalanQty, setHambalanQty] = useState(0);
+    const [hambalanType, setHambalanType] = useState('DENGAN_LAMPU'); // 'DENGAN_LAMPU' | 'TANPA_LAMPU'
 
     // Options & Add-ons
     const [plafonOption, setPlafonOption] = useState('none'); // 'none' | 'lt_50' | '50_to_70'
@@ -58,6 +73,15 @@ export const EstimatorCalculator = ({
             cabinetBawah: category === 'KITCHEN_SET' ? cabinetBawah : undefined,
             cabinetAtas: category === 'KITCHEN_SET' ? cabinetAtas : undefined,
             isKusenBawahOnly: category === 'KITCHEN_SET' ? isKusenBawahOnly : false,
+            topTableOption: category === 'KITCHEN_SET' ? topTableOption : 'none',
+            topTableLength: category === 'KITCHEN_SET' ? topTableLength : undefined,
+            backsplashOption: category === 'KITCHEN_SET' ? backsplashOption : 'none',
+            backsplashLength: category === 'KITCHEN_SET' ? backsplashLength : undefined,
+            topiBarLength: category === 'KITCHEN_SET' ? topiBarLength : 0,
+            boxElektronikType: category === 'KITCHEN_SET' ? boxElektronikType : 'none',
+            boxElektronikQty: category === 'KITCHEN_SET' ? boxElektronikQty : 0,
+            hambalanQty: category === 'KITCHEN_SET' ? hambalanQty : 0,
+            hambalanType: category === 'KITCHEN_SET' ? hambalanType : 'DENGAN_LAMPU',
             plafonOption,
             isHplLuarDalam,
             pintuKusen,
@@ -71,6 +95,8 @@ export const EstimatorCalculator = ({
     }, [
         region, category, material, style, p, t, l,
         cabinetBawah, cabinetAtas, isKusenBawahOnly,
+        topTableOption, topTableLength, backsplashOption, backsplashLength,
+        topiBarLength, boxElektronikType, boxElektronikQty, hambalanQty, hambalanType,
         plafonOption, isHplLuarDalam, pintuKusen, pintuKaca,
         sofaCover, headboardOption, rangkaDipanTingkat,
         bawahTanggaKedalamanGt60, customAddons
@@ -93,7 +119,10 @@ export const EstimatorCalculator = ({
         if (onApplyToAI) {
             let dimString = `${p}m ${t > 1 ? `x ${t}m` : ''} ${l > 1 ? `x ${l}m` : ''}`.trim();
             if (category === 'KITCHEN_SET') {
-                dimString = `Cabinet Bawah: ${cabinetBawah}m', Cabinet Atas: ${cabinetAtas}m'`;
+                const parts = [`Cabinet Bawah: ${cabinetBawah}m'`, `Cabinet Atas: ${cabinetAtas}m'`];
+                if (topTableOption !== 'none') parts.push(`Top Table: ${topTableOption}`);
+                if (backsplashOption !== 'none') parts.push(`Backsplash: ${backsplashOption}`);
+                dimString = parts.join(' | ');
             }
             onApplyToAI({
                 dimensions: dimString,
@@ -368,29 +397,230 @@ export const EstimatorCalculator = ({
                     <div className="pt-2 space-y-3">
                         <label className="text-xs font-bold text-zinc-300 block mb-1">3. Opsi & Aksesoris Tambahan</label>
 
-                        {/* Kitchen Set Plafon */}
+                        {/* Kitchen Set Specific Options: Plafon, Top Table, Backsplash, Topi Bar, Box Elektronik, Hambalan */}
                         {category === 'KITCHEN_SET' && (
-                            <div className="space-y-2">
-                                <label className="text-[11px] text-zinc-400 block">Kabinet Plafon Atas (Tingkat 2)</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {[
-                                        { id: 'none', label: 'Tanpa Plafon' },
-                                        { id: 'lt_50', label: 'Tinggi < 50cm' },
-                                        { id: '50_to_70', label: 'Tinggi 50 - 70cm' }
-                                    ].map((opt) => (
-                                        <button
-                                            key={opt.id}
-                                            type="button"
-                                            onClick={() => setPlafonOption(opt.id)}
-                                            className={`p-2 rounded-xl border text-xs font-semibold text-center transition-all ${
-                                                plafonOption === opt.id
-                                                    ? 'bg-[#c5a059]/20 border-[#c5a059] text-[#c5a059]'
-                                                    : 'bg-[#1b1b22] border-[#2e2e38] text-zinc-400'
-                                            }`}
-                                        >
-                                            {opt.label}
-                                        </button>
-                                    ))}
+                            <div className="space-y-4">
+                                {/* Plafon Atas */}
+                                <div className="space-y-2">
+                                    <label className="text-[11px] text-zinc-400 block font-semibold">Kabinet Plafon Atas (Tingkat 2)</label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {[
+                                            { id: 'none', label: 'Tanpa Plafon' },
+                                            { id: 'lt_50', label: 'Tinggi < 50cm' },
+                                            { id: '50_to_70', label: 'Tinggi 50 - 70cm' }
+                                        ].map((opt) => (
+                                            <button
+                                                key={opt.id}
+                                                type="button"
+                                                onClick={() => setPlafonOption(opt.id)}
+                                                className={`p-2 rounded-xl border text-xs font-semibold text-center transition-all ${
+                                                    plafonOption === opt.id
+                                                        ? 'bg-[#c5a059]/20 border-[#c5a059] text-[#c5a059]'
+                                                        : 'bg-[#1b1b22] border-[#2e2e38] text-zinc-400'
+                                                }`}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Top Table (Countertop) */}
+                                <div className="p-3.5 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-2.5">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-bold text-[#c5a059] flex items-center gap-1.5">
+                                            <span>🍳</span>
+                                            <span>Top Table (Meja Countertop Dapur)</span>
+                                        </label>
+                                        <span className="text-[10px] text-zinc-400">Pilihan Bahan Resmi</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                        {[
+                                            { id: 'none', label: 'Tanpa Top Table', price: 'Rp 0' },
+                                            { id: 'AICA', label: 'Aica HPL/Solid', price: 'Rp 1.400.000/m\'' },
+                                            { id: 'QUADRA', label: 'Quadra Sintered', price: 'Rp 2.300.000/m\'' },
+                                            { id: 'GRANIT', label: 'Granit Alam/Nero', price: 'Rp 2.800.000/m\'' }
+                                        ].map((tt) => (
+                                            <button
+                                                key={tt.id}
+                                                type="button"
+                                                onClick={() => setTopTableOption(tt.id)}
+                                                className={`p-2 rounded-xl border text-left transition-all ${
+                                                    topTableOption === tt.id
+                                                        ? 'bg-[#c5a059]/20 border-[#c5a059] text-white shadow-sm'
+                                                        : 'bg-[#121216] border-[#2e2e38] text-zinc-400 hover:text-zinc-200'
+                                                }`}
+                                            >
+                                                <div className="text-xs font-bold text-zinc-200">{tt.label}</div>
+                                                <div className="text-[10px] text-[#c5a059] font-mono mt-0.5">{tt.price}</div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {topTableOption !== 'none' && (
+                                        <div className="pt-1 flex items-center gap-2">
+                                            <span className="text-[11px] text-zinc-400 whitespace-nowrap">Panjang Top Table:</span>
+                                            <input
+                                                type="number"
+                                                step="0.1"
+                                                min="0.5"
+                                                value={topTableLength}
+                                                onChange={(e) => setTopTableLength(e.target.value)}
+                                                placeholder={`Auto (${cabinetBawah || p} m')`}
+                                                className="w-32 bg-[#111115] border border-[#2e2e38] rounded-xl px-2.5 py-1 text-xs text-white font-mono focus:border-[#c5a059] focus:outline-none"
+                                            />
+                                            <span className="text-xs text-zinc-500 font-mono">m'</span>
+                                            <span className="text-[10px] text-zinc-500 ml-1">Kosongkan jika sama dengan cabinet bawah</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Backsplash (Dinding Dapur) */}
+                                <div className="p-3.5 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-2.5">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-bold text-[#c5a059] flex items-center gap-1.5">
+                                            <span>🧱</span>
+                                            <span>Backsplash (Dinding Dapur)</span>
+                                        </label>
+                                        <span className="text-[10px] text-zinc-400">Pilihan Bahan Resmi</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                        {[
+                                            { id: 'none', label: 'Tanpa Backsplash', price: 'Rp 0' },
+                                            { id: 'AICA', label: 'Aica Panel', price: 'Rp 1.400.000/m\'' },
+                                            { id: 'QUADRA', label: 'Quadra Sintered', price: 'Rp 2.300.000/m\'' },
+                                            { id: 'GRANIT', label: 'Granit Backsplash', price: 'Rp 2.800.000/m\'' },
+                                            { id: 'KERAMIK_BEVEL', label: 'Keramik Bevel', price: region === 'dalam_kota' ? 'Rp 850.000/m\'' : 'Rp 1.050.000/m\'' },
+                                            { id: 'MOZAIC', label: 'Mozaik Tile', price: region === 'dalam_kota' ? 'Rp 1.100.000/m\'' : 'Rp 1.500.000/m\'' },
+                                            { id: 'CERMIN_GREY', label: 'Cermin Bronze/Grey', price: 'Rp 1.850.000/m\'' }
+                                        ].map((bs) => (
+                                            <button
+                                                key={bs.id}
+                                                type="button"
+                                                onClick={() => setBacksplashOption(bs.id)}
+                                                className={`p-2 rounded-xl border text-left transition-all ${
+                                                    backsplashOption === bs.id
+                                                        ? 'bg-[#c5a059]/20 border-[#c5a059] text-white shadow-sm'
+                                                        : 'bg-[#121216] border-[#2e2e38] text-zinc-400 hover:text-zinc-200'
+                                                }`}
+                                            >
+                                                <div className="text-xs font-bold text-zinc-200">{bs.label}</div>
+                                                <div className="text-[10px] text-[#c5a059] font-mono mt-0.5">{bs.price}</div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {backsplashOption !== 'none' && (
+                                        <div className="pt-1 flex items-center gap-2">
+                                            <span className="text-[11px] text-zinc-400 whitespace-nowrap">Panjang Backsplash:</span>
+                                            <input
+                                                type="number"
+                                                step="0.1"
+                                                min="0.5"
+                                                value={backsplashLength}
+                                                onChange={(e) => setBacksplashLength(e.target.value)}
+                                                placeholder={`Auto (${cabinetBawah || p} m')`}
+                                                className="w-32 bg-[#111115] border border-[#2e2e38] rounded-xl px-2.5 py-1 text-xs text-white font-mono focus:border-[#c5a059] focus:outline-none"
+                                            />
+                                            <span className="text-xs text-zinc-500 font-mono">m'</span>
+                                            <span className="text-[10px] text-zinc-500 ml-1">Kosongkan jika sama dengan cabinet bawah</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Topi Bar, Box Elektronik & Hambalan (Disatukan ke Kitchen Set) */}
+                                <div className="p-3.5 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-3">
+                                    <div className="text-xs font-bold text-[#c5a059] flex items-center gap-1.5">
+                                        <span>📦</span>
+                                        <span>Topi Bar, Box Elektronik & Hambalan Kitchen Set</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                                        {/* Topi Bar */}
+                                        <div className="p-2.5 bg-[#121216] rounded-xl border border-[#26262d] space-y-1.5">
+                                            <label className="text-[11px] font-bold text-zinc-300 block">Topi Bar (m')</label>
+                                            <div className="flex items-center">
+                                                <input
+                                                    type="number"
+                                                    step="0.1"
+                                                    min="0"
+                                                    value={topiBarLength}
+                                                    onChange={(e) => setTopiBarLength(parseFloat(e.target.value) || 0)}
+                                                    className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-[#c5a059] focus:outline-none"
+                                                    placeholder="0"
+                                                />
+                                                <span className="text-xs text-zinc-500 ml-1.5 font-mono">m'</span>
+                                            </div>
+                                            <div className="text-[9px] text-zinc-500">DK Rp 1.45jt/m' (Multipleks)</div>
+                                        </div>
+
+                                        {/* Box Elektronik */}
+                                        <div className="p-2.5 bg-[#121216] rounded-xl border border-[#26262d] space-y-1.5">
+                                            <label className="text-[11px] font-bold text-zinc-300 block">Box Elektronik (Kulkas/Oven)</label>
+                                            <select
+                                                value={boxElektronikType}
+                                                onChange={(e) => setBoxElektronikType(e.target.value)}
+                                                className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-lg px-2 py-1 text-xs text-white focus:border-[#c5a059] focus:outline-none"
+                                            >
+                                                <option value="none">Tanpa Box</option>
+                                                <option value="LT_1M">Tinggi &lt; 1m (Rp 2.5jt/unit)</option>
+                                                <option value="GT_1M">Tinggi &gt; 1m (Rp 2.6jt/unit)</option>
+                                            </select>
+                                            {boxElektronikType !== 'none' && (
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    <span className="text-[10px] text-zinc-400">Qty:</span>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        value={boxElektronikQty}
+                                                        onChange={(e) => setBoxElektronikQty(parseInt(e.target.value, 10) || 1)}
+                                                        className="w-16 bg-[#1b1b22] border border-[#2e2e38] rounded px-1.5 py-0.5 text-xs text-white font-mono"
+                                                    />
+                                                    <span className="text-[10px] text-zinc-500">unit</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Hambalan */}
+                                        <div className="p-2.5 bg-[#121216] rounded-xl border border-[#26262d] space-y-1.5">
+                                            <label className="text-[11px] font-bold text-zinc-300 block">Hambalan Floating (pcs)</label>
+                                            <div className="flex items-center">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={hambalanQty}
+                                                    onChange={(e) => setHambalanQty(parseInt(e.target.value, 10) || 0)}
+                                                    className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-[#c5a059] focus:outline-none"
+                                                    placeholder="0"
+                                                />
+                                                <span className="text-xs text-zinc-500 ml-1.5 font-mono">pcs</span>
+                                            </div>
+                                            {hambalanQty > 0 && (
+                                                <div className="flex items-center gap-1.5 pt-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setHambalanType('DENGAN_LAMPU')}
+                                                        className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+                                                            hambalanType === 'DENGAN_LAMPU'
+                                                                ? 'bg-[#c5a059] text-black border-[#c5a059]'
+                                                                : 'bg-[#1b1b22] text-zinc-400 border-[#2e2e38]'
+                                                        }`}
+                                                    >
+                                                        +LED (500k)
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setHambalanType('TANPA_LAMPU')}
+                                                        className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+                                                            hambalanType === 'TANPA_LAMPU'
+                                                                ? 'bg-[#c5a059] text-black border-[#c5a059]'
+                                                                : 'bg-[#1b1b22] text-zinc-400 border-[#2e2e38]'
+                                                        }`}
+                                                    >
+                                                        Polos (450k)
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}

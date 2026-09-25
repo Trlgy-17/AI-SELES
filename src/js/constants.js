@@ -627,6 +627,21 @@ export const GLOBAL_CORE_KNOWLEDGE = [
    - Industrial: DK Rp 2.000.000 - Rp 2.300.000/m (Rangka Besi +Rp 1.800.000/m DK, Rp 2.100.000/m LK | +Wire Mesh Rp 2.000.000/m DK, Rp 2.300.000/m LK)
    - Kabinet Atas Full Plafon: Tingkat 2 (T < 50cm): Rp 1.800.000 - Rp 2.400.000/m | Tingkat 2 (T 50-70cm): Rp 1.950.000 - Rp 2.600.000/m
    - Cabinet Bawah Pintu Kusen Saja (Meja Cor Beton): Minimalis Rp 1.450.000/m | Klasik Rp 1.650.000/m
+   - Top Table (Meja Countertop Dapur per meter lari m'):
+     * Aica (HPL / Solid Surface): Rp 1.400.000,- / meter
+     * Quadra (Sintered Stone Mewah): Rp 2.300.000,- / meter
+     * Granit (Batu Alam Solid Nero): Rp 2.800.000,- / meter
+   - Backsplash (Dinding Dapur per meter lari m'):
+     * Aica Splash Panel: Rp 1.400.000,- / meter
+     * Quadra Sintered Stone: Rp 2.300.000,- / meter
+     * Granit Backsplash: Rp 2.800.000,- / meter
+     * Keramik Bevel / Subway: DK Rp 850.000/m | LK Rp 1.050.000/m
+     * Mozaic Tile: DK Rp 1.100.000/m | LK Rp 1.500.000/m
+     * Cermin Bronze / Grey Bevel: Rp 1.850.000/m
+   - Elemen Kitchen Set Tambahan:
+     * Topi Bar: Blockboard Rp 1.250.000 - Rp 1.350.000/m | Multipleks Rp 1.450.000/m | Duco Rp 2.100.000/m
+     * Box Elektronik (Kulkas/Oven): T < 1m Rp 2.100.000 - Rp 2.600.000/unit | T > 1m Rp 2.200.000 - Rp 2.700.000/unit
+     * Hambalan Floating: +LED Strip Rp 500.000 - Rp 600.000/pcs | Polos Rp 450.000 - Rp 550.000/pcs
 
 2. LEMARI BAWAH TANGGA:
    - Rumus Standar (Kedalaman 60cm): Panjang x Tinggi x 0,8 x Harga
