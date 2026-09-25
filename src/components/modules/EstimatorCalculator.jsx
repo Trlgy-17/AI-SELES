@@ -166,11 +166,11 @@ export const EstimatorCalculator = ({
                 </div>
 
                 {/* Region Selector Pill */}
-                <div className="flex items-center p-1 bg-[#101014] rounded-2xl border border-[#2e2e38]">
+                <div className="flex flex-col sm:flex-row w-full sm:w-auto p-1 bg-[#101014] rounded-2xl border border-[#2e2e38] gap-1">
                     <button
                         type="button"
                         onClick={() => setRegion('dalam_kota')}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        className={`px-3.5 py-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 min-h-[44px] sm:min-h-0 touch-manipulation active:scale-95 ${
                             region === 'dalam_kota'
                                 ? 'bg-[#c5a059] text-black shadow-md'
                                 : 'text-zinc-400 hover:text-white'
@@ -182,7 +182,7 @@ export const EstimatorCalculator = ({
                     <button
                         type="button"
                         onClick={() => setRegion('luar_kota')}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        className={`px-3.5 py-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 min-h-[44px] sm:min-h-0 touch-manipulation active:scale-95 ${
                             region === 'luar_kota'
                                 ? 'bg-[#c5a059] text-black shadow-md'
                                 : 'text-zinc-400 hover:text-white'
@@ -204,7 +204,7 @@ export const EstimatorCalculator = ({
                             setCategory(cat.id);
                             if (cat.id === 'LEMARI_WARDROBE' && t < 2) setT(2.8);
                         }}
-                        className={`px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+                        className={`px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 min-h-[44px] touch-manipulation active:scale-95 ${
                             category === cat.id
                                 ? 'bg-[#c5a059]/20 text-[#c5a059] border-[#c5a059] shadow-lg shadow-[#c5a059]/10'
                                 : 'bg-[#15151a] text-zinc-400 border-[#26262d] hover:border-zinc-600 hover:text-zinc-200'
@@ -306,7 +306,7 @@ export const EstimatorCalculator = ({
                                                 min="0"
                                                 value={cabinetBawah}
                                                 onChange={(e) => setCabinetBawah(parseFloat(e.target.value) >= 0 ? parseFloat(e.target.value) : 0)}
-                                                className="w-full bg-[#111115] border border-[#2e2e38] rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-[#c5a059] focus:outline-none"
+                                                className="w-full bg-[#111115] border border-[#2e2e38] rounded-xl px-3 py-2 text-base sm:text-sm text-white font-mono focus:border-[#c5a059] focus:outline-none min-h-[44px]"
                                                 placeholder="Contoh: 2.0"
                                             />
                                             <span className="text-xs text-zinc-500 ml-2 font-mono">m'</span>
@@ -316,9 +316,9 @@ export const EstimatorCalculator = ({
                                                 type="checkbox"
                                                 checked={isKusenBawahOnly}
                                                 onChange={(e) => setIsKusenBawahOnly(e.target.checked)}
-                                                className="w-3.5 h-3.5 accent-[#c5a059] rounded"
+                                                className="w-4 h-4 accent-[#c5a059] rounded"
                                             />
-                                            <span className="text-[11px] text-zinc-300">
+                                            <span className="text-xs sm:text-[11px] text-zinc-300">
                                                 Hanya Pintu Kusen (Meja Cor Semen)
                                             </span>
                                         </label>
@@ -343,7 +343,7 @@ export const EstimatorCalculator = ({
                                                 min="0"
                                                 value={cabinetAtas}
                                                 onChange={(e) => setCabinetAtas(parseFloat(e.target.value) >= 0 ? parseFloat(e.target.value) : 0)}
-                                                className="w-full bg-[#111115] border border-[#2e2e38] rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-[#c5a059] focus:outline-none"
+                                                className="w-full bg-[#111115] border border-[#2e2e38] rounded-xl px-3 py-2 text-base sm:text-sm text-white font-mono focus:border-[#c5a059] focus:outline-none min-h-[44px]"
                                                 placeholder="Contoh: 2.0"
                                             />
                                             <span className="text-xs text-zinc-500 ml-2 font-mono">m'</span>
@@ -365,7 +365,7 @@ export const EstimatorCalculator = ({
                                             min="0.5"
                                             value={p}
                                             onChange={(e) => setP(parseFloat(e.target.value) || 0)}
-                                            className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-sm text-white focus:border-[#c5a059] focus:outline-none"
+                                            className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-base sm:text-sm text-white focus:border-[#c5a059] focus:outline-none min-h-[44px]"
                                         />
                                         <span className="text-xs text-zinc-500 ml-2">m</span>
                                     </div>
@@ -381,7 +381,7 @@ export const EstimatorCalculator = ({
                                                 min="0.5"
                                                 value={t}
                                                 onChange={(e) => setT(parseFloat(e.target.value) || 0)}
-                                                className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-sm text-white focus:border-[#c5a059] focus:outline-none"
+                                                className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-base sm:text-sm text-white focus:border-[#c5a059] focus:outline-none min-h-[44px]"
                                             />
                                             <span className="text-xs text-zinc-500 ml-2">m</span>
                                         </div>
@@ -398,7 +398,7 @@ export const EstimatorCalculator = ({
                                                 min="0.9"
                                                 value={l}
                                                 onChange={(e) => setL(parseFloat(e.target.value) || 0)}
-                                                className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-sm text-white focus:border-[#c5a059] focus:outline-none"
+                                                className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-base sm:text-sm text-white focus:border-[#c5a059] focus:outline-none min-h-[44px]"
                                             />
                                             <span className="text-xs text-zinc-500 ml-2">m</span>
                                         </div>
@@ -799,7 +799,7 @@ export const EstimatorCalculator = ({
                                 <button
                                     type="button"
                                     onClick={handleCopy}
-                                    className={`w-full py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg ${
+                                    className={`w-full py-3 px-4 min-h-[46px] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg touch-manipulation active:scale-95 ${
                                         copied
                                             ? 'bg-emerald-500 text-white'
                                             : 'gold-btn shadow-[#c5a059]/20'
@@ -816,7 +816,7 @@ export const EstimatorCalculator = ({
                                     type="button"
                                     onClick={handleExportPDF}
                                     disabled={isExportingPDF}
-                                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all bg-[#1a1a24] hover:bg-[#252533] text-[#c5a059] border border-[#c5a059]/40 flex items-center justify-center gap-2 shadow-md hover:border-[#c5a059] active:scale-[0.99] disabled:opacity-50"
+                                    className="w-full py-2.5 px-4 min-h-[46px] rounded-xl text-xs font-bold transition-all bg-[#1a1a24] hover:bg-[#252533] text-[#c5a059] border border-[#c5a059]/40 flex items-center justify-center gap-2 shadow-md hover:border-[#c5a059] touch-manipulation active:scale-95 disabled:opacity-50"
                                 >
                                     <span>📄</span>
                                     <span>{isExportingPDF ? 'Membuat Dokumen PDF...' : `Ekspor PDF Penawaran RAB (${brandName})`}</span>
@@ -826,7 +826,7 @@ export const EstimatorCalculator = ({
                                     <button
                                         type="button"
                                         onClick={handleSendToAI}
-                                        className="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all bg-[#202028] hover:bg-[#2e2e38] text-zinc-200 border border-[#2e2e38] flex items-center justify-center gap-2"
+                                        className="w-full py-2.5 px-4 min-h-[46px] rounded-xl text-xs font-bold transition-all bg-[#202028] hover:bg-[#2e2e38] text-zinc-200 border border-[#2e2e38] flex items-center justify-center gap-2 touch-manipulation active:scale-95"
                                     >
                                         <Icons.Brain />
                                         <span>Gunakan untuk Balasan Sales Ary</span>

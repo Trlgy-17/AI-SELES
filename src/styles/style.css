@@ -88,3 +88,31 @@ body {
 .animate-fade-in {
     animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Mobile Safe Area & Touch Hardening */
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+}
+
+@supports (padding: max(0px)) {
+    .safe-padding-bottom {
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+    .safe-padding-top {
+        padding-top: max(0.5rem, env(safe-area-inset-top));
+    }
+}
+
+/* Prevent auto-zoom on iOS Safari when focusing inputs */
+@media screen and (max-width: 768px) {
+    input, select, textarea {
+        font-size: 16px !important;
+    }
+}
+
+/* Accessible Touch Target Helper */
+.touch-target-min {
+    min-height: 44px;
+    min-width: 44px;
+}

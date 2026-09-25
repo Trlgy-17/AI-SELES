@@ -80,17 +80,17 @@ export const ApiKeyModal = ({
             role="dialog" 
             aria-modal="true" 
             aria-labelledby="api-modal-title" 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in overflow-y-auto"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fade-in overflow-y-auto safe-padding-bottom safe-padding-top"
         >
-            <div className="bg-[#15151a] border border-[#26262d] rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-5 my-8">
+            <div className="bg-[#15151a] border border-[#26262d] rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl space-y-5 my-auto max-h-[90dvh] overflow-y-auto">
                 <div className="flex justify-between items-center border-b border-[#26262d] pb-3.5">
                     <div>
-                        <h3 id="api-modal-title" className="serif-font font-bold text-lg text-white flex items-center gap-2">
+                        <h3 id="api-modal-title" className="serif-font font-bold text-base sm:text-lg text-white flex items-center gap-2">
                             <Icons.Key /> Pengaturan AI Provider & API
                         </h3>
                         <p className="text-xs text-zinc-400 mt-0.5">Konfigurasi Google Gemini atau Custom Provider format OpenAI API.</p>
                     </div>
-                    <button onClick={onClose} className="text-zinc-400 hover:text-white font-bold p-1 rounded-lg" aria-label="Tutup modal">✕</button>
+                    <button onClick={onClose} className="text-zinc-400 hover:text-white font-bold p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg" aria-label="Tutup modal">✕</button>
                 </div>
 
                 {/* Tab Pemilihan Provider */}
@@ -249,7 +249,7 @@ export const ApiKeyModal = ({
                     <button 
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 rounded-xl text-xs font-bold text-zinc-400 bg-[#202028] hover:text-white"
+                        className="px-4 py-2.5 rounded-xl text-xs font-bold text-zinc-400 bg-[#202028] hover:text-white min-h-[44px] touch-manipulation active:scale-95"
                     >
                         Batal
                     </button>
@@ -268,7 +268,7 @@ export const ApiKeyModal = ({
                             });
                             onClose();
                         }} 
-                        className="gold-btn px-5 py-2 rounded-xl text-xs font-bold shadow-lg shadow-[#c5a059]/25"
+                        className="gold-btn px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-[#c5a059]/25 min-h-[44px] touch-manipulation active:scale-95"
                     >
                         Simpan Pengaturan
                     </button>

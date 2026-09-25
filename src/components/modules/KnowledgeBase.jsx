@@ -110,11 +110,11 @@ export const KnowledgeBase = ({ activeBrand, currentUser, onApplyToAI, showToast
             </div>
 
             {/* VIEW MODE TABS: KALKULATOR ESTIMASI vs KATALOG KNOWLEDGE */}
-            <div className="flex items-center gap-2 p-1.5 bg-[#15151a] rounded-2xl border border-[#26262d] w-fit flex-wrap">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-1.5 bg-[#15151a] rounded-2xl border border-[#26262d] w-full sm:w-fit">
                 <button
                     type="button"
                     onClick={() => setViewMode('CALCULATOR')}
-                    className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    className={`px-4 sm:px-5 py-3 sm:py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 min-h-[44px] touch-manipulation active:scale-95 ${
                         viewMode === 'CALCULATOR'
                             ? 'bg-[#c5a059] text-black shadow-lg shadow-[#c5a059]/20'
                             : 'text-zinc-400 hover:text-white'
@@ -126,7 +126,7 @@ export const KnowledgeBase = ({ activeBrand, currentUser, onApplyToAI, showToast
                 <button
                     type="button"
                     onClick={() => setViewMode('CATALOG')}
-                    className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    className={`px-4 sm:px-5 py-3 sm:py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 min-h-[44px] touch-manipulation active:scale-95 ${
                         viewMode === 'CATALOG'
                             ? 'bg-[#c5a059] text-black shadow-lg shadow-[#c5a059]/20'
                             : 'text-zinc-400 hover:text-white'
@@ -166,17 +166,17 @@ export const KnowledgeBase = ({ activeBrand, currentUser, onApplyToAI, showToast
                     </span>
                 </div>
 
-                <form onSubmit={handleRunTest} className="flex gap-2">
+                <form onSubmit={handleRunTest} className="flex flex-col sm:flex-row gap-2">
                     <input 
                         type="text"
                         value={testQuery}
                         onChange={(e) => setTestQuery(e.target.value)}
                         placeholder="Contoh query klien: 'Berapa harga kitchen set per meter di Bandung?' atau 'Ada diskon promo apa?'..."
-                        className="flex-1 bg-[#1b1b22] border border-[#26262d] rounded-2xl px-4 py-3 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c5a059]"
+                        className="flex-1 bg-[#1b1b22] border border-[#26262d] rounded-2xl px-4 py-3 text-base sm:text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c5a059] min-h-[44px]"
                     />
                     <button
                         type="submit"
-                        className="gold-btn px-6 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-[#c5a059]/20 flex-shrink-0"
+                        className="gold-btn px-6 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#c5a059]/20 flex-shrink-0 min-h-[44px] touch-manipulation active:scale-95"
                     >
                         <Icons.Search /> Test Resolusi RAG
                     </button>
@@ -231,8 +231,8 @@ export const KnowledgeBase = ({ activeBrand, currentUser, onApplyToAI, showToast
             </div>
 
             {/* FILTER LAYER & PENCARIAN */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-[#15151a] p-4 rounded-3xl border border-[#26262d]">
-                <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
+            <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 bg-[#15151a] p-3.5 sm:p-4 rounded-3xl border border-[#26262d]">
+                <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 sm:pb-0 scrollbar-thin">
                     {[
                         { id: 'ALL', label: 'Semua Layer' },
                         { id: 'GLOBAL', label: 'Layer 1: Global Core' },
@@ -242,7 +242,7 @@ export const KnowledgeBase = ({ activeBrand, currentUser, onApplyToAI, showToast
                         <button
                             key={tab.id}
                             onClick={() => setActiveLayerFilter(tab.id)}
-                            className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap ${
+                            className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap min-h-[44px] touch-manipulation active:scale-95 ${
                                 activeLayerFilter === tab.id
                                     ? 'bg-[#c5a059] text-[#0d0d0d] shadow-md shadow-[#c5a059]/20'
                                     : 'bg-[#1b1b22] text-zinc-400 hover:text-white border border-[#2a2a34]'
@@ -259,9 +259,9 @@ export const KnowledgeBase = ({ activeBrand, currentUser, onApplyToAI, showToast
                         placeholder="Cari modul atau materi..." 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-[#1b1b22] border border-[#26262d] rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c5a059]"
+                        className="w-full bg-[#1b1b22] border border-[#26262d] rounded-2xl pl-10 pr-4 py-2.5 text-base sm:text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c5a059] min-h-[44px]"
                     />
-                    <div className="absolute left-3.5 top-3 text-zinc-500">
+                    <div className="absolute left-3.5 top-3.5 text-zinc-500 pointer-events-none">
                         <Icons.Search />
                     </div>
                 </div>

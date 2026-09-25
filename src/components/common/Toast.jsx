@@ -11,7 +11,7 @@ export const Toast = ({ toast }) => {
         <div 
             role="status" 
             aria-live="polite" 
-            className={`fixed bottom-6 right-6 z-50 px-5 py-3.5 rounded-2xl shadow-2xl border flex items-center gap-3 animate-fade-in text-sm font-semibold transition-all ${
+            className={`fixed bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 px-4 sm:px-5 py-3.5 rounded-2xl shadow-2xl border flex items-center gap-3 animate-fade-in text-xs sm:text-sm font-semibold transition-all safe-padding-bottom ${
                 isError ? 'bg-rose-950 border-rose-800 text-rose-100' :
                 isWarning ? 'bg-amber-950 border-amber-800 text-amber-100' :
                 'bg-[#1a1a22] border-[#c5a059]/40 text-white shadow-[#c5a059]/10'

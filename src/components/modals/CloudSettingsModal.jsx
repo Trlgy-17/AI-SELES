@@ -53,14 +53,14 @@ export const CloudSettingsModal = ({ isOpen, onClose, onSaveConfig, currentConfi
             role="dialog" 
             aria-modal="true" 
             aria-labelledby="cloud-modal-title" 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in overflow-y-auto safe-padding-bottom safe-padding-top"
         >
-            <div className="bg-[#15151a] border border-[#26262d] rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+            <div className="bg-[#15151a] border border-[#26262d] rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl space-y-4 my-auto max-h-[90dvh] overflow-y-auto">
                 <div className="flex justify-between items-center border-b border-[#26262d] pb-3">
-                    <h3 id="cloud-modal-title" className="serif-font font-bold text-lg text-white flex items-center gap-2">
+                    <h3 id="cloud-modal-title" className="serif-font font-bold text-base sm:text-lg text-white flex items-center gap-2">
                         <Icons.Settings /> Pengaturan Cloud & Database Firebase
                     </h3>
-                    <button onClick={onClose} className="text-zinc-400 hover:text-white font-bold" aria-label="Tutup modal">✕</button>
+                    <button onClick={onClose} className="text-zinc-400 hover:text-white font-bold p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg" aria-label="Tutup modal">✕</button>
                 </div>
 
                 {err && (
@@ -98,18 +98,18 @@ export const CloudSettingsModal = ({ isOpen, onClose, onSaveConfig, currentConfi
                     </FormField>
                 </div>
 
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-3 border-t border-[#26262d]">
+                <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-3 border-t border-[#26262d]">
                     <button 
                         onClick={onForceLocalMode} 
-                        className="text-xs font-semibold text-zinc-400 hover:text-amber-400 underline underline-offset-2"
+                        className="text-xs font-semibold text-zinc-400 hover:text-amber-400 underline underline-offset-2 py-2 min-h-[44px] flex items-center justify-center sm:justify-start"
                     >
                         Gunakan Mode Offline Saja
                     </button>
                     <div className="flex gap-2">
-                        <button onClick={onClose} className="px-4 py-2 rounded-xl text-xs font-bold text-zinc-400 bg-[#202028] hover:text-white">
+                        <button onClick={onClose} className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold text-zinc-400 bg-[#202028] hover:text-white min-h-[44px] touch-manipulation active:scale-95">
                             Batal
                         </button>
-                        <button onClick={handleSave} className="gold-btn px-5 py-2 rounded-xl text-xs font-bold">
+                        <button onClick={handleSave} className="flex-1 sm:flex-initial gold-btn px-5 py-2.5 rounded-xl text-xs font-bold min-h-[44px] touch-manipulation active:scale-95">
                             Simpan & Terapkan
                         </button>
                     </div>

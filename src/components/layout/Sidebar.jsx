@@ -88,7 +88,7 @@ export const Sidebar = ({
                     <button 
                         ref={closeBtnRef}
                         onClick={closeSidebar} 
-                        className="lg:hidden text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-[#1a1a20]"
+                        className="lg:hidden text-slate-400 hover:text-white p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-[#1a1a20] transition-colors"
                         aria-label="Tutup menu navigasi"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -121,7 +121,7 @@ export const Sidebar = ({
                     
                     <button 
                         onClick={() => { setActiveTab('workspace'); closeSidebar(); }} 
-                        className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${activeTab === 'workspace' ? 'bg-gradient-to-r from-[#c5a059] to-[#b8972e] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/20' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
+                        className={`w-full min-h-[44px] flex items-center justify-between px-3.5 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${activeTab === 'workspace' ? 'bg-gradient-to-r from-[#c5a059] to-[#b8972e] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/20' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
                     >
                         <div className="flex items-center gap-3">
                             <Icons.MessageSquare />
@@ -132,7 +132,7 @@ export const Sidebar = ({
 
                     <button 
                         onClick={() => { setActiveTab('crm'); closeSidebar(); }} 
-                        className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${activeTab === 'crm' ? 'bg-gradient-to-r from-[#c5a059] to-[#b8972e] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/20' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
+                        className={`w-full min-h-[44px] flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${activeTab === 'crm' ? 'bg-gradient-to-r from-[#c5a059] to-[#b8972e] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/20' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
                     >
                         <Icons.Users />
                         <span>CRM Leads {brandName.split(' ')[0]}</span>
@@ -140,7 +140,7 @@ export const Sidebar = ({
 
                     <button 
                         onClick={() => { setActiveTab('estimator'); closeSidebar(); }} 
-                        className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${activeTab === 'estimator' ? 'bg-gradient-to-r from-[#c5a059] to-[#b8972e] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/20' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
+                        className={`w-full min-h-[44px] flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${activeTab === 'estimator' ? 'bg-gradient-to-r from-[#c5a059] to-[#b8972e] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/20' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
                     >
                         <Icons.Calculator />
                         <span>Kalkulator Estimasi RAB</span>
@@ -150,7 +150,7 @@ export const Sidebar = ({
 
                     <button 
                         onClick={() => { setActiveTab('knowledge'); closeSidebar(); }} 
-                        className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${activeTab === 'knowledge' ? 'bg-gradient-to-r from-[#c5a059] to-[#b8972e] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/20' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
+                        className={`w-full min-h-[44px] flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${activeTab === 'knowledge' ? 'bg-gradient-to-r from-[#c5a059] to-[#b8972e] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/20' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
                     >
                         <Icons.BookOpen />
                         <span>Knowledge & Override</span>
@@ -158,7 +158,7 @@ export const Sidebar = ({
                 </nav>
 
                 {/* Footer Sync & Brand Status */}
-                <div className="p-4 border-t border-[#26262d] bg-[#0e0e12]/80 space-y-2">
+                <div className="p-4 border-t border-[#26262d] bg-[#0e0e12]/80 space-y-2 safe-padding-bottom">
                     <div className="flex items-center justify-between text-[11px] text-zinc-400">
                         <span className="flex items-center gap-1.5">
                             <span className={`w-2 h-2 rounded-full ${syncStatus === 'synced' ? 'bg-emerald-400' : syncStatus === 'error' ? 'bg-rose-500' : 'bg-amber-400'}`}></span>

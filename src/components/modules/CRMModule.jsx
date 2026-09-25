@@ -305,46 +305,46 @@ export const CRMModule = ({
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
                     <input 
                         type="text" 
                         placeholder="Nama Klien..." 
                         value={newLeadName}
                         onChange={(e) => setNewLeadName(e.target.value)}
-                        className="bg-[#15151a] border border-[#26262d] rounded-xl px-4 py-2.5 text-sm text-white shadow-inner placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
+                        className="bg-[#15151a] border border-[#26262d] rounded-xl px-4 py-2.5 text-base sm:text-sm text-white shadow-inner placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
                     />
                     <input 
                         type="text" 
                         placeholder="WhatsApp (08... / +62...)" 
                         value={newLeadPhone}
                         onChange={(e) => setNewLeadPhone(e.target.value)}
-                        className="bg-[#15151a] border border-[#26262d] rounded-xl px-4 py-2.5 text-sm text-white shadow-inner placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
+                        className="bg-[#15151a] border border-[#26262d] rounded-xl px-4 py-2.5 text-base sm:text-sm text-white shadow-inner placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
                     />
                     <input 
                         type="text" 
                         placeholder="Proyek (Kitchen/Wardrobe)" 
                         value={newLeadProject}
                         onChange={(e) => setNewLeadProject(e.target.value)}
-                        className="bg-[#15151a] border border-[#26262d] rounded-xl px-4 py-2.5 text-sm text-white shadow-inner placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
+                        className="bg-[#15151a] border border-[#26262d] rounded-xl px-4 py-2.5 text-base sm:text-sm text-white shadow-inner placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
                     />
                     <input 
                         type="text" 
                         placeholder="Lokasi (e.g. Bandung Kota)" 
                         value={newLeadLocation}
                         onChange={(e) => setNewLeadLocation(e.target.value)}
-                        className="bg-[#15151a] border border-[#26262d] rounded-xl px-4 py-2.5 text-sm text-white shadow-inner placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
+                        className="bg-[#15151a] border border-[#26262d] rounded-xl px-4 py-2.5 text-base sm:text-sm text-white shadow-inner placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
                     />
                     <input 
                         type="number" 
                         placeholder="Estimasi Nilai (Rp)" 
                         value={newLeadValue}
                         onChange={(e) => setNewLeadValue(e.target.value)}
-                        className="bg-[#15151a] border border-[#26262d] rounded-xl px-4 py-2.5 text-sm text-white shadow-inner placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
+                        className="bg-[#15151a] border border-[#26262d] rounded-xl px-4 py-2.5 text-base sm:text-sm text-white shadow-inner placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
                     />
                     <button 
                         onClick={handleAddLead}
                         disabled={isAddingLead}
-                        className="gold-btn rounded-xl py-2.5 px-4 font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-[#c5a059]/20"
+                        className="gold-btn rounded-xl py-3 px-4 font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-[#c5a059]/20 min-h-[44px] touch-manipulation active:scale-95"
                     >
                         {isAddingLead ? 'Menyimpan...' : <React.Fragment><Icons.Plus /> Simpan Prospek</React.Fragment>}
                     </button>
@@ -352,17 +352,17 @@ export const CRMModule = ({
             </div>
 
             {/* Filter & Search Bar */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-[#15151a] p-4 rounded-3xl border border-[#26262d]">
-                <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 bg-[#15151a] p-3.5 sm:p-4 rounded-3xl border border-[#26262d]">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
                     <div className="relative flex-1 md:w-72">
                         <input 
                             type="text" 
                             placeholder="Cari nama, proyek, lokasi..." 
                             value={crmSearch}
                             onChange={(e) => setCrmSearch(e.target.value)}
-                            className="w-full bg-[#1b1b22] border border-[#26262d] rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c5a059]"
+                            className="w-full bg-[#1b1b22] border border-[#26262d] rounded-2xl pl-10 pr-4 py-2.5 text-base sm:text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c5a059] min-h-[44px]"
                         />
-                        <div className="absolute left-3.5 top-3 text-zinc-500">
+                        <div className="absolute left-3.5 top-3.5 text-zinc-500 pointer-events-none">
                             <Icons.Search />
                         </div>
                     </div>
@@ -370,7 +370,7 @@ export const CRMModule = ({
                     <select
                         value={crmStatusFilter}
                         onChange={(e) => setCrmStatusFilter(e.target.value)}
-                        className="bg-[#1b1b22] border border-[#26262d] rounded-2xl px-3 py-2.5 text-xs text-zinc-300 focus:outline-none focus:border-[#c5a059]"
+                        className="bg-[#1b1b22] border border-[#26262d] rounded-2xl px-3 py-2.5 text-base sm:text-xs text-zinc-300 focus:outline-none focus:border-[#c5a059] min-h-[44px]"
                     >
                         <option value="Semua">Semua Status</option>
                         {LEAD_STATUS_OPTIONS.map(s => (
@@ -379,11 +379,11 @@ export const CRMModule = ({
                     </select>
                 </div>
 
-                <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                <div className="flex items-center gap-2.5 w-full md:w-auto justify-between md:justify-end">
                     <select
                         value={crmSortOption}
                         onChange={(e) => setCrmSortOption(e.target.value)}
-                        className="bg-[#1b1b22] border border-[#26262d] rounded-2xl px-3 py-2.5 text-xs text-zinc-300 focus:outline-none focus:border-[#c5a059]"
+                        className="flex-1 sm:flex-initial bg-[#1b1b22] border border-[#26262d] rounded-2xl px-3 py-2.5 text-base sm:text-xs text-zinc-300 focus:outline-none focus:border-[#c5a059] min-h-[44px]"
                     >
                         <option value="terbaru">Terbaru Masuk</option>
                         <option value="terlama">Terlama Masuk</option>
@@ -394,17 +394,18 @@ export const CRMModule = ({
 
                     <button
                         onClick={() => ExportService.exportLeadsToCsv(filteredLeads)}
-                        className="px-4 py-2.5 bg-[#202028] hover:bg-[#282834] text-zinc-300 rounded-2xl border border-[#33333d] text-xs font-bold flex items-center gap-2 transition-colors"
+                        className="px-4 py-2.5 bg-[#202028] hover:bg-[#282834] text-zinc-300 rounded-2xl border border-[#33333d] text-xs font-bold flex items-center justify-center gap-2 transition-colors min-h-[44px] touch-manipulation active:scale-95"
                         title="Ekspor daftar klien ke file CSV"
                     >
-                        <Icons.FileSpreadsheet /> Ekspor CSV
+                        <Icons.FileSpreadsheet /> <span>Ekspor CSV</span>
                     </button>
                 </div>
             </div>
 
-            {/* Tabel Data Prospek Klien */}
+            {/* TABEL DATA PROSPEK (DESKTOP md:block) & CARD LIST (MOBILE md:hidden) */}
             <div className="bg-[#15151a] rounded-3xl border border-[#26262d] overflow-hidden shadow-2xl">
-                <div className="overflow-x-auto">
+                {/* Desktop Table */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left text-xs text-zinc-300">
                         <thead className="bg-[#1b1b22] text-zinc-400 uppercase tracking-wider font-bold border-b border-[#26262d]">
                             <tr>
@@ -473,7 +474,7 @@ export const CRMModule = ({
                                                 {onConsultLeadInAI && (
                                                     <button
                                                         onClick={() => onConsultLeadInAI(lead)}
-                                                        className="px-2.5 py-1.5 rounded-xl bg-[#202028] hover:bg-[#c5a059] hover:text-[#0d0d0d] text-[#c5a059] font-bold text-[11px] border border-[#33333d] transition-all flex items-center gap-1"
+                                                        className="px-2.5 py-1.5 rounded-xl bg-[#202028] hover:bg-[#c5a059] hover:text-[#0d0d0d] text-[#c5a059] font-bold text-[11px] border border-[#33333d] transition-all flex items-center gap-1 min-h-[36px]"
                                                         title="Konsultasikan chat klien ini dengan AI Copilot"
                                                     >
                                                         <Icons.Brain /> Copilot
@@ -481,14 +482,14 @@ export const CRMModule = ({
                                                 )}
                                                 <button
                                                     onClick={() => setEditingLead(lead)}
-                                                    className="p-1.5 rounded-xl hover:bg-[#202028] text-zinc-400 hover:text-white transition-colors"
+                                                    className="p-2 rounded-xl hover:bg-[#202028] text-zinc-400 hover:text-white transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                                                     title="Edit Klien & Memori"
                                                 >
                                                     <Icons.Edit />
                                                 </button>
                                                 <button
                                                     onClick={() => setDeleteTargetId(lead.id)}
-                                                    className="p-1.5 rounded-xl hover:bg-rose-950/60 text-zinc-500 hover:text-rose-400 transition-colors"
+                                                    className="p-2 rounded-xl hover:bg-rose-950/60 text-zinc-500 hover:text-rose-400 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                                                     title="Hapus Klien"
                                                 >
                                                     <Icons.Trash />
@@ -506,6 +507,98 @@ export const CRMModule = ({
                             )}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile / Tablet Card List (< md) */}
+                <div className="md:hidden divide-y divide-[#202028]">
+                    {filteredLeads.length > 0 ? (
+                        filteredLeads.map((lead) => (
+                            <div key={lead.id} className="p-4 space-y-3 hover:bg-[#1a1a24] transition-colors">
+                                <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                        <div className="font-bold text-white text-base flex items-center gap-1.5 flex-wrap">
+                                            <span>{lead.name}</span>
+                                            {lead.location && (
+                                                <span className="text-[10px] px-1.5 py-0.5 bg-[#202028] text-[#c5a059] rounded border border-[#2e2e38]" title={`Lokasi: ${lead.location}`}>
+                                                    📍 {lead.location}
+                                                </span>
+                                            )}
+                                            {lead.dimensions && (
+                                                <span className="text-[10px] px-1.5 py-0.5 bg-[#202028] text-purple-400 rounded border border-[#2e2e38]" title={`Dimensi: ${lead.dimensions}`}>
+                                                    📐 {lead.dimensions}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="text-xs text-zinc-400 mt-1 font-medium">
+                                            {lead.project || 'Interior Custom'}
+                                        </div>
+                                    </div>
+                                    <StatusBadge status={lead.status} />
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs pt-1 border-t border-[#202028]/60">
+                                    <span className="text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">Estimasi Nilai</span>
+                                    <span className="font-extrabold text-white">
+                                        {lead.value ? `Rp ${Number(lead.value).toLocaleString('id-ID')}` : '-'}
+                                    </span>
+                                </div>
+
+                                {lead.phoneRaw && (
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">WhatsApp</span>
+                                        <a 
+                                            href={buildWaLink(lead.phoneNormalized || lead.phoneRaw)} 
+                                            target="_blank" 
+                                            rel="noreferrer"
+                                            className="text-emerald-400 hover:underline font-semibold flex items-center gap-1 py-1"
+                                        >
+                                            <Icons.MessageSquare />
+                                            {formatDisplayPhone(lead.phoneRaw)}
+                                        </a>
+                                    </div>
+                                )}
+
+                                {isSuperAdmin && showAllBrands && (
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">Brand</span>
+                                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#202028] text-[#c5a059] border border-[#2e2e38]">
+                                            {lead.brandId ? lead.brandId.replace('brand_', '') : 'nacira'}
+                                        </span>
+                                    </div>
+                                )}
+
+                                {/* Action Toolbar Mobile */}
+                                <div className="flex items-center gap-2 pt-2 border-t border-[#202028]">
+                                    {onConsultLeadInAI && (
+                                        <button
+                                            onClick={() => onConsultLeadInAI(lead)}
+                                            className="flex-1 py-2.5 px-3 rounded-xl bg-[#202028] hover:bg-[#c5a059] hover:text-[#0d0d0d] text-[#c5a059] font-bold text-xs border border-[#33333d] transition-all flex items-center justify-center gap-1.5 min-h-[44px] touch-manipulation active:scale-95"
+                                        >
+                                            <Icons.Brain /> <span>Sales Ary</span>
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => setEditingLead(lead)}
+                                        className="py-2.5 px-4 rounded-xl bg-[#202028] hover:bg-[#282834] text-zinc-300 font-bold text-xs border border-[#33333d] transition-colors flex items-center justify-center gap-1.5 min-h-[44px] touch-manipulation active:scale-95"
+                                        title="Edit Data"
+                                    >
+                                        <Icons.Edit /> <span>Edit</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setDeleteTargetId(lead.id)}
+                                        className="py-2.5 px-3 rounded-xl bg-rose-950/40 hover:bg-rose-950 text-rose-300 font-bold text-xs border border-rose-800/40 transition-colors flex items-center justify-center min-h-[44px] min-w-[44px] touch-manipulation active:scale-95"
+                                        title="Hapus Prospek"
+                                    >
+                                        <Icons.Trash />
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="p-6 text-center text-zinc-500 text-xs">
+                            Tidak ada data prospek ditemukan untuk brand ini. Tambahkan prospek baru di atas.
+                        </div>
+                    )}
                 </div>
             </div>
 

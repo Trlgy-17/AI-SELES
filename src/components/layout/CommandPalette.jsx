@@ -64,11 +64,11 @@ export const CommandPalette = ({
         <div 
             role="dialog" 
             aria-modal="true" 
-            className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+            className="fixed inset-0 z-50 flex items-start justify-center pt-8 sm:pt-20 p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
             onClick={onClose}
         >
             <div 
-                className="bg-[#15151a] border border-[#2e2e38] rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col my-auto"
+                className="bg-[#15151a] border border-[#2e2e38] rounded-3xl max-w-lg w-full max-h-[85dvh] shadow-2xl overflow-hidden flex flex-col my-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Search Input Bar */}
@@ -80,7 +80,7 @@ export const CommandPalette = ({
                         value={query} 
                         onChange={(e) => setQuery(e.target.value)} 
                         placeholder="Ketik perintah atau cari menu (Ctrl+K)..." 
-                        className="bg-transparent text-white text-sm w-full focus:outline-none placeholder:text-zinc-500 font-medium"
+                        className="bg-transparent text-white text-base sm:text-sm w-full focus:outline-none placeholder:text-zinc-500 font-medium"
                     />
                     <kbd className="text-[10px] bg-[#22222c] text-zinc-400 px-2 py-0.5 rounded border border-[#30303e] font-mono">ESC</kbd>
                 </div>
@@ -92,7 +92,7 @@ export const CommandPalette = ({
                             <button
                                 key={action.id}
                                 onClick={() => { action.action(); onClose(); }}
-                                className="w-full flex items-center justify-between p-3 rounded-2xl hover:bg-[#20202a] text-zinc-300 hover:text-white transition-all text-left text-xs font-medium group"
+                                className="w-full min-h-[44px] flex items-center justify-between p-3 rounded-2xl hover:bg-[#20202a] text-zinc-300 hover:text-white transition-all text-left text-xs font-medium group"
                             >
                                 <div className="flex items-center gap-3">
                                     <span className="text-zinc-500 group-hover:text-[#c5a059] transition-colors">{action.icon}</span>

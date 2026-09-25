@@ -41,7 +41,7 @@ export const AppShell = ({
                 todayCount={todayCount}
             />
             
-            <main className="lg:ml-72 flex-1 p-4 sm:p-6 lg:p-10 w-full min-h-[100dvh] overflow-y-auto overflow-x-hidden">
+            <main className="lg:ml-72 flex-1 p-3.5 sm:p-6 lg:p-10 w-full min-w-0 min-h-[100dvh] overflow-y-auto overflow-x-hidden safe-padding-bottom">
                 <Header 
                     setIsSidebarOpen={setIsSidebarOpen} 
                     activeTab={activeTab} 
@@ -58,7 +58,7 @@ export const AppShell = ({
                     overdueCount={overdueCount}
                     todayCount={todayCount}
                     rescheduleCount={rescheduleCount}
-                    onNavigateFollowUp={() => setActiveTab('followup')}
+                    onNavigateFollowUp={() => setActiveTab('crm')}
                 />
 
                 {children}

@@ -79,17 +79,17 @@ export const EditTaskModal = ({ isOpen, task, crmLeads = [], onSave, onCancel })
             role="dialog" 
             aria-modal="true" 
             aria-labelledby="edit-task-title" 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in overflow-y-auto safe-padding-bottom safe-padding-top"
         >
-            <div className="bg-[#15151a] border border-[#26262d] rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+            <div className="bg-[#15151a] border border-[#26262d] rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl space-y-4 my-auto max-h-[90dvh] overflow-y-auto">
                 <div className="flex justify-between items-center border-b border-[#26262d] pb-3">
-                    <h3 id="edit-task-title" className="serif-font font-bold text-lg text-white flex items-center gap-2">
+                    <h3 id="edit-task-title" className="serif-font font-bold text-base sm:text-lg text-white flex items-center gap-2">
                         <Icons.Edit /> Edit Tugas Follow-Up
                     </h3>
                     <button 
                         onClick={onCancel} 
                         disabled={isSaving} 
-                        className="text-zinc-400 hover:text-white font-bold" 
+                        className="text-zinc-400 hover:text-white font-bold p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg" 
                         aria-label="Tutup modal edit tugas"
                     >
                         ✕
@@ -177,14 +177,14 @@ export const EditTaskModal = ({ isOpen, task, crmLeads = [], onSave, onCancel })
                     <button 
                         onClick={onCancel} 
                         disabled={isSaving} 
-                        className="px-4 py-2 rounded-xl text-xs font-bold text-zinc-400 bg-[#202028] hover:text-white transition-colors"
+                        className="px-4 py-2.5 rounded-xl text-xs font-bold text-zinc-400 bg-[#202028] hover:text-white transition-colors min-h-[44px] touch-manipulation active:scale-95"
                     >
                         Batal
                     </button>
                     <button 
                         onClick={handleSave} 
                         disabled={isSaving} 
-                        className="gold-btn px-5 py-2 rounded-xl text-xs font-bold shadow-lg shadow-[#c5a059]/25 transition-all"
+                        className="gold-btn px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-[#c5a059]/25 transition-all min-h-[44px] touch-manipulation active:scale-95"
                     >
                         {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
                     </button>

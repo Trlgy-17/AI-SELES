@@ -52,24 +52,24 @@ export const AuthModal = ({
         <div 
             role="dialog" 
             aria-modal="true" 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in overflow-y-auto"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fade-in overflow-y-auto safe-padding-bottom safe-padding-top"
             onClick={onClose}
         >
             <div 
-                className="bg-[#15151a] border border-[#26262d] rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-6 my-8"
+                className="bg-[#15151a] border border-[#26262d] rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl space-y-5 my-auto max-h-[90dvh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 <div className="flex justify-between items-center border-b border-[#26262d] pb-4">
                     <div>
-                        <h3 className="serif-font font-bold text-lg text-white flex items-center gap-2">
+                        <h3 className="serif-font font-bold text-base sm:text-lg text-white flex items-center gap-2">
                             <Icons.Key /> Masuk & Ganti Akun Admin
                         </h3>
                         <p className="text-xs text-zinc-400 mt-0.5">
                             Sistem Multi-Brand: Setiap admin terisolasi pada brand masing-masing.
                         </p>
                     </div>
-                    <button onClick={onClose} className="text-zinc-400 hover:text-white font-bold p-1 rounded-lg">✕</button>
+                    <button onClick={onClose} className="text-zinc-400 hover:text-white font-bold p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg" aria-label="Tutup modal">✕</button>
                 </div>
 
                 {authError && (
@@ -102,7 +102,7 @@ export const AuthModal = ({
                                 key={acc.username}
                                 type="button"
                                 onClick={() => handleQuickLogin(acc.username)}
-                                className={`p-3 rounded-2xl border text-left transition-all ${
+                                className={`p-3 rounded-2xl border text-left transition-all min-h-[48px] touch-manipulation active:scale-95 ${
                                     currentUser?.username === acc.username 
                                         ? 'bg-[#c5a059]/15 border-[#c5a059] text-white shadow-md' 
                                         : 'bg-[#181820] hover:bg-[#202028] border-[#282832] text-zinc-300'
@@ -129,7 +129,7 @@ export const AuthModal = ({
                             placeholder="admin / homeputra / heya" 
                             value={usernameInput} 
                             onChange={(e) => setUsernameInput(e.target.value)} 
-                            className="w-full bg-[#1b1b22] border border-[#26262d] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
+                            className="w-full bg-[#1b1b22] border border-[#26262d] rounded-xl px-4 py-2.5 text-base sm:text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30 min-h-[44px]"
                         />
                     </FormField>
                     <FormField label="Password">
@@ -138,12 +138,12 @@ export const AuthModal = ({
                             placeholder="password123" 
                             value={passwordInput} 
                             onChange={(e) => setPasswordInput(e.target.value)} 
-                            className="w-full bg-[#1b1b22] border border-[#26262d] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
+                            className="w-full bg-[#1b1b22] border border-[#26262d] rounded-xl px-4 py-2.5 text-base sm:text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30 min-h-[44px]"
                         />
                     </FormField>
                     <button 
                         type="submit" 
-                        className="gold-btn w-full py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-[#c5a059]/25"
+                        className="gold-btn w-full py-3 rounded-xl text-xs font-bold shadow-lg shadow-[#c5a059]/25 min-h-[44px] touch-manipulation active:scale-95"
                     >
                         Masuk Akun
                     </button>

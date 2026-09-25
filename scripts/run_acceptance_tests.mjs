@@ -478,6 +478,64 @@ assert(commandPaletteSrc.includes("title: 'Sales Ary'"), 'CommandPalette display
 assert(!workspaceSrc.includes('<span>Kalkulator RAB</span>'), 'Calculator button removed from AIWorkspace toolbar');
 assert(!workspaceSrc.includes('showCalculatorModal'), 'Calculator modal removed from AIWorkspace');
 
+// ----------------------------------------------------
+// TEST 15: Responsive & Mobile Hardening System
+// ----------------------------------------------------
+console.log('\n🧪 TEST 15: Responsive & Mobile Hardening System');
+const indexHtmlSrc = fs.readFileSync('index.html', 'utf-8');
+const cssSrc = fs.readFileSync('src/styles/style.css', 'utf-8');
+const appShellSrc = fs.readFileSync('src/components/layout/AppShell.jsx', 'utf-8');
+const crmSrc = fs.readFileSync('src/components/modules/CRMModule.jsx', 'utf-8');
+const estimatorSrc = fs.readFileSync('src/components/modules/EstimatorCalculator.jsx', 'utf-8');
+const toastSrc = fs.readFileSync('src/components/common/Toast.jsx', 'utf-8');
+const apiKeyModalSrc = fs.readFileSync('src/components/modals/ApiKeyModal.jsx', 'utf-8');
+const editLeadModalSrc = fs.readFileSync('src/components/modals/EditLeadModal.jsx', 'utf-8');
+const editTaskModalSrc = fs.readFileSync('src/components/modals/EditTaskModal.jsx', 'utf-8');
+const cloudModalSrc = fs.readFileSync('src/components/modals/CloudSettingsModal.jsx', 'utf-8');
+const authModalSrc = fs.readFileSync('src/components/modals/AuthModal.jsx', 'utf-8');
+const confirmModalSrc = fs.readFileSync('src/components/common/ConfirmModal.jsx', 'utf-8');
+
+// Viewport & Safe-area CSS
+assert(indexHtmlSrc.includes('viewport-fit=cover'), 'index.html includes viewport-fit=cover');
+assert(indexHtmlSrc.includes('maximum-scale=5.0'), 'index.html sets maximum-scale=5.0 for accessibility');
+assert(cssSrc.includes('safe-padding-bottom'), 'style.css includes safe-padding-bottom helper');
+assert(cssSrc.includes('safe-padding-top'), 'style.css includes safe-padding-top helper');
+assert(cssSrc.includes('font-size: 16px !important'), 'style.css enforces 16px input font size under 768px (iOS anti-zoom)');
+assert(cssSrc.includes('.touch-target-min'), 'style.css defines 44px touch target helper');
+
+// AppShell & Layout
+assert(appShellSrc.includes('min-w-0'), 'AppShell main container has min-w-0 for flex/grid overflow prevention');
+assert(appShellSrc.includes('p-3.5 sm:p-6 lg:p-10'), 'AppShell uses responsive content padding');
+assert(appShellSrc.includes('safe-padding-bottom'), 'AppShell includes safe-padding-bottom');
+
+// Sidebar & Header Touch Targets
+assert(sidebarSrc.includes('min-h-[44px]'), 'Sidebar navigation items have min-h-[44px] touch target');
+assert(headerSrc.includes('min-h-[44px]') || headerSrc.includes('h-11 w-11'), 'Header buttons meet touch target guidelines');
+
+// AI Workspace Responsive & WA Link
+assert(workspaceSrc.includes('responsePanelRef'), 'AIWorkspace implements responsePanelRef for mobile auto-scroll');
+assert(workspaceSrc.includes('ai-response-panel'), 'AIWorkspace attaches ai-response-panel anchor');
+assert(workspaceSrc.includes('api.whatsapp.com/send?text='), 'AIWorkspace uses universal WhatsApp API for mobile/desktop app routing');
+assert(workspaceSrc.includes('min-h-[180px] lg:min-h-[480px]'), 'AIWorkspace empty state adapts height between mobile and desktop');
+
+// CRM Adaptive Dual View (Table Desktop vs Card List Mobile)
+assert(crmSrc.includes('hidden md:block'), 'CRMModule renders table on desktop (hidden md:block)');
+assert(crmSrc.includes('md:hidden'), 'CRMModule renders adaptive card list on mobile (md:hidden)');
+assert(crmSrc.includes('text-base sm:text-sm'), 'CRMModule inputs prevent iOS auto-zoom');
+
+// Estimator Calculator Responsiveness
+assert(estimatorSrc.includes('flex flex-col sm:flex-row'), 'EstimatorCalculator region selector wraps cleanly on mobile');
+assert(estimatorSrc.includes('min-h-[44px]'), 'EstimatorCalculator controls meet minimum 44px tap target');
+
+// Toast & Modals
+assert(toastSrc.includes('safe-padding-bottom') && toastSrc.includes('left-4 right-4'), 'Toast is positioned with safe margins on mobile');
+assert(apiKeyModalSrc.includes('max-h-[90dvh]') && apiKeyModalSrc.includes('overflow-y-auto'), 'ApiKeyModal adapts to mobile virtual keyboard height');
+assert(editLeadModalSrc.includes('max-h-[90dvh]') && editLeadModalSrc.includes('overflow-y-auto'), 'EditLeadModal adapts to mobile viewport height');
+assert(editTaskModalSrc.includes('max-h-[90dvh]') && editTaskModalSrc.includes('overflow-y-auto'), 'EditTaskModal adapts to mobile viewport height');
+assert(cloudModalSrc.includes('max-h-[90dvh]') && cloudModalSrc.includes('overflow-y-auto'), 'CloudSettingsModal adapts to mobile viewport height');
+assert(authModalSrc.includes('max-h-[90dvh]') && authModalSrc.includes('overflow-y-auto'), 'AuthModal adapts to mobile viewport height');
+assert(confirmModalSrc.includes('max-h-[90dvh]') && confirmModalSrc.includes('overflow-y-auto'), 'ConfirmModal adapts to mobile viewport height');
+
 console.log('\n========================================================');
 console.log(`🎉 ALL ${passedTests}/${totalTests} ACCEPTANCE TESTS PASSED SUCCESSFULLY!`);
 console.log('========================================================\n');

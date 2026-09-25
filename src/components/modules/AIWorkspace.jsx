@@ -81,6 +81,14 @@ export const AIWorkspace = ({
 
     const [showApiKeyModal, setShowApiKeyModal] = useState(false);
     const fileInputRef = useRef(null);
+    const responsePanelRef = useRef(null);
+
+    // Auto-scroll ke hasil rekomendasi AI pada layar mobile / tablet setelah generate
+    useEffect(() => {
+        if ((isLoading || aiResponse) && typeof window !== 'undefined' && window.innerWidth < 1024) {
+            responsePanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, [isLoading, aiResponse]);
 
     const brandName = activeBrand?.brandName || 'HOMEPUTRA INTERIOR';
     const adminName = activeBrand?.adminName || 'Admin Marketing';
@@ -401,7 +409,7 @@ export const AIWorkspace = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12 animate-fade-in">
             {/* SISI KIRI: INPUT CHAT & SCREENSHOT */}
             <div className="lg:col-span-6 space-y-6">
-                <div className="glass-panel rounded-3xl p-6 md:p-8 shadow-2xl border border-[#26262d]">
+                <div className="glass-panel rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl border border-[#26262d]">
                     {/* Brand Banner Header */}
                     <div className="flex items-center justify-between mb-5 flex-wrap gap-3 pb-4 border-b border-[#26262d]">
                         <div className="flex items-center gap-3">
@@ -422,7 +430,7 @@ export const AIWorkspace = ({
                         <div className="flex items-center gap-2 flex-wrap">
                             <button 
                                 onClick={() => setShowApiKeyModal(true)}
-                                className="text-xs font-semibold px-3 py-1.5 bg-[#202028] hover:bg-[#282832] text-[#c5a059] rounded-full border border-[#33333d] flex items-center gap-1.5 transition-colors shadow-sm"
+                                className="min-h-[40px] text-xs font-semibold px-3 py-1.5 bg-[#202028] hover:bg-[#282832] text-[#c5a059] rounded-full border border-[#33333d] flex items-center gap-1.5 transition-colors shadow-sm active:scale-95"
                                 title={aiProvider === 'openai' ? `OpenAI Base: ${openaiBaseUrl} | Model: ${openaiModel}` : `Google Gemini | Model: ${selectedModel}`}
                             >
                                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -441,7 +449,7 @@ export const AIWorkspace = ({
                                 Klik untuk mengarahkan taktik AI
                             </span>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
                             {AI_RESPONSE_MODES.map((mode) => {
                                 const isSelected = selectedMode === mode.id;
                                 return (
@@ -449,7 +457,7 @@ export const AIWorkspace = ({
                                         key={mode.id}
                                         type="button"
                                         onClick={() => setSelectedMode(mode.id)}
-                                        className={`p-3 rounded-2xl text-left border transition-all flex flex-col justify-between relative group ${
+                                        className={`min-h-[72px] p-2.5 sm:p-3 rounded-2xl text-left border transition-all flex flex-col justify-between relative group active:scale-[0.98] ${
                                             isSelected
                                                 ? 'bg-gradient-to-b from-[#c5a059]/20 to-[#1a1712] border-[#c5a059] text-white shadow-lg shadow-[#c5a059]/15 ring-1 ring-[#c5a059]/30'
                                                 : 'bg-[#15151a] border-[#26262d] text-zinc-400 hover:border-[#383844] hover:text-zinc-200'
@@ -481,13 +489,13 @@ export const AIWorkspace = ({
                         {(() => {
                             const activeModeObj = AI_RESPONSE_MODES.find(m => m.id === selectedMode) || AI_RESPONSE_MODES[0];
                             return (
-                                <div className="mt-2.5 px-3.5 py-2.5 rounded-xl bg-[#1a1a24] border border-[#c5a059]/30 flex items-center justify-between flex-wrap gap-2 text-xs animate-fade-in shadow-inner">
+                                <div className="mt-2.5 px-3 sm:px-3.5 py-2.5 rounded-xl bg-[#1a1a24] border border-[#c5a059]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs animate-fade-in shadow-inner">
                                     <span className="text-zinc-300 font-medium flex items-center gap-2">
-                                        <span className="w-2 h-2 rounded-full bg-[#c5a059] animate-pulse"></span>
-                                        <strong className="text-[#c5a059]">Fokus Taktis:</strong>
+                                        <span className="w-2 h-2 rounded-full bg-[#c5a059] animate-pulse shrink-0"></span>
+                                        <strong className="text-[#c5a059] shrink-0">Fokus Taktis:</strong>
                                         <span className="text-zinc-200">{activeModeObj.desc}</span>
                                     </span>
-                                    <span className="text-[10px] text-zinc-400 bg-[#22222d] px-2 py-0.5 rounded-full border border-[#30303e]">
+                                    <span className="text-[10px] text-zinc-400 bg-[#22222d] px-2 py-0.5 rounded-full border border-[#30303e] shrink-0 self-end sm:self-auto">
                                         Tersinkronisasi ke SOP {brandName}
                                     </span>
                                 </div>
@@ -672,7 +680,7 @@ export const AIWorkspace = ({
                             helperText={selectedImage || imagePreview ? "Ketik instruksi untuk AI (misal: 'follow up klien ini', 'arahkan ke survei', 'tanyakan ukuran')" : "Ketik pesan calon klien atau instruksi kerja admin"}
                         >
                             <textarea 
-                                className="w-full bg-[#15151a] border border-[#26262d] rounded-2xl p-4 text-sm focus:ring-2 focus:ring-[#c5a059]/30 focus:border-[#c5a059] transition-all resize-none shadow-inner text-zinc-100 placeholder:text-zinc-600"
+                                className="w-full bg-[#15151a] border border-[#26262d] rounded-2xl p-3.5 sm:p-4 text-base sm:text-sm focus:ring-2 focus:ring-[#c5a059]/30 focus:border-[#c5a059] transition-all resize-none shadow-inner text-zinc-100 placeholder:text-zinc-600"
                                 rows="3"
                                 placeholder={selectedImage || imagePreview 
                                     ? "Contoh: 'follow up klien ini dengan sopan', 'arahkan untuk booking survei akhir pekan ini', 'tawarkan opsi penyesuaian budget'..." 
@@ -692,7 +700,7 @@ export const AIWorkspace = ({
                                     <button 
                                         type="button" 
                                         onClick={() => setInputText('')} 
-                                        className="text-zinc-500 hover:text-zinc-300 text-[10px] underline underline-offset-2"
+                                        className="text-zinc-500 hover:text-zinc-300 text-[10px] underline underline-offset-2 p-1"
                                     >
                                         Bersihkan
                                     </button>
@@ -706,7 +714,7 @@ export const AIWorkspace = ({
                                             key={idx}
                                             type="button"
                                             onClick={() => handleApplyDirective(chip.text, chip.mode)}
-                                            className={`text-xs px-2.5 py-1 rounded-xl border transition-all flex items-center gap-1 font-medium ${
+                                            className={`text-xs px-2.5 py-1.5 min-h-[36px] rounded-xl border transition-all flex items-center gap-1 font-medium active:scale-95 ${
                                                 isSelected
                                                     ? 'bg-[#c5a059]/20 text-[#c5a059] border-[#c5a059]/50 font-bold shadow-sm'
                                                     : 'bg-[#1a1a22] text-zinc-300 border-[#2e2e38] hover:border-[#c5a059]/40 hover:text-white hover:bg-[#202028]'
@@ -725,12 +733,12 @@ export const AIWorkspace = ({
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">Screenshot Chat WhatsApp</label>
-                                <span className="text-[11px] font-semibold text-[#c5a059] bg-[#202028] px-2.5 py-0.5 rounded-md">💡 Klik atau Tekan Ctrl + V</span>
+                                <span className="text-[10px] sm:text-[11px] font-semibold text-[#c5a059] bg-[#202028] px-2 sm:px-2.5 py-0.5 rounded-md">💡 Klik atau Tekan Ctrl + V</span>
                             </div>
                             
                             {!imagePreview ? (
                                 <div 
-                                    className="border-2 border-dashed border-[#33333d] rounded-2xl p-8 text-center hover:bg-[#1a1a22]/60 hover:border-[#c5a059] transition-all cursor-pointer group bg-[#15151a]/50"
+                                    className="border-2 border-dashed border-[#33333d] rounded-2xl p-5 sm:p-8 text-center hover:bg-[#1a1a22]/60 hover:border-[#c5a059] transition-all cursor-pointer group bg-[#15151a]/50"
                                     onClick={() => fileInputRef.current?.click()}
                                     onDragOver={(e) => e.preventDefault()}
                                     onDrop={(e) => {
@@ -740,11 +748,16 @@ export const AIWorkspace = ({
                                         }
                                     }}
                                 >
-                                    <div className="mx-auto w-14 h-14 bg-[#202028] rounded-2xl flex items-center justify-center text-[#c5a059] group-hover:scale-110 transition-transform mb-3 shadow-md">
+                                    <div className="mx-auto w-12 h-12 sm:w-14 sm:h-14 bg-[#202028] rounded-2xl flex items-center justify-center text-[#c5a059] group-hover:scale-110 transition-transform mb-2 sm:mb-3 shadow-md">
                                         <Icons.Image />
                                     </div>
-                                    <p className="text-sm font-semibold text-zinc-200">Klik untuk unggah atau <span className="text-[#c5a059] underline underline-offset-2">Paste (Ctrl+V)</span></p>
-                                    <p className="text-xs text-zinc-500 mt-1">PNG, JPG, WEBP (Otomatis dikompresi cepat)</p>
+                                    <p className="text-xs sm:text-sm font-semibold text-zinc-200">Klik untuk unggah atau <span className="text-[#c5a059] underline underline-offset-2">Paste (Ctrl+V)</span></p>
+                                    <p className="text-[11px] sm:text-xs text-zinc-500 mt-1">PNG, JPG, WEBP (Otomatis dikompresi cepat)</p>
+                                    <div className="mt-3 sm:hidden">
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#202028] text-[#c5a059] text-xs font-bold border border-[#33333d]">
+                                            📷 Pilih File / Screenshot
+                                        </span>
+                                    </div>
                                     <input 
                                         type="file" 
                                         ref={fileInputRef} 
@@ -760,7 +773,7 @@ export const AIWorkspace = ({
                                         <span className="text-xs font-medium text-white bg-black/70 px-2.5 py-1 rounded-lg backdrop-blur-md">Screenshot WhatsApp Terlampir</span>
                                         <button 
                                             onClick={removeImage}
-                                            className="bg-black/80 hover:bg-black text-rose-400 p-2 rounded-xl shadow-lg transition-transform hover:scale-105"
+                                            className="min-h-[44px] min-w-[44px] flex items-center justify-center bg-black/80 hover:bg-black text-rose-400 p-2 rounded-xl shadow-lg transition-transform hover:scale-105"
                                             aria-label="Hapus screenshot yang terlampir"
                                         >
                                             <Icons.Trash />
@@ -775,7 +788,7 @@ export const AIWorkspace = ({
                             <button 
                                 onClick={generateReply}
                                 disabled={isLoading}
-                                className={`w-full flex items-center justify-center gap-2.5 py-4 px-6 rounded-2xl font-bold shadow-xl transition-all ${
+                                className={`w-full min-h-[48px] flex items-center justify-center gap-2.5 py-3.5 sm:py-4 px-6 rounded-2xl font-bold text-xs sm:text-sm shadow-xl transition-all active:scale-[0.99] ${
                                     isLoading ? 'bg-[#2a2a30] text-zinc-500 cursor-not-allowed' : 'gold-btn shadow-[#c5a059]/25 hover:scale-[1.01]'
                                 }`}
                             >
@@ -800,7 +813,7 @@ export const AIWorkspace = ({
             </div>
 
             {/* SISI KANAN: REKOMENDASI UTAMA BALASAN & SMART CONTEXT PANEL */}
-            <div className="lg:col-span-6 space-y-6">
+            <div ref={responsePanelRef} id="ai-response-panel" className="lg:col-span-6 space-y-6">
                 {isLoading ? (
                     streamingReply ? (
                         <div className="bg-[#15151a] rounded-3xl shadow-2xl border border-[#26262d] overflow-hidden flex flex-col animate-fade-in p-6 min-h-[360px]">
@@ -819,15 +832,15 @@ export const AIWorkspace = ({
                             </div>
                         </div>
                     ) : (
-                        <div className="glass-panel rounded-3xl p-8 shadow-2xl h-full flex flex-col justify-center items-center text-zinc-500 border border-[#26262d] min-h-[480px]">
-                            <div className="relative w-20 h-20 mb-6">
+                        <div className="glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl h-full flex flex-col justify-center items-center text-zinc-500 border border-[#26262d] min-h-[220px] lg:min-h-[480px]">
+                            <div className="relative w-16 h-16 sm:w-20 sm:h-20 mb-4 sm:mb-6">
                                 <div className="absolute inset-0 bg-[#c5a059]/20 rounded-full animate-ping"></div>
-                                <div className="relative bg-[#18181e] rounded-2xl p-5 shadow-2xl border border-[#c5a059]/30 text-[#c5a059] flex items-center justify-center">
+                                <div className="relative bg-[#18181e] rounded-2xl p-4 sm:p-5 shadow-2xl border border-[#c5a059]/30 text-[#c5a059] flex items-center justify-center">
                                     <Icons.Brain />
                                 </div>
                             </div>
-                            <h3 className="serif-font text-lg font-bold text-white">{brandName} Sales Ary Sedang Bekerja...</h3>
-                            <p className="text-sm mt-2 text-center max-w-sm text-zinc-400">
+                            <h3 className="serif-font text-base sm:text-lg font-bold text-white text-center">{brandName} Sales Ary Sedang Bekerja...</h3>
+                            <p className="text-xs sm:text-sm mt-2 text-center max-w-sm text-zinc-400">
                                 Mencocokkan knowledge base 3-layer, mengaudit integritas harga 2026, dan merumuskan rekomendasi balasan WhatsApp terbaik.
                             </p>
                         </div>
@@ -837,7 +850,7 @@ export const AIWorkspace = ({
                         {/* KARTU REKOMENDASI UTAMA BALASAN */}
                         <div className="bg-[#15151a] rounded-3xl shadow-2xl border border-[#26262d] overflow-hidden flex flex-col animate-fade-in">
                             {/* Header Rekomendasi Utama */}
-                            <div className="bg-[#1a1a22] border-b border-[#26262d] p-4 flex items-center justify-between flex-wrap gap-2">
+                            <div className="bg-[#1a1a22] border-b border-[#26262d] p-3.5 sm:p-4 flex items-center justify-between flex-wrap gap-2.5">
                                 <div className="flex items-center gap-2">
                                     <span className="px-2.5 py-1 rounded-xl bg-[#c5a059]/20 text-[#c5a059] text-xs font-bold uppercase tracking-wider border border-[#c5a059]/30 flex items-center gap-1.5">
                                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -850,21 +863,21 @@ export const AIWorkspace = ({
                                     )}
                                 </div>
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    {/* Tombol Buka WA Web */}
+                                    {/* Tombol Buka WhatsApp (Universal Mobile/Desktop App/Web) */}
                                     <a 
-                                        href={`https://web.whatsapp.com/send?text=${encodeURIComponent(primaryReplyText)}`}
+                                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(primaryReplyText)}`}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30"
-                                        title="Buka WhatsApp Web dan kirimkan teks balasan ini"
+                                        className="flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-all bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 touch-manipulation active:scale-95"
+                                        title="Buka WhatsApp dan kirimkan teks balasan ini"
                                     >
-                                        <Icons.ExternalLink /> WA Web
+                                        <Icons.ExternalLink /> Buka WA
                                     </a>
 
                                     {/* Tombol Copy Balasan */}
                                     <button 
                                         onClick={() => handleCopy('primary', primaryReplyText)}
-                                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
+                                        className={`flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-all shadow-sm touch-manipulation active:scale-95 ${
                                             copiedKey === 'primary' 
                                                 ? 'bg-emerald-500 text-white' 
                                                 : 'bg-[#202028] hover:bg-[#c5a059] hover:text-[#0d0d0d] text-zinc-200 border border-[#2e2e38]'
@@ -881,7 +894,7 @@ export const AIWorkspace = ({
                                     <div className="flex items-center gap-1 bg-[#15151a] p-1 rounded-xl border border-[#2e2e38] ml-1">
                                         <button 
                                             onClick={() => handleGiveFeedback('POSITIVE')}
-                                            className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
+                                            className={`px-2.5 py-1.5 min-h-[40px] rounded-lg text-xs font-bold transition-all touch-manipulation active:scale-95 ${
                                                 feedbackGiven === 'POSITIVE' 
                                                     ? 'bg-emerald-500 text-white' 
                                                     : 'text-zinc-400 hover:text-emerald-400 hover:bg-[#202028]'
@@ -892,7 +905,7 @@ export const AIWorkspace = ({
                                         </button>
                                         <button 
                                             onClick={() => handleGiveFeedback('NEGATIVE')}
-                                            className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
+                                            className={`px-2.5 py-1.5 min-h-[40px] rounded-lg text-xs font-bold transition-all touch-manipulation active:scale-95 ${
                                                 feedbackGiven === 'NEGATIVE' 
                                                     ? 'bg-rose-500 text-white' 
                                                     : 'text-zinc-400 hover:text-rose-400 hover:bg-[#202028]'
@@ -1021,12 +1034,12 @@ export const AIWorkspace = ({
                         </div>
                     </div>
                 ) : (
-                    <div className="glass-panel rounded-3xl p-8 shadow-2xl h-full flex flex-col justify-center items-center text-zinc-500 border border-[#26262d] min-h-[480px] border-dashed text-center">
-                        <div className="w-16 h-16 bg-[#1a1a20] rounded-2xl flex items-center justify-center text-zinc-400 mb-4 shadow-inner">
+                    <div className="glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl h-full flex flex-col justify-center items-center text-zinc-500 border border-[#26262d] min-h-[180px] lg:min-h-[480px] border-dashed text-center">
+                        <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#1a1a20] rounded-2xl flex items-center justify-center text-zinc-400 mb-3 sm:mb-4 shadow-inner">
                             <Icons.Send />
                         </div>
                         <h3 className="serif-font font-bold text-white text-base">Belum Ada Balasan Dibuat</h3>
-                        <p className="text-sm mt-1 text-zinc-400 max-w-sm">
+                        <p className="text-xs sm:text-sm mt-1 text-zinc-400 max-w-sm">
                             Masukkan chat atau screenshot pelanggan {brandName} di sebelah kiri, lalu klik Generate untuk membuat rekomendasi balasan AI terbaik.
                         </p>
                     </div>
