@@ -306,6 +306,9 @@ export const calculateEstimate = ({
     p = 3, // Panjang dalam meter
     t = 1, // Tinggi dalam meter
     l = 1, // Lebar dalam meter
+    cabinetBawah = undefined, // Panjang meter lari kabinet bawah
+    cabinetAtas = undefined,  // Panjang meter lari kabinet atas
+    isKusenBawahOnly = false, // Jika kabinet bawah hanya pintu/kusen cor beton
     plafonOption = 'none', // 'none' | 'lt_50' | '50_to_70'
     isHplLuarDalam = false,
     pintuKusen = false,
@@ -326,31 +329,90 @@ export const calculateEstimate = ({
     const numT = parseFloat(t) || 0;
     const numL = parseFloat(l) || 0;
 
-    // 1. KITCHEN SET
+    // 1. KITCHEN SET (Cabinet Bawah & Cabinet Atas)
     if (category === 'KITCHEN_SET') {
         const catPrices = PRICELIST_CATALOG.KITCHEN_SET[region]?.[material] || PRICELIST_CATALOG.KITCHEN_SET[region]?.MULTIPLEKS;
         const styleData = catPrices?.[style] || catPrices?.MINIMALIS || { base: 2500000 };
         baseUnitPrice = styleData.base;
-        subtotal = numP * baseUnitPrice;
-        formulaText = `${numP}m x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
-        itemBreakdown.push({ label: `Kitchen Set (${material} ${style})`, amount: subtotal, detail: formulaText });
 
-        // Kabinet Atas Full Plafon
-        if (plafonOption === 'lt_50' && styleData.plafonLt50) {
-            const plafonCost = numP * styleData.plafonLt50;
-            subtotal += plafonCost;
-            itemBreakdown.push({ label: 'Kabinet Plafon Tingkat 2 (T < 50cm)', amount: plafonCost, detail: `${numP}m x Rp ${styleData.plafonLt50.toLocaleString('id-ID')}` });
-        } else if (plafonOption === '50_to_70' && styleData.plafon50to70) {
-            const plafonCost = numP * styleData.plafon50to70;
-            subtotal += plafonCost;
-            itemBreakdown.push({ label: 'Kabinet Plafon Tingkat 2 (T 50-70cm)', amount: plafonCost, detail: `${numP}m x Rp ${styleData.plafon50to70.toLocaleString('id-ID')}` });
-        }
+        const hasExplicitCabinets = (cabinetBawah !== undefined || cabinetAtas !== undefined);
+        const lenBawah = hasExplicitCabinets ? (parseFloat(cabinetBawah) || 0) : 0;
+        const lenAtas = hasExplicitCabinets ? (parseFloat(cabinetAtas) || 0) : 0;
 
-        // Pintu Kusen
-        if (pintuKusen && styleData.kusen) {
-            const kusenCost = numP * styleData.kusen;
-            subtotal += kusenCost;
-            itemBreakdown.push({ label: 'Pintu Kusen Bawah', amount: kusenCost, detail: `${numP}m x Rp ${styleData.kusen.toLocaleString('id-ID')}` });
+        if (hasExplicitCabinets && (lenBawah > 0 || lenAtas > 0)) {
+            // 1a. Cabinet Bawah
+            if (lenBawah > 0) {
+                if ((isKusenBawahOnly || pintuKusen) && styleData.kusen) {
+                    const kusenCost = Math.round(lenBawah * styleData.kusen);
+                    subtotal += kusenCost;
+                    itemBreakdown.push({
+                        label: `Cabinet Bawah (Pintu Kusen Meja Cor)`,
+                        amount: kusenCost,
+                        detail: `${lenBawah}m' x Rp ${styleData.kusen.toLocaleString('id-ID')}`
+                    });
+                } else {
+                    const costBawah = Math.round(lenBawah * baseUnitPrice);
+                    subtotal += costBawah;
+                    itemBreakdown.push({
+                        label: `Cabinet Bawah (${material} ${style})`,
+                        amount: costBawah,
+                        detail: `${lenBawah}m' x Rp ${baseUnitPrice.toLocaleString('id-ID')}`
+                    });
+                }
+            }
+
+            // 1b. Cabinet Atas
+            if (lenAtas > 0) {
+                const costAtas = Math.round(lenAtas * baseUnitPrice);
+                subtotal += costAtas;
+                itemBreakdown.push({
+                    label: `Cabinet Atas (${material} ${style})`,
+                    amount: costAtas,
+                    detail: `${lenAtas}m' x Rp ${baseUnitPrice.toLocaleString('id-ID')}`
+                });
+
+                // Kabinet Atas Plafon Tingkat 2
+                if (plafonOption === 'lt_50' && styleData.plafonLt50) {
+                    const plafonCost = Math.round(lenAtas * styleData.plafonLt50);
+                    subtotal += plafonCost;
+                    itemBreakdown.push({
+                        label: 'Kabinet Plafon Tingkat 2 (T < 50cm)',
+                        amount: plafonCost,
+                        detail: `${lenAtas}m' x Rp ${styleData.plafonLt50.toLocaleString('id-ID')}`
+                    });
+                } else if (plafonOption === '50_to_70' && styleData.plafon50to70) {
+                    const plafonCost = Math.round(lenAtas * styleData.plafon50to70);
+                    subtotal += plafonCost;
+                    itemBreakdown.push({
+                        label: 'Kabinet Plafon Tingkat 2 (T 50-70cm)',
+                        amount: plafonCost,
+                        detail: `${lenAtas}m' x Rp ${styleData.plafon50to70.toLocaleString('id-ID')}`
+                    });
+                }
+            }
+        } else {
+            // Fallback backward-compatible: single panjang P
+            subtotal = Math.round(numP * baseUnitPrice);
+            formulaText = `${numP}m x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
+            itemBreakdown.push({ label: `Kitchen Set (${material} ${style})`, amount: subtotal, detail: formulaText });
+
+            // Kabinet Atas Full Plafon
+            if (plafonOption === 'lt_50' && styleData.plafonLt50) {
+                const plafonCost = Math.round(numP * styleData.plafonLt50);
+                subtotal += plafonCost;
+                itemBreakdown.push({ label: 'Kabinet Plafon Tingkat 2 (T < 50cm)', amount: plafonCost, detail: `${numP}m x Rp ${styleData.plafonLt50.toLocaleString('id-ID')}` });
+            } else if (plafonOption === '50_to_70' && styleData.plafon50to70) {
+                const plafonCost = Math.round(numP * styleData.plafon50to70);
+                subtotal += plafonCost;
+                itemBreakdown.push({ label: 'Kabinet Plafon Tingkat 2 (T 50-70cm)', amount: plafonCost, detail: `${numP}m x Rp ${styleData.plafon50to70.toLocaleString('id-ID')}` });
+            }
+
+            // Pintu Kusen
+            if (pintuKusen && styleData.kusen) {
+                const kusenCost = Math.round(numP * styleData.kusen);
+                subtotal += kusenCost;
+                itemBreakdown.push({ label: 'Pintu Kusen Bawah', amount: kusenCost, detail: `${numP}m x Rp ${styleData.kusen.toLocaleString('id-ID')}` });
+            }
         }
     }
 
@@ -485,10 +547,19 @@ export const calculateEstimate = ({
     }
 
     // Tambahan Finishing HPL Luar & Dalam jika dipilih
-    if (isHplLuarDalam && numP > 0) {
-        const hplCost = numP * rules.finishingHplLuarDalamPerMeter;
+    const hasExplicitCabinets = (category === 'KITCHEN_SET' && (cabinetBawah !== undefined || cabinetAtas !== undefined));
+    const hplBaseLength = hasExplicitCabinets
+        ? ((parseFloat(cabinetBawah) || 0) + (parseFloat(cabinetAtas) || 0))
+        : numP;
+
+    if (isHplLuarDalam && hplBaseLength > 0) {
+        const hplCost = Math.round(hplBaseLength * rules.finishingHplLuarDalamPerMeter);
         subtotal += hplCost;
-        itemBreakdown.push({ label: 'Finishing HPL Luar & Dalam', amount: hplCost, detail: `${numP}m x Rp ${rules.finishingHplLuarDalamPerMeter.toLocaleString('id-ID')}` });
+        itemBreakdown.push({
+            label: 'Finishing HPL Luar & Dalam',
+            amount: hplCost,
+            detail: `${hplBaseLength}m' x Rp ${rules.finishingHplLuarDalamPerMeter.toLocaleString('id-ID')}`
+        });
     }
 
     // Custom Addons
@@ -509,7 +580,13 @@ export const calculateEstimate = ({
         category,
         material,
         style,
-        dimensions: { p: numP, t: numT, l: numL },
+        dimensions: {
+            p: numP,
+            t: numT,
+            l: numL,
+            cabinetBawah: (cabinetBawah !== undefined) ? (parseFloat(cabinetBawah) || 0) : undefined,
+            cabinetAtas: (cabinetAtas !== undefined) ? (parseFloat(cabinetAtas) || 0) : undefined
+        },
         subtotal,
         isFreeOngkir,
         ongkirCost,
@@ -525,12 +602,17 @@ export const calculateEstimate = ({
 export const formatEstimateForWhatsApp = (estimate, brandName = 'PUTRA INTERIOR') => {
     if (!estimate) return '';
 
+    let dimText = `P: ${estimate.dimensions.p}m ${estimate.dimensions.t > 0 ? `| T: ${estimate.dimensions.t}m` : ''} ${estimate.dimensions.l > 0 ? `| L: ${estimate.dimensions.l}m` : ''}`.trim();
+    if (estimate.category === 'KITCHEN_SET' && (estimate.dimensions.cabinetBawah !== undefined || estimate.dimensions.cabinetAtas !== undefined)) {
+        dimText = `Cabinet Bawah: ${estimate.dimensions.cabinetBawah || 0}m' | Cabinet Atas: ${estimate.dimensions.cabinetAtas || 0}m'`;
+    }
+
     const lines = [
         `Halo Kak! Berikut rincian simulasi estimasi biaya interior dari *${brandName}*:`,
         '',
         `📍 *Wilayah:* ${estimate.regionLabel}`,
         `🛠️ *Spesifikasi:* ${estimate.category.replace(/_/g, ' ')} (${estimate.material} - ${estimate.style})`,
-        `📐 *Ukuran:* P: ${estimate.dimensions.p}m ${estimate.dimensions.t > 0 ? `| T: ${estimate.dimensions.t}m` : ''} ${estimate.dimensions.l > 0 ? `| L: ${estimate.dimensions.l}m` : ''}`,
+        `📐 *Ukuran:* ${dimText}`,
         '',
         `📝 *Rincian Estimasi Biaya:*`
     ];

@@ -341,6 +341,40 @@ assert(waFormatted.includes('100% GRATIS'), 'WhatsApp output includes free surve
 const calcKnowledge = GLOBAL_CORE_KNOWLEDGE.find(k => k.id === 'core_estimator_master_pricelist_2026');
 assert(calcKnowledge !== undefined, 'Master Pricelist 2026 knowledge chunk exists in GLOBAL_CORE_KNOWLEDGE');
 assert(calcKnowledge.content.includes('MASTER PRICELIST 2026 LENGKAP'), 'Master Pricelist 2026 content verified');
+assert(calcKnowledge.content.includes('Cabinet Bawah (CB) & Cabinet Atas (CA)'), 'Master Pricelist mentions Cabinet Bawah and Cabinet Atas');
+
+// 6. Kitchen Set dengan Cabinet Bawah & Cabinet Atas terpisah
+const estKitchenSplit = calculateEstimate({
+    region: 'dalam_kota',
+    category: 'KITCHEN_SET',
+    material: 'MULTIPLEKS',
+    style: 'MINIMALIS',
+    cabinetBawah: 3,
+    cabinetAtas: 2
+});
+assert(estKitchenSplit.subtotal === 12500000, 'Kitchen Set split CB 3m + CA 2m subtotal is 12.500.000');
+assert(estKitchenSplit.isFreeOngkir === true, 'Kitchen Set split >= 10jt has free ongkir');
+assert(estKitchenSplit.grandTotal === 12500000, 'Kitchen Set split grand total is 12.500.000');
+assert(estKitchenSplit.itemBreakdown.some(i => i.label.includes('Cabinet Bawah')), 'Item breakdown contains Cabinet Bawah');
+assert(estKitchenSplit.itemBreakdown.some(i => i.label.includes('Cabinet Atas')), 'Item breakdown contains Cabinet Atas');
+
+const waSplitFormatted = formatEstimateForWhatsApp(estKitchenSplit, 'HOMEPUTRA INTERIOR');
+assert(waSplitFormatted.includes('Cabinet Bawah: 3m'), 'WhatsApp output reflects Cabinet Bawah length');
+assert(waSplitFormatted.includes('Cabinet Atas: 2m'), 'WhatsApp output reflects Cabinet Atas length');
+
+// 7. Kitchen Set dengan Pintu Kusen Cor Bawah
+const estKusenBawah = calculateEstimate({
+    region: 'dalam_kota',
+    category: 'KITCHEN_SET',
+    material: 'MULTIPLEKS',
+    style: 'MINIMALIS',
+    cabinetBawah: 2,
+    cabinetAtas: 2,
+    isKusenBawahOnly: true
+});
+assert(estKusenBawah.subtotal === 7900000, 'Kitchen Set kusen bawah 2m + CA 2m subtotal is 7.900.000');
+assert(estKusenBawah.grandTotal === 8400000, 'Kitchen Set kusen bawah includes 500k ongkir');
+assert(estKusenBawah.itemBreakdown.some(i => i.label.includes('Pintu Kusen')), 'Item breakdown includes Pintu Kusen Meja Cor');
 
 console.log('\n========================================================');
 console.log(`🎉 ALL ${passedTests}/${totalTests} ACCEPTANCE TESTS PASSED SUCCESSFULLY!`);

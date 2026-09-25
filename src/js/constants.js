@@ -614,6 +614,8 @@ export const GLOBAL_CORE_KNOWLEDGE = [
         content: `• MASTER PRICELIST 2026 LENGKAP (24 HALAMAN DOKUMEN RESMI):
 
 1. KITCHENSET (PL DK: Bandung & Tasikmalaya / PL LK: Luar Kota & Jabodetabek):
+   - Cabinet Bawah (CB) & Cabinet Atas (CA): Masing-masing dihitung terpisah per meter lari (m') sesuai kebutuhan tata ruang dapur klien:
+     * Klien dapat memesan satu set lengkap (Cabinet Bawah + Cabinet Atas), atau hanya Cabinet Bawah saja / Cabinet Atas saja.
    - Blockboard Minimalis: DK Rp 2.000.000/m | LK Rp 2.300.000/m
    - Blockboard Semi Klasik: DK Rp 2.500.000/m | LK Rp 2.600.000/m
    - Blockboard Klasik: DK Rp 2.900.000/m | LK Rp 3.000.000/m
@@ -624,7 +626,7 @@ export const GLOBAL_CORE_KNOWLEDGE = [
    - Duco Klasik (Double Profil): DK Rp 6.100.000/m | LK Rp 6.200.000/m
    - Industrial: DK Rp 2.000.000 - Rp 2.300.000/m (Rangka Besi +Rp 1.800.000/m DK, Rp 2.100.000/m LK | +Wire Mesh Rp 2.000.000/m DK, Rp 2.300.000/m LK)
    - Kabinet Atas Full Plafon: Tingkat 2 (T < 50cm): Rp 1.800.000 - Rp 2.400.000/m | Tingkat 2 (T 50-70cm): Rp 1.950.000 - Rp 2.600.000/m
-   - Pintu Kusen Bawah: Minimalis Rp 1.450.000/m | Klasik Rp 1.650.000/m
+   - Cabinet Bawah Pintu Kusen Saja (Meja Cor Beton): Minimalis Rp 1.450.000/m | Klasik Rp 1.650.000/m
 
 2. LEMARI BAWAH TANGGA:
    - Rumus Standar (Kedalaman 60cm): Panjang x Tinggi x 0,8 x Harga

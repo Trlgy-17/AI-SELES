@@ -27,6 +27,11 @@ export const EstimatorCalculator = ({
     const [t, setT] = useState(category === 'LEMARI_WARDROBE' ? 2.8 : 1.0);
     const [l, setL] = useState(1.6);
 
+    // Kitchen Set Specific: Cabinet Bawah & Cabinet Atas
+    const [cabinetBawah, setCabinetBawah] = useState(2.0);
+    const [cabinetAtas, setCabinetAtas] = useState(2.0);
+    const [isKusenBawahOnly, setIsKusenBawahOnly] = useState(false);
+
     // Options & Add-ons
     const [plafonOption, setPlafonOption] = useState('none'); // 'none' | 'lt_50' | '50_to_70'
     const [isHplLuarDalam, setIsHplLuarDalam] = useState(false);
@@ -50,6 +55,9 @@ export const EstimatorCalculator = ({
             p,
             t,
             l,
+            cabinetBawah: category === 'KITCHEN_SET' ? cabinetBawah : undefined,
+            cabinetAtas: category === 'KITCHEN_SET' ? cabinetAtas : undefined,
+            isKusenBawahOnly: category === 'KITCHEN_SET' ? isKusenBawahOnly : false,
             plafonOption,
             isHplLuarDalam,
             pintuKusen,
@@ -62,6 +70,7 @@ export const EstimatorCalculator = ({
         });
     }, [
         region, category, material, style, p, t, l,
+        cabinetBawah, cabinetAtas, isKusenBawahOnly,
         plafonOption, isHplLuarDalam, pintuKusen, pintuKaca,
         sofaCover, headboardOption, rangkaDipanTingkat,
         bawahTanggaKedalamanGt60, customAddons
@@ -82,8 +91,12 @@ export const EstimatorCalculator = ({
 
     const handleSendToAI = () => {
         if (onApplyToAI) {
+            let dimString = `${p}m ${t > 1 ? `x ${t}m` : ''} ${l > 1 ? `x ${l}m` : ''}`.trim();
+            if (category === 'KITCHEN_SET') {
+                dimString = `Cabinet Bawah: ${cabinetBawah}m', Cabinet Atas: ${cabinetAtas}m'`;
+            }
             onApplyToAI({
-                dimensions: `${p}m ${t > 1 ? `x ${t}m` : ''} ${l > 1 ? `x ${l}m` : ''}`.trim(),
+                dimensions: dimString,
                 budget: `Rp ${(estimate.grandTotal / 1000000).toFixed(1)} Juta`,
                 projectType: `${category.replace(/_/g, ' ')} (${material} ${style})`,
                 notes: `Estimasi RAB: Rp ${estimate.grandTotal.toLocaleString('id-ID')} (${estimate.regionLabel})`
@@ -226,57 +239,129 @@ export const EstimatorCalculator = ({
 
                     {/* Dimensi Ruangan */}
                     <div className="pt-2">
-                        <label className="text-xs font-bold text-zinc-300 block mb-2">2. Ukuran / Dimensi</label>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div>
-                                <label className="text-[11px] text-zinc-400 block mb-1 font-semibold">Panjang (P) / Meter</label>
-                                <div className="flex items-center">
-                                    <input
-                                        type="number"
-                                        step="0.1"
-                                        min="0.5"
-                                        value={p}
-                                        onChange={(e) => setP(parseFloat(e.target.value) || 0)}
-                                        className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-sm text-white focus:border-[#c5a059] focus:outline-none"
-                                    />
-                                    <span className="text-xs text-zinc-500 ml-2">m</span>
+                        <label className="text-xs font-bold text-zinc-300 block mb-2">
+                            {category === 'KITCHEN_SET' ? '2. Ukuran Kabinet Kitchen Set (Cabinet Bawah & Cabinet Atas)' : '2. Ukuran / Dimensi'}
+                        </label>
+
+                        {category === 'KITCHEN_SET' ? (
+                            <div className="space-y-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {/* Cabinet Bawah */}
+                                    <div className="p-3.5 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-2.5">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-bold text-[#c5a059] flex items-center gap-1.5">
+                                                <span>🔽</span>
+                                                <span>Cabinet Bawah</span>
+                                            </label>
+                                            <span className="text-[10px] text-zinc-400 font-mono">Meter Lari (m')</span>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <input
+                                                type="number"
+                                                step="0.1"
+                                                min="0"
+                                                value={cabinetBawah}
+                                                onChange={(e) => setCabinetBawah(parseFloat(e.target.value) >= 0 ? parseFloat(e.target.value) : 0)}
+                                                className="w-full bg-[#111115] border border-[#2e2e38] rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-[#c5a059] focus:outline-none"
+                                                placeholder="Contoh: 2.0"
+                                            />
+                                            <span className="text-xs text-zinc-500 ml-2 font-mono">m'</span>
+                                        </div>
+                                        <label className="flex items-center gap-2 pt-1 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={isKusenBawahOnly}
+                                                onChange={(e) => setIsKusenBawahOnly(e.target.checked)}
+                                                className="w-3.5 h-3.5 accent-[#c5a059] rounded"
+                                            />
+                                            <span className="text-[11px] text-zinc-300">
+                                                Hanya Pintu Kusen (Meja Cor Semen)
+                                            </span>
+                                        </label>
+                                        <p className="text-[10px] text-zinc-500">
+                                            Standar T: 80-85cm, Kedalaman 60cm. Isi 0 jika tidak memesan cabinet bawah.
+                                        </p>
+                                    </div>
+
+                                    {/* Cabinet Atas */}
+                                    <div className="p-3.5 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-2.5">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-bold text-[#c5a059] flex items-center gap-1.5">
+                                                <span>🔼</span>
+                                                <span>Cabinet Atas</span>
+                                            </label>
+                                            <span className="text-[10px] text-zinc-400 font-mono">Meter Lari (m')</span>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <input
+                                                type="number"
+                                                step="0.1"
+                                                min="0"
+                                                value={cabinetAtas}
+                                                onChange={(e) => setCabinetAtas(parseFloat(e.target.value) >= 0 ? parseFloat(e.target.value) : 0)}
+                                                className="w-full bg-[#111115] border border-[#2e2e38] rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-[#c5a059] focus:outline-none"
+                                                placeholder="Contoh: 2.0"
+                                            />
+                                            <span className="text-xs text-zinc-500 ml-2 font-mono">m'</span>
+                                        </div>
+                                        <p className="text-[10px] text-zinc-400 pt-2">
+                                            Standar T: 80cm gantung, Kedalaman 35cm. Isi 0 jika tidak memesan cabinet atas.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-
-                            {(category === 'LEMARI_WARDROBE' || category === 'BACKDROP_TV' || category === 'LEMARI_BAWAH_TANGGA' || category === 'WALLPANEL_KACA' || category === 'PARTISI_BENCH') && (
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div>
-                                    <label className="text-[11px] text-zinc-400 block mb-1 font-semibold">Tinggi (T) / Meter</label>
+                                    <label className="text-[11px] text-zinc-400 block mb-1 font-semibold">Panjang (P) / Meter</label>
                                     <div className="flex items-center">
                                         <input
                                             type="number"
                                             step="0.1"
                                             min="0.5"
-                                            value={t}
-                                            onChange={(e) => setT(parseFloat(e.target.value) || 0)}
+                                            value={p}
+                                            onChange={(e) => setP(parseFloat(e.target.value) || 0)}
                                             className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-sm text-white focus:border-[#c5a059] focus:outline-none"
                                         />
                                         <span className="text-xs text-zinc-500 ml-2">m</span>
                                     </div>
                                 </div>
-                            )}
 
-                            {(category === 'DIPAN_HEADBOARD') && (
-                                <div>
-                                    <label className="text-[11px] text-zinc-400 block mb-1 font-semibold">Lebar Ranjang (L) / Meter</label>
-                                    <div className="flex items-center">
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            min="0.9"
-                                            value={l}
-                                            onChange={(e) => setL(parseFloat(e.target.value) || 0)}
-                                            className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-sm text-white focus:border-[#c5a059] focus:outline-none"
-                                        />
-                                        <span className="text-xs text-zinc-500 ml-2">m</span>
+                                {(category === 'LEMARI_WARDROBE' || category === 'BACKDROP_TV' || category === 'LEMARI_BAWAH_TANGGA' || category === 'WALLPANEL_KACA' || category === 'PARTISI_BENCH') && (
+                                    <div>
+                                        <label className="text-[11px] text-zinc-400 block mb-1 font-semibold">Tinggi (T) / Meter</label>
+                                        <div className="flex items-center">
+                                            <input
+                                                type="number"
+                                                step="0.1"
+                                                min="0.5"
+                                                value={t}
+                                                onChange={(e) => setT(parseFloat(e.target.value) || 0)}
+                                                className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-sm text-white focus:border-[#c5a059] focus:outline-none"
+                                            />
+                                            <span className="text-xs text-zinc-500 ml-2">m</span>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                        </div>
+                                )}
+
+                                {(category === 'DIPAN_HEADBOARD') && (
+                                    <div>
+                                        <label className="text-[11px] text-zinc-400 block mb-1 font-semibold">Lebar Ranjang (L) / Meter</label>
+                                        <div className="flex items-center">
+                                            <input
+                                                type="number"
+                                                step="0.1"
+                                                min="0.9"
+                                                value={l}
+                                                onChange={(e) => setL(parseFloat(e.target.value) || 0)}
+                                                className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-sm text-white focus:border-[#c5a059] focus:outline-none"
+                                            />
+                                            <span className="text-xs text-zinc-500 ml-2">m</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Opsi Tambahan Spesifik Kategori */}
