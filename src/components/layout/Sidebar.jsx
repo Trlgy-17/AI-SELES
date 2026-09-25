@@ -125,7 +125,7 @@ export const Sidebar = ({
                     >
                         <div className="flex items-center gap-3">
                             <Icons.MessageSquare />
-                            <span>AI Sales Copilot</span>
+                            <span>Sales Ary</span>
                         </div>
                         <span className="text-[9px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-bold">3 OPSI</span>
                     </button>

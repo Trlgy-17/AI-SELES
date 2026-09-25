@@ -145,7 +145,7 @@ export const EstimatorCalculator = ({
                 projectType: `${category.replace(/_/g, ' ')} (${material} ${style})`,
                 notes: `Estimasi RAB: Rp ${estimate.grandTotal.toLocaleString('id-ID')} (${estimate.regionLabel})`
             });
-            showToast?.("Hasil estimasi berhasil dimasukkan ke AI Copilot Workspace!");
+            showToast?.("Hasil estimasi berhasil dimasukkan ke Sales Ary Workspace!");
         }
     };
 
@@ -829,7 +829,7 @@ export const EstimatorCalculator = ({
                                         className="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all bg-[#202028] hover:bg-[#2e2e38] text-zinc-200 border border-[#2e2e38] flex items-center justify-center gap-2"
                                     >
                                         <Icons.Brain />
-                                        <span>Gunakan untuk Balasan AI Copilot</span>
+                                        <span>Gunakan untuk Balasan Sales Ary</span>
                                     </button>
                                 )}
                             </div>

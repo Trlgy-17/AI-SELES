@@ -43,7 +43,7 @@ export const Header = ({
                     <div>
                         <div className="flex items-center gap-2 flex-wrap">
                             <h1 className="serif-font text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-                                {brandName} <span className="gold-gradient-text text-xl md:text-2xl font-sans font-bold">Sales Copilot</span>
+                                {brandName} <span className="gold-gradient-text text-xl md:text-2xl font-sans font-bold">Sales Ary</span>
                             </h1>
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#c5a059]/15 text-[#c5a059] border border-[#c5a059]/30">
                                 {activeBrand?.id === 'brand_nacira' ? 'Flagship' : 'Multi-Brand'}

@@ -40,7 +40,7 @@ export const CommandPalette = ({
     if (!isOpen) return null;
 
     const baseActions = [
-        { id: 'workspace', title: 'AI Sales Copilot', icon: <Icons.MessageSquare />, action: () => onNavigate('workspace'), category: 'Navigasi' },
+        { id: 'workspace', title: 'Sales Ary', icon: <Icons.MessageSquare />, action: () => onNavigate('workspace'), category: 'Navigasi' },
         { id: 'crm', title: 'CRM Data Leads', icon: <Icons.Users />, action: () => onNavigate('crm'), category: 'Navigasi' },
         { id: 'estimator', title: 'Kalkulator Estimasi RAB & Cetak PDF', icon: <Icons.Calculator />, action: () => onNavigate('estimator'), category: 'Navigasi' },
         { id: 'knowledge', title: 'Knowledge Base & Master Pricelist', icon: <Icons.BookOpen />, action: () => onNavigate('knowledge'), category: 'Navigasi' },

@@ -332,7 +332,7 @@ export function App() {
                     currentUser={currentUser}
                     onConsultLeadInAI={(lead) => {
                         setActiveTab('workspace');
-                        showToast(`Membuka AI Copilot untuk klien ${lead.name}`, 'info');
+                        showToast(`Membuka Sales Ary untuk klien ${lead.name}`, 'info');
                     }}
                 />
             )}
@@ -350,7 +350,7 @@ export function App() {
                                 Estimator Anggaran Biaya (RAB) — {activeBrand?.brandName || 'Brand Aktif'}
                             </h1>
                             <p className="text-xs text-zinc-400 mt-1">
-                                Simulasikan rincian biaya proyek interior, ekspor dokumen PDF penawaran resmi, dan sinkronkan ke AI Sales Copilot.
+                                Simulasikan rincian biaya proyek interior, ekspor dokumen PDF penawaran resmi, dan sinkronkan ke Sales Ary.
                             </p>
                         </div>
                     </div>
@@ -360,7 +360,7 @@ export function App() {
                         showToast={showToast} 
                         onApplyToAI={(calcData) => {
                             setActiveTab('workspace');
-                            showToast(`Hasil hitungan ${calcData.projectType} (${calcData.budget}) siap digunakan di AI Copilot!`);
+                            showToast(`Hasil hitungan ${calcData.projectType} (${calcData.budget}) siap digunakan di Sales Ary!`);
                         }} 
                     />
                 </div>
@@ -371,7 +371,7 @@ export function App() {
                     currentUser={currentUser}
                     onApplyToAI={(calcData) => {
                         setActiveTab('workspace');
-                        showToast(`Hasil hitungan ${calcData.projectType} (${calcData.budget}) siap digunakan di AI Copilot!`);
+                        showToast(`Hasil hitungan ${calcData.projectType} (${calcData.budget}) siap digunakan di Sales Ary!`);
                     }}
                     showToast={showToast}
                 />

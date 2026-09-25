@@ -465,6 +465,19 @@ assert(estimatorIndex > crmIndex, 'Estimator RAB is placed in left panel below C
 assert(appSrc.includes("activeTab === 'estimator'"), 'app.jsx routes activeTab === estimator to EstimatorCalculator');
 assert(commandPaletteSrc.includes("'estimator'"), 'CommandPalette includes estimator action');
 
+// ----------------------------------------------------
+// TEST 14: Sales Ary Branding & AI Workspace Calculator Cleanup
+// ----------------------------------------------------
+console.log('\n🧪 TEST 14: Sales Ary Branding & AI Workspace Calculator Cleanup');
+const headerSrc = fs.readFileSync('src/components/layout/Header.jsx', 'utf-8');
+const workspaceSrc = fs.readFileSync('src/components/modules/AIWorkspace.jsx', 'utf-8');
+
+assert(sidebarSrc.includes('<span>Sales Ary</span>'), 'Sidebar displays Sales Ary navigation label');
+assert(headerSrc.includes('Sales Ary'), 'Header displays Sales Ary branding');
+assert(commandPaletteSrc.includes("title: 'Sales Ary'"), 'CommandPalette displays Sales Ary action');
+assert(!workspaceSrc.includes('<span>Kalkulator RAB</span>'), 'Calculator button removed from AIWorkspace toolbar');
+assert(!workspaceSrc.includes('showCalculatorModal'), 'Calculator modal removed from AIWorkspace');
+
 console.log('\n========================================================');
 console.log(`🎉 ALL ${passedTests}/${totalTests} ACCEPTANCE TESTS PASSED SUCCESSFULLY!`);
 console.log('========================================================\n');
