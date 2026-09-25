@@ -10,6 +10,7 @@ import {
     BACKSPLASH_PRICES
 } from '../../js/services/calculatorData.js';
 import { copyToClipboard } from '../../js/utils/clipboard.js';
+import { exportEstimateToPDF } from '../../js/utils/pdfExport.js';
 
 export const EstimatorCalculator = ({ 
     activeBrand, 
@@ -17,6 +18,7 @@ export const EstimatorCalculator = ({
     showToast 
 }) => {
     const brandName = activeBrand?.brandName || 'PUTRA INTERIOR';
+    const [isExportingPDF, setIsExportingPDF] = useState(false);
 
     // Form States
     const [region, setRegion] = useState('dalam_kota'); // 'dalam_kota' | 'luar_kota'
@@ -112,6 +114,19 @@ export const EstimatorCalculator = ({
             setCopied(true);
             showToast?.("Rincian estimasi biaya berhasil disalin dalam format WhatsApp!");
             setTimeout(() => setCopied(false), 2500);
+        }
+    };
+
+    const handleExportPDF = async () => {
+        try {
+            setIsExportingPDF(true);
+            exportEstimateToPDF(estimate, activeBrand);
+            showToast?.(`File PDF penawaran RAB (${brandName}) berhasil diunduh!`, 'success');
+        } catch (err) {
+            console.error('Gagal membuat dokumen PDF:', err);
+            showToast?.('Gagal membuat dokumen PDF: ' + (err.message || 'Unknown error'), 'error');
+        } finally {
+            setIsExportingPDF(false);
         }
     };
 
@@ -795,6 +810,16 @@ export const EstimatorCalculator = ({
                                     ) : (
                                         <React.Fragment><Icons.Copy /> Salin Format Chat WhatsApp</React.Fragment>
                                     )}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={handleExportPDF}
+                                    disabled={isExportingPDF}
+                                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all bg-[#1a1a24] hover:bg-[#252533] text-[#c5a059] border border-[#c5a059]/40 flex items-center justify-center gap-2 shadow-md hover:border-[#c5a059] active:scale-[0.99] disabled:opacity-50"
+                                >
+                                    <span>📄</span>
+                                    <span>{isExportingPDF ? 'Membuat Dokumen PDF...' : `Ekspor PDF Penawaran RAB (${brandName})`}</span>
                                 </button>
 
                                 {onApplyToAI && (

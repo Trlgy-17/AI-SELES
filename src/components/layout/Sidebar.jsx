@@ -138,21 +138,6 @@ export const Sidebar = ({
                         <span>CRM Leads {brandName.split(' ')[0]}</span>
                     </button>
 
-                    <button 
-                        onClick={() => { setActiveTab('followup'); closeSidebar(); }} 
-                        className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${activeTab === 'followup' ? 'bg-gradient-to-r from-[#c5a059] to-[#b8972e] text-[#0d0d0d] font-bold shadow-lg shadow-[#c5a059]/20' : 'hover:bg-[#1a1a20] text-zinc-400 hover:text-zinc-200'}`}
-                    >
-                        <div className="flex items-center gap-3">
-                            <Icons.Calendar />
-                            <span>Follow-Up AI</span>
-                        </div>
-                        {(overdueCount > 0 || todayCount > 0) && (
-                            <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse">
-                                {overdueCount + todayCount}
-                            </span>
-                        )}
-                    </button>
-
                     <div className="pt-3 px-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Basis Pengetahuan</div>
 
                     <button 

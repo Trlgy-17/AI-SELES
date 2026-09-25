@@ -336,17 +336,6 @@ export function App() {
                     }}
                 />
             )}
-            {activeTab === 'followup' && (
-                <FollowUpModule 
-                    followUpTasks={followUpTasks} 
-                    setFollowUpTasks={setFollowUpTasks} 
-                    crmLeads={crmLeads} 
-                    userId={userId} 
-                    showToast={showToast}
-                    activeBrand={activeBrand}
-                    currentUser={currentUser}
-                />
-            )}
             {activeTab === 'knowledge' && (
                 <KnowledgeBase 
                     activeBrand={activeBrand}

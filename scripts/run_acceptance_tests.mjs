@@ -6,7 +6,11 @@ import { ResponseParser } from '../src/js/services/ai/ResponseParser.js';
 import { CustomerMemoryEngine } from '../src/js/services/ai/CustomerMemoryEngine.js';
 import { ConversationAnalyzer } from '../src/js/services/ai/ConversationAnalyzer.js';
 import { calculateEstimate, formatEstimateForWhatsApp } from '../src/js/services/calculatorData.js';
+import { exportEstimateToPDF } from '../src/js/utils/pdfExport.js';
 import { INITIAL_BRANDS, INITIAL_USERS, GLOBAL_CORE_KNOWLEDGE, DEFAULT_BRAND_OVERRIDES } from '../src/js/constants.js';
+import fs from 'node:fs';
+
+process.env.NODE_ENV = 'test';
 
 let passedTests = 0;
 let totalTests = 0;
@@ -422,6 +426,28 @@ assert(estKitchenAddons.subtotal === 15675000, 'Kitchen Set with Topi Bar, Box E
 assert(estKitchenAddons.itemBreakdown.some(i => i.label.includes('Topi Bar')), 'Item breakdown includes Topi Bar');
 assert(estKitchenAddons.itemBreakdown.some(i => i.label.includes('Box Elektronik')), 'Item breakdown includes Box Elektronik');
 assert(estKitchenAddons.itemBreakdown.some(i => i.label.includes('Hambalan')), 'Item breakdown includes Hambalan');
+
+// ----------------------------------------------------
+// TEST 11: Modern Brand-Specific PDF Quotation Export
+// ----------------------------------------------------
+console.log('\n🧪 TEST 11: Modern Brand-Specific PDF Quotation Export');
+const naciraBrand = INITIAL_BRANDS.find(b => b.id === 'brand_nacira');
+const pdfResult = exportEstimateToPDF(estTopTableGranit, naciraBrand);
+assert(pdfResult && pdfResult.success === true, 'PDF quotation generated successfully');
+assert(pdfResult.fileName.includes('NACIRAST'), 'PDF filename contains sanitized active brand code');
+assert(pdfResult.doc && typeof pdfResult.doc.save === 'function', 'Generated jsPDF document is valid and exportable');
+
+// ----------------------------------------------------
+// TEST 12: Follow-Up Tab Navigation Removed
+// ----------------------------------------------------
+console.log('\n🧪 TEST 12: Follow-Up Tab Navigation Removed');
+const sidebarSrc = fs.readFileSync('src/components/layout/Sidebar.jsx', 'utf-8');
+const commandPaletteSrc = fs.readFileSync('src/components/layout/CommandPalette.jsx', 'utf-8');
+const appSrc = fs.readFileSync('src/js/app.jsx', 'utf-8');
+
+assert(!sidebarSrc.includes("'followup'"), 'Follow-Up tab removed from Sidebar');
+assert(!commandPaletteSrc.includes("'followup'"), 'Follow-Up action removed from CommandPalette');
+assert(!appSrc.includes("activeTab === 'followup'"), 'Follow-Up tab rendering removed from app.jsx');
 
 console.log('\n========================================================');
 console.log(`🎉 ALL ${passedTests}/${totalTests} ACCEPTANCE TESTS PASSED SUCCESSFULLY!`);
