@@ -110,7 +110,10 @@ export const exportEstimateToPDF = (estimate, activeBrand = {}) => {
         doc.setFont('helvetica', 'bold');
         doc.text('Wilayah Proyek', 18, currentY + 14);
         doc.setFont('helvetica', 'normal');
-        doc.text(`: ${estimate.regionLabel}`, 52, currentY + 14);
+        const regionText = (estimate.region === 'luar_kota' || String(estimate.regionLabel || '').toLowerCase().includes('luar'))
+            ? 'Luar Kota'
+            : 'Dalam Kota';
+        doc.text(`: ${regionText}`, 52, currentY + 14);
 
         doc.setFont('helvetica', 'bold');
         doc.text('Kategori Item', 18, currentY + 21);
