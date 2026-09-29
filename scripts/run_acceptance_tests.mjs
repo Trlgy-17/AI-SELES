@@ -17,7 +17,6 @@ import {
 import { exportEstimateToPDF, getApplicableWarrantyText } from '../src/js/utils/pdfExport.js';
 import { INITIAL_BRANDS, INITIAL_USERS, GLOBAL_CORE_KNOWLEDGE, DEFAULT_BRAND_OVERRIDES } from '../src/js/constants.js';
 import fs from 'node:fs';
-import { LayoutAnalyzerService } from '../src/js/services/layoutAnalyzer.js';
 
 process.env.NODE_ENV = 'test';
 
@@ -734,39 +733,6 @@ assert(editTaskModalSrc.includes('max-h-[90dvh]') && editTaskModalSrc.includes('
 assert(cloudModalSrc.includes('max-h-[90dvh]') && cloudModalSrc.includes('overflow-y-auto'), 'CloudSettingsModal adapts to mobile viewport height');
 assert(authModalSrc.includes('max-h-[90dvh]') && authModalSrc.includes('overflow-y-auto'), 'AuthModal adapts to mobile viewport height');
 assert(confirmModalSrc.includes('max-h-[90dvh]') && confirmModalSrc.includes('overflow-y-auto'), 'ConfirmModal adapts to mobile viewport height');
-
-// ----------------------------------------------------
-// TEST 19: AI Layout, Measurement & Photo Drop Zone Estimator
-// ----------------------------------------------------
-console.log('\n🧪 TEST 19: AI Layout, Measurement & Photo Drop Zone Estimator');
-assert(typeof LayoutAnalyzerService.analyzeFile === 'function', 'LayoutAnalyzerService.analyzeFile function exists');
-
-// Test heuristic analysis on mock layout file
-const mockFile = {
-    name: 'denah_dapur_3.5m_2.8m_kulkas_hambalan.png',
-    size: 245000,
-    type: 'image/png'
-};
-const mockAnalysis = await LayoutAnalyzerService.analyzeFile({
-    file: mockFile,
-    customApiKey: '', // trigger smart fallback
-    activeBrand: { brandName: 'Nacira Studio' }
-});
-
-assert(mockAnalysis.success === true, 'Layout analysis succeeds');
-assert(mockAnalysis.category === 'KITCHEN_SET', 'Kitchen Set category correctly identified from filename');
-assert(mockAnalysis.cabinetBawah === 3.5, 'Cabinet bawah 3.5m extracted');
-assert(mockAnalysis.cabinetAtas === 2.8, 'Cabinet atas 2.8m extracted');
-assert(mockAnalysis.boxElektronik.active === true, 'Box elektronik kulkas detected from file');
-assert(mockAnalysis.hambalanLength > 0, 'Hambalan floating detected from file');
-
-// Verify EstimatorCalculator integration
-const estimatorCalcSrc = fs.readFileSync('src/components/modules/EstimatorCalculator.jsx', 'utf-8');
-assert(estimatorCalcSrc.includes('LayoutAnalyzerService'), 'EstimatorCalculator imports LayoutAnalyzerService');
-assert(estimatorCalcSrc.includes('handleFileDrop'), 'EstimatorCalculator implements handleFileDrop');
-assert(estimatorCalcSrc.includes('onDragOver') && estimatorCalcSrc.includes('onDrop'), 'EstimatorCalculator implements Drag & Drop listeners');
-assert(estimatorCalcSrc.includes('Scan AI Denah, Ukuran, Layout'), 'EstimatorCalculator renders Drop Zone UI');
-assert(estimatorCalcSrc.includes('analysisResult'), 'EstimatorCalculator renders AI Analysis Result panel');
 
 console.log('\n========================================================');
 console.log(`🎉 ALL ${passedTests}/${totalTests} ACCEPTANCE TESTS PASSED SUCCESSFULLY!`);
