@@ -628,7 +628,7 @@ export const GLOBAL_CORE_KNOWLEDGE = [
    - Kabinet Atas Full Plafon: Tingkat 2 (T < 50cm): Rp 1.800.000 - Rp 2.400.000/m | Tingkat 2 (T 50-70cm): Rp 1.950.000 - Rp 2.600.000/m
    - Cabinet Bawah Pintu Kusen Saja (Meja Cor Beton): Minimalis Rp 1.450.000/m | Klasik Rp 1.650.000/m
    - Top Table (Meja Countertop Dapur per meter lari m'):
-     * Aica (HPL / Solid Surface): Rp 1.400.000,- / meter
+     * Aica: Rp 1.400.000,- / meter
      * Quadra (Sintered Stone Mewah): Rp 2.300.000,- / meter
      * Granit (Batu Alam Solid Nero): Rp 2.800.000,- / meter
    - Backsplash (Dinding Dapur per meter lari m'):

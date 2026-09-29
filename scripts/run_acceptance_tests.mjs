@@ -415,6 +415,7 @@ const estTopTableAica = calculateEstimate({
 });
 assert(estTopTableAica.subtotal === 11700000, 'Kitchen Set with Aica Top Table subtotal is 11.700.000');
 assert(estTopTableAica.itemBreakdown.some(i => i.label.includes('Aica') && i.amount === 4200000), 'Aica Top Table calculated at 1.4jt/m');
+assert(estTopTableAica.itemBreakdown.some(i => i.label === 'Top Table (Aica)'), 'Top Table label is strictly Top Table (Aica)');
 
 // 10. Kitchen Set dengan Topi Bar, Box Elektronik & Hambalan disatukan
 // - Hambalan per meter: Rp 650.000/m'

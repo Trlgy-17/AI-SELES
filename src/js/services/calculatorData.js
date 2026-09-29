@@ -442,7 +442,7 @@ export const PROJECT_RULES = {
  * DAFTAR HARGA TOP TABLE & BACKSPLASH RESMI
  */
 export const TOP_TABLE_PRICES = {
-    AICA: { id: 'AICA', label: 'Aica (HPL / Solid Surface)', price: 1400000, desc: 'Higienis, tahan gores & mudah dibersihkan' },
+    AICA: { id: 'AICA', label: 'Aica', price: 1400000, desc: 'Higienis, tahan gores & mudah dibersihkan' },
     QUADRA: { id: 'QUADRA', label: 'Quadra Sintered Stone', price: 2300000, desc: 'Batu sinter mewah, tahan panas & anti noda' },
     GRANIT: { id: 'GRANIT', label: 'Granit Alam / Nero', price: 2800000, desc: 'Batu alam solid premium berkelas & kokoh' }
 };

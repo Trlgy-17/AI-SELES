@@ -524,7 +524,7 @@ export const EstimatorCalculator = ({
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                     {[
                                         { id: 'none', label: 'Tanpa Top Table', price: 'Rp 0' },
-                                        { id: 'AICA', label: 'Aica HPL / Solid', price: 'Rp 1.400.000/m\'' },
+                                        { id: 'AICA', label: 'Aica', price: 'Rp 1.400.000/m\'' },
                                         { id: 'QUADRA', label: 'Quadra Sintered', price: 'Rp 2.300.000/m\'' },
                                         { id: 'GRANIT', label: 'Granit Alam / Nero', price: 'Rp 2.800.000/m\'' }
                                     ].map((tt) => (
