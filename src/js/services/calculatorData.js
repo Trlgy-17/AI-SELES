@@ -2,24 +2,70 @@
 
 /**
  * MASTER PRICELIST & ESTIMATOR DATA 2026
- * Diambil langsung dari 24 Halaman Dokumen Resmi PUTRA CORPORATION
- * Mencakup Wilayah:
- * - Dalam Kota (PL DK: Bandung & Tasikmalaya)
- * - Luar Kota (PL LK: Jabodetabek, Pantura, Jatim & Jateng)
+ * Diambil langsung dari Dokumen Resmi PUTRA CORPORATION:
+ * - PL DK: Price List Dalam Kota (Bandung & Tasikmalaya)
+ * - PL LK: Price List Luar Kota (Jabodetabek, Pantura, Jatim & Jateng)
+ * - PL INT SVY: Standar Rumus Perhitungan & SOP Pengukuran
+ * 
+ * Pengelompokan Item Terpadu Sesuai File:
+ * 1. Area Kitchen Set (Kabinet Dapur, Meja Cor, Top Table, Backsplash, Mini Bar, Topi Bar, Box Elektronik, Hambalan)
+ * 2. Area Kamar Set (Lemari Wardrobe, Dipan Ranjang, Headboard, Nakas, Rangka Dipan Tingkat, Meja Rias)
+ * 3. Area Living Room (Backdrop TV, Lemari Bawah Tangga, Cradienza, Partisi Sekat, Bench, Wallpanel & Sofa)
+ * 4. Sipil & Bengkel Las (Canopi Spandek/Alderon, Pagar Wire Mesh, Cor Meja Beton & Jasa Sipil)
  */
 
 export const ESTIMATOR_CATEGORIES = [
-    { id: 'KITCHEN_SET', name: 'Kitchen Set', icon: '🍳', unit: 'meter lari' },
-    { id: 'LEMARI_BAWAH_TANGGA', name: 'Lemari Bawah Tangga', icon: '📐', unit: 'P x T x 0.8' },
-    { id: 'LEMARI_WARDROBE', name: 'Lemari Pakaian / Wardrobe', icon: '🚪', unit: 'P x T (m2)' },
-    { id: 'BACKDROP_TV', name: 'Backdrop TV', icon: '📺', unit: 'P x T (m2)' },
-    { id: 'MINIBAR_ISLAND', name: 'Mini Bar / Meja Island', icon: '🍸', unit: 'P x 0.6 / unit' },
-    { id: 'DIPAN_HEADBOARD', name: 'Dipan, Headboard & Nakas', icon: '🛏️', unit: 'P x L / meter' },
-    { id: 'RANGKA_DIPAN_TINGKAT', name: 'Penambahan Rangka Dipan Tingkat', icon: '🪜', unit: 'unit' },
-    { id: 'CRADIENZA', name: 'Cradienza / Kredensa', icon: '🗄️', unit: 'meter lari' },
-    { id: 'WALLPANEL_KACA', name: 'Wallpanel & Cermin Bevel', icon: '🪞', unit: 'P x T (m2)' },
-    { id: 'PARTISI_BENCH', name: 'Partisi & Bench', icon: '🛋️', unit: 'P x T / meter' },
-    { id: 'SOFA', name: 'Sofa Custom', icon: '🛋️', unit: 'P x 0.60' }
+    { 
+        id: 'KITCHEN_SET', 
+        name: 'Area Kitchen Set', 
+        icon: '🍳', 
+        unit: 'All-in-One Dapur',
+        description: 'Kabinet Dapur, Meja Cor, Top Table, Backsplash, Mini Bar, Topi Bar, Box Elektronik & Hambalan' 
+    },
+    { 
+        id: 'KAMAR_SET', 
+        name: 'Area Kamar Set', 
+        icon: '🛏️', 
+        unit: 'Master Bedroom',
+        description: 'Lemari Wardrobe, Dipan Ranjang, Headboard, Nakas, Rangka Dipan Tingkat & Meja Rias' 
+    },
+    { 
+        id: 'LIVING_ROOM', 
+        name: 'Area Living Room', 
+        icon: '📺', 
+        unit: 'Ruang Keluarga & Tamu',
+        description: 'Backdrop TV, Lemari Bawah Tangga, Cradienza, Partisi Sekat, Bench, Wallpanel & Sofa Custom' 
+    },
+    { 
+        id: 'SIPIL_BENGKEL', 
+        name: 'Sipil & Bengkel Las', 
+        icon: '🏗️', 
+        unit: 'Eksterior & Sipil',
+        description: 'Canopi Spandek/Alderon, Pagar Wire Mesh/Hollow, Cor Meja Beton & Jasa Bongkaran' 
+    }
+];
+
+export const KAMAR_SET_ITEMS = [
+    { id: 'LEMARI_WARDROBE', name: 'Lemari Pakaian / Wardrobe', unit: 'P x T (m2)', icon: '🚪' },
+    { id: 'DIPAN_HEADBOARD', name: 'Dipan Ranjang & Headboard', unit: 'P x L (m2)', icon: '🛏️' },
+    { id: 'RANGKA_DIPAN_TINGKAT', name: 'Penambahan Rangka Dipan Tingkat', unit: 'Unit', icon: '🪜' },
+    { id: 'MEJA_RIAS', name: 'Meja Rias', unit: 'P (meter)', icon: '🪞' }
+];
+
+export const LIVING_ROOM_ITEMS = [
+    { id: 'BACKDROP_TV', name: 'Backdrop TV', unit: 'P x T (m2)', icon: '📺' },
+    { id: 'LEMARI_BAWAH_TANGGA', name: 'Lemari Bawah Tangga', unit: 'P x T x 0.8', icon: '📐' },
+    { id: 'CRADIENZA', name: 'Cradienza / Kredensa', unit: 'P (meter)', icon: '🗄️' },
+    { id: 'PARTISI_BENCH', name: 'Partisi & Sekat Ruangan', unit: 'P x T (m2)', icon: '🚪' },
+    { id: 'BENCH', name: 'Bench / Bangku Duduk', unit: 'P (meter)', icon: '🛋️' },
+    { id: 'WALLPANEL_KACA', name: 'Wallpanel & Cermin Bevel / WPC', unit: 'P x T (m2)', icon: '🪞' },
+    { id: 'SOFA', name: 'Sofa Custom', unit: 'P : 0.60', icon: '🛋️' }
+];
+
+export const SIPIL_BENGKEL_ITEMS = [
+    { id: 'CANOPI', name: 'Canopi (Spandek / Alderon / Kaca)', unit: 'P x L (m2)', icon: '🏠' },
+    { id: 'PAGAR', name: 'Pagar & Railing (Wire Mesh / Hollow)', unit: 'P x T (m2)', icon: '🛡️' },
+    { id: 'JASA_SIPIL', name: 'Jasa Sipil & Bongkaran', unit: 'Borongan / Titik', icon: '🔨' }
 ];
 
 export const PRICELIST_CATALOG = {
@@ -46,6 +92,15 @@ export const PRICELIST_CATALOG = {
                 KLASIK: { base: 4700000, plafonLt50: 4500000, plafon50to70: 4700000, kusen: 2150000 },
                 DUCO_DOUBLE_PROFIL: { base: 6100000, kusen: 2350000 },
                 INDUSTRIAL: { base: 4500000, rangkaBesi: 2100000, rangkaWiremesh: 2300000 }
+            },
+            PVC: {
+                MINIMALIS: { base: 4000000, plafonLt50: 3800000, plafon50to70: 4000000, kusen: 1650000 },
+                SEMI_KLASIK: { base: 4500000, plafonLt50: 4300000, plafon50to70: 4500000, kusen: 1850000 },
+                KLASIK: { base: 4800000, plafonLt50: 4500000, plafon50to70: 4700000, kusen: 1850000 }
+            },
+            ALUMUNIUM: {
+                MINIMALIS: { base: 3300000, kusen: 1650000 },
+                SEMI_KLASIK: { base: 3750000, kusen: 1850000 }
             }
         },
         luar_kota: {
@@ -67,30 +122,55 @@ export const PRICELIST_CATALOG = {
                 KLASIK: { base: 4800000, plafonLt50: 4600000, plafon50to70: 4800000, kusen: 2250000 },
                 DUCO_DOUBLE_PROFIL: { base: 6200000, kusen: 2450000 },
                 INDUSTRIAL: { base: 4500000, rangkaBesi: 2100000, rangkaWiremesh: 2300000 }
+            },
+            PVC: {
+                MINIMALIS: { base: 4100000, plafonLt50: 3800000, plafon50to70: 4000000, kusen: 1650000 },
+                SEMI_KLASIK: { base: 4500000, plafonLt50: 4300000, plafon50to70: 4500000, kusen: 1850000 },
+                KLASIK: { base: 4800000, plafonLt50: 4500000, plafon50to70: 4700000, kusen: 1850000 }
+            },
+            ALUMUNIUM: {
+                MINIMALIS: { base: 3500000, kusen: 1750000 },
+                SEMI_KLASIK: { base: 5000000, kusen: 1950000 },
+                LUXURY_FRAMELESS: { base: 5500000, kusen: 2150000 }
             }
         }
     },
 
     // ----------------------------------------------------
-    // 2. LEMARI BAWAH TANGGA (Page 22 & 23)
-    // Formula: P x T x 0.8 x Harga (Standar Kedalaman 60cm)
-    // Jika kedalaman > 60cm: P x T x Harga
+    // 2. MINI BAR / MEJA ISLAND (Page 7 & 10)
+    // Formula: P : 0.6 x Harga
     // ----------------------------------------------------
-    LEMARI_BAWAH_TANGGA: {
+    MINIBAR_ISLAND: {
         dalam_kota: {
-            BLOCKBOARD: { MINIMALIS: 2300000, SEMI_KLASIK: 2700000, KLASIK: 2950000 },
-            MULTIPLEKS: { MINIMALIS: 2500000, SEMI_KLASIK: 2750000, KLASIK: 3000000 },
-            DUCO: { MINIMALIS: 4800000, SEMI_KLASIK: 5300000, KLASIK: 6300000 }
+            BLOCKBOARD: { MINIMALIS: 2100000, SEMI_KLASIK: 2500000, KLASIK: 2500000, INDUSTRIAL: 2100000, RANGKA_BESI: 1800000, RANGKA_WIREMESH: 2000000 },
+            MULTIPLEKS: { MINIMALIS: 2500000, SEMI_KLASIK: 2700000, KLASIK: 2700000, INDUSTRIAL: 2500000, RANGKA_BESI: 1800000, RANGKA_WIREMESH: 2000000 }
         },
         luar_kota: {
-            BLOCKBOARD: { MINIMALIS: 2400000, SEMI_KLASIK: 2850000, KLASIK: 3050000 },
-            MULTIPLEKS: { MINIMALIS: 2600000, SEMI_KLASIK: 2850000, KLASIK: 3100000 },
-            DUCO: { MINIMALIS: 4100000, SEMI_KLASIK: 4800000, KLASIK: 5500000 }
+            BLOCKBOARD: { MINIMALIS: 2300000, SEMI_KLASIK: 2700000, KLASIK: 2700000, INDUSTRIAL: 2300000, RANGKA_BESI: 2100000, RANGKA_WIREMESH: 2300000 },
+            MULTIPLEKS: { MINIMALIS: 2500000, SEMI_KLASIK: 2700000, KLASIK: 2700000, INDUSTRIAL: 2500000, RANGKA_BESI: 2100000, RANGKA_WIREMESH: 2300000 }
         }
     },
 
     // ----------------------------------------------------
-    // 3. LEMARI / WARDROBE (Page 15 & 16)
+    // 3. TOPI BAR, BOX ELEKTRONIK & HAMBALAN (Page 8 & 9)
+    // ----------------------------------------------------
+    TOPI_BOX_HAMBALAN: {
+        dalam_kota: {
+            TOPI_BAR: { BLOCKBOARD: 1250000, MULTIPLEK: 1450000, DUCO: 2100000 },
+            BOX_ELEKTRONIK_BLOCKBOARD: { LT_1M: 2100000, GT_1M: 2200000 },
+            BOX_ELEKTRONIK_MULTIPLEKS: { LT_1M: 2500000, GT_1M: 2600000 },
+            HAMBALAN: { DENGAN_LAMPU: 500000, TANPA_LAMPU: 450000 }
+        },
+        luar_kota: {
+            TOPI_BAR: { BLOCKBOARD: 1350000, MULTIPLEK: 1450000, DUCO: 2100000 },
+            BOX_ELEKTRONIK_BLOCKBOARD: { LT_1M: 2300000, GT_1M: 2400000 },
+            BOX_ELEKTRONIK_MULTIPLEKS: { LT_1M: 2600000, GT_1M: 2700000 },
+            HAMBALAN: { DENGAN_LAMPU: 600000, TANPA_LAMPU: 550000 }
+        }
+    },
+
+    // ----------------------------------------------------
+    // 4. LEMARI / WARDROBE (Page 15 & 16)
     // Formula: P x T x Harga (Standar Kedalaman 60cm)
     // ----------------------------------------------------
     LEMARI_WARDROBE: {
@@ -109,57 +189,7 @@ export const PRICELIST_CATALOG = {
     },
 
     // ----------------------------------------------------
-    // 4. BACKDROP TV (Page 17 & 18)
-    // Formula: P x T x Harga
-    // ----------------------------------------------------
-    BACKDROP_TV: {
-        dalam_kota: {
-            BLOCKBOARD: { MINIMALIS: 2100000, SEMI_KLASIK: 2300000, KLASIK: 2500000 },
-            MULTIPLEKS: { MINIMALIS: 2300000, SEMI_KLASIK: 2500000, KLASIK: 2800000 },
-            DUCO: { MINIMALIS: 4600000, SEMI_KLASIK: 5100000, KLASIK: 6100000 }
-        },
-        luar_kota: {
-            BLOCKBOARD: { MINIMALIS: 2100000, SEMI_KLASIK: 2300000, KLASIK: 2600000 },
-            MULTIPLEKS: { MINIMALIS: 2400000, SEMI_KLASIK: 2600000, KLASIK: 2900000 },
-            DUCO: { MINIMALIS: 4600000, SEMI_KLASIK: 5100000, KLASIK: 6100000 }
-        }
-    },
-
-    // ----------------------------------------------------
-    // 5. MINI BAR / MEJA ISLAND (Page 7 & 10)
-    // Formula: P : 0.6 x Harga
-    // ----------------------------------------------------
-    MINIBAR_ISLAND: {
-        dalam_kota: {
-            BLOCKBOARD: { MINIMALIS: 2100000, SEMI_KLASIK: 2500000, KLASIK: 2500000, INDUSTRIAL: 2100000, RANGKA_BESI: 1800000, RANGKA_WIREMESH: 2000000 },
-            MULTIPLEKS: { MINIMALIS: 2500000, SEMI_KLASIK: 2700000, KLASIK: 2700000, INDUSTRIAL: 2500000, RANGKA_BESI: 1800000, RANGKA_WIREMESH: 2000000 }
-        },
-        luar_kota: {
-            BLOCKBOARD: { MINIMALIS: 2300000, SEMI_KLASIK: 2700000, KLASIK: 2700000, INDUSTRIAL: 2300000, RANGKA_BESI: 2100000, RANGKA_WIREMESH: 2300000 },
-            MULTIPLEKS: { MINIMALIS: 2500000, SEMI_KLASIK: 2700000, KLASIK: 2700000, INDUSTRIAL: 2500000, RANGKA_BESI: 2100000, RANGKA_WIREMESH: 2300000 }
-        }
-    },
-
-    // ----------------------------------------------------
-    // 6. TOPI BAR, BOX ELEKTRONIK & HAMBALAN (Page 8 & 9)
-    // ----------------------------------------------------
-    TOPI_BOX_HAMBALAN: {
-        dalam_kota: {
-            TOPI_BAR: { BLOCKBOARD: 1250000, MULTIPLEK: 1450000, DUCO: 2100000 },
-            BOX_ELEKTRONIK_BLOCKBOARD: { LT_1M: 2100000, GT_1M: 2200000 },
-            BOX_ELEKTRONIK_MULTIPLEKS: { LT_1M: 2500000, GT_1M: 2600000 },
-            HAMBALAN: { DENGAN_LAMPU: 500000, TANPA_LAMPU: 450000 }
-        },
-        luar_kota: {
-            TOPI_BAR: { BLOCKBOARD: 1350000, MULTIPLEK: 1450000, DUCO: 2100000 },
-            BOX_ELEKTRONIK_BLOCKBOARD: { LT_1M: 2300000, GT_1M: 2400000 },
-            BOX_ELEKTRONIK_MULTIPLEKS: { LT_1M: 2600000, GT_1M: 2700000 },
-            HAMBALAN: { DENGAN_LAMPU: 600000, TANPA_LAMPU: 550000 }
-        }
-    },
-
-    // ----------------------------------------------------
-    // 7. DIPAN, HEADBOARD & NAKAS (Page 11 & 14)
+    // 5. DIPAN, HEADBOARD & NAKAS (Page 11 & 14)
     // ----------------------------------------------------
     DIPAN_HEADBOARD: {
         dalam_kota: {
@@ -193,7 +223,7 @@ export const PRICELIST_CATALOG = {
     },
 
     // ----------------------------------------------------
-    // 8. PENAMBAHAN RANGKA DIPAN TINGKAT (Page 12 & 13)
+    // 6. PENAMBAHAN RANGKA DIPAN TINGKAT (Page 12 & 13)
     // Besi Hollow lapis HPL per Unit
     // ----------------------------------------------------
     RANGKA_DIPAN_TINGKAT: {
@@ -216,7 +246,57 @@ export const PRICELIST_CATALOG = {
     },
 
     // ----------------------------------------------------
-    // 9. CRADIENZA / KREDENSA (Page 19)
+    // 7. MEJA RIAS (Page 16)
+    // Formula: P x Harga (Standar Kedalaman 60cm + Kaca)
+    // ----------------------------------------------------
+    MEJA_RIAS: {
+        dalam_kota: {
+            BLOCKBOARD: { MINIMALIS: 1900000, SEMI_KLASIK: 2200000, KLASIK: 2400000 },
+            MULTIPLEKS: { MINIMALIS: 2100000, SEMI_KLASIK: 2450000, KLASIK: 2600000 }
+        },
+        luar_kota: {
+            BLOCKBOARD: { MINIMALIS: 1900000, SEMI_KLASIK: 2200000, KLASIK: 2400000 },
+            MULTIPLEKS: { MINIMALIS: 2100000, SEMI_KLASIK: 2450000, KLASIK: 2600000 }
+        }
+    },
+
+    // ----------------------------------------------------
+    // 8. BACKDROP TV (Page 17 & 18)
+    // Formula: P x T x Harga
+    // ----------------------------------------------------
+    BACKDROP_TV: {
+        dalam_kota: {
+            BLOCKBOARD: { MINIMALIS: 2100000, SEMI_KLASIK: 2300000, KLASIK: 2500000 },
+            MULTIPLEKS: { MINIMALIS: 2300000, SEMI_KLASIK: 2500000, KLASIK: 2800000 },
+            DUCO: { MINIMALIS: 4600000, SEMI_KLASIK: 5100000, KLASIK: 6100000 }
+        },
+        luar_kota: {
+            BLOCKBOARD: { MINIMALIS: 2100000, SEMI_KLASIK: 2300000, KLASIK: 2600000 },
+            MULTIPLEKS: { MINIMALIS: 2400000, SEMI_KLASIK: 2600000, KLASIK: 2900000 },
+            DUCO: { MINIMALIS: 4600000, SEMI_KLASIK: 5100000, KLASIK: 6100000 }
+        }
+    },
+
+    // ----------------------------------------------------
+    // 9. LEMARI BAWAH TANGGA (Page 22 & 23)
+    // Formula: P x T x 0.8 x Harga (Standar Kedalaman 60cm)
+    // Jika kedalaman > 60cm: P x T x Harga
+    // ----------------------------------------------------
+    LEMARI_BAWAH_TANGGA: {
+        dalam_kota: {
+            BLOCKBOARD: { MINIMALIS: 2300000, SEMI_KLASIK: 2700000, KLASIK: 2950000 },
+            MULTIPLEKS: { MINIMALIS: 2500000, SEMI_KLASIK: 2750000, KLASIK: 3000000 },
+            DUCO: { MINIMALIS: 4800000, SEMI_KLASIK: 5300000, KLASIK: 6300000 }
+        },
+        luar_kota: {
+            BLOCKBOARD: { MINIMALIS: 2400000, SEMI_KLASIK: 2850000, KLASIK: 3050000 },
+            MULTIPLEKS: { MINIMALIS: 2600000, SEMI_KLASIK: 2850000, KLASIK: 3100000 },
+            DUCO: { MINIMALIS: 4100000, SEMI_KLASIK: 4800000, KLASIK: 5500000 }
+        }
+    },
+
+    // ----------------------------------------------------
+    // 10. CRADIENZA / KREDENSA (Page 19)
     // Formula: P x Harga
     // ----------------------------------------------------
     CRADIENZA: {
@@ -228,17 +308,6 @@ export const PRICELIST_CATALOG = {
     },
 
     // ----------------------------------------------------
-    // 10. WALLPANEL & KACA CERMIN BEVEL (Page 20)
-    // Formula: P x T x Harga
-    // ----------------------------------------------------
-    WALLPANEL_KACA: {
-        all_regions: {
-            WALLPANEL_MULTIPLEK: { MINIMALIS: 1350000, SEMI_KLASIK: 1500000, KLASIK: 1650000, DUCO: 2750000 },
-            KACA_BEVEL: { CERMIN_BIASA: 1850000, CERMIN_BRONZE_GREY: 1950000 }
-        }
-    },
-
-    // ----------------------------------------------------
     // 11. PARTISI & BENCH (Page 21)
     // ----------------------------------------------------
     PARTISI_BENCH: {
@@ -246,13 +315,34 @@ export const PRICELIST_CATALOG = {
             PARTISI_BLOCKBOARD: 2100000, // P x T
             PARTISI_MULTIPLEK_MINIMALIS: 2400000,
             PARTISI_MULTIPLEK_DUCO: 4500000,
-            BENCH_BLOCKBOARD: 2100000, // P x Harga
-            BENCH_MULTIPLEK: 2600000
+            BENCH_BLOCKBOARD: 2000000, // P x Harga
+            BENCH_MULTIPLEK: 2200000,
+            BUSA_STANDARD: 650000
+        },
+        luar_kota: {
+            PARTISI_BLOCKBOARD: 2200000,
+            PARTISI_MULTIPLEK_MINIMALIS: 2400000,
+            PARTISI_MULTIPLEK_DUCO: 4500000,
+            BENCH_BLOCKBOARD: 2100000,
+            BENCH_MULTIPLEK: 2300000,
+            BUSA_STANDARD: 650000
         }
     },
 
     // ----------------------------------------------------
-    // 12. SOFA (Page 24)
+    // 12. WALLPANEL & KACA CERMIN BEVEL (Page 20)
+    // Formula: P x T x Harga
+    // ----------------------------------------------------
+    WALLPANEL_KACA: {
+        all_regions: {
+            WALLPANEL_MULTIPLEK: { MINIMALIS: 1350000, SEMI_KLASIK: 1500000, KLASIK: 1650000, DUCO: 2750000 },
+            KACA_BEVEL: { CERMIN_BIASA: 1850000, CERMIN_BRONZE_GREY: 1950000 },
+            WPC_PANEL: { dalam_kota: 850000, luar_kota: 950000 }
+        }
+    },
+
+    // ----------------------------------------------------
+    // 13. SOFA (Page 24)
     // Formula: P : 0.60 x Harga
     // ----------------------------------------------------
     SOFA: {
@@ -266,15 +356,55 @@ export const PRICELIST_CATALOG = {
             },
             ONGKIR_LUAR_KOTA: 750000
         }
+    },
+
+    // ----------------------------------------------------
+    // 14. CANOPI & PAGAR (Sipil & Bengkel Las)
+    // ----------------------------------------------------
+    SIPIL_BENGKEL: {
+        CANOPI: {
+            HOLO_4X4_SPANDEK: { label: 'Hollow 4x4 Atap Spandek', price: 1200000 },
+            HOLO_4X6_SPANDEK: { label: 'Hollow 4x6 Atap Spandek', price: 1400000 },
+            HOLO_4X4_ALDERON: { label: 'Hollow 4x4 Atap Alderon 2 Layer', price: 1600000 },
+            HOLO_4X6_ALDERON: { label: 'Hollow 4x6 Atap Alderon 2 Layer', price: 1800000 },
+            BAJA_RINGAN_SPANDEK: { label: 'Baja Ringan Atap Spandek', price: 750000 },
+            ATAP_KACA: { label: 'Atap Kaca Tempered Solid', price: 2800000 }
+        },
+        PAGAR: {
+            MINIMALIS: { label: 'Pagar Besi Minimalis', price: 1800000 },
+            MODERN_MINIMALIS: { label: 'Pagar Modern Minimalis', price: 2100000 },
+            MODERN_CLASSIC: { label: 'Pagar Modern Classic Profil', price: 2400000 },
+            WIRE_MESH: { label: 'Pagar & Railing Wire Mesh Jaring', price: 1800000 }
+        },
+        JASA_SIPIL: {
+            dalam_kota: {
+                COR_MEJA_DAPUR: { label: 'Bikin Meja Cor Dapur (Jasa Borong)', price: 2400000, unit: 'm\'' },
+                BOBOK_KOMPOR_SINK: { label: 'Bobok Lubang Kompor / Sink', price: 500000, unit: 'lubang' },
+                PINDAH_TITIK_AIR: { label: 'Pindah Titik Air Bersih/Kotor', price: 750000, unit: 'titik' },
+                PINDAH_TITIK_LISTRIK: { label: 'Pindah Titik Saklar / Stop Kontak', price: 650000, unit: 'titik' },
+                PENGECATAN: { label: 'Pengecatan Tembok (Jasa Borong)', price: 200000, unit: 'm2' },
+                BONGKAR_CORAN: { label: 'Bongkar Coran Beton (1-2m)', price: 1000000, unit: 'paket' },
+                BONGKAR_KABINET: { label: 'Bongkar Kitchenset Lama (2-4m)', price: 1250000, unit: 'paket' }
+            },
+            luar_kota: {
+                COR_MEJA_DAPUR: { label: 'Bikin Meja Cor Dapur (Finishing Keramik)', price: 2400000, unit: 'm\'' },
+                BOBOK_KOMPOR_SINK: { label: 'Bobok Lubang Kompor / Sink', price: 750000, unit: 'lubang' },
+                PINDAH_TITIK_AIR: { label: 'Pindah Titik Air Bersih/Kotor', price: 450000, unit: 'm\'' },
+                PINDAH_TITIK_LISTRIK: { label: 'Pindah Titik Saklar / Stop Kontak', price: 650000, unit: 'm\'' },
+                PENGECATAN: { label: 'Pengecatan Tembok (Jasa Borong)', price: 1250000, unit: 'm2' },
+                BONGKAR_CORAN: { label: 'Bongkar Coran Beton (0-5m)', price: 1750000, unit: 'paket' },
+                BONGKAR_KABINET: { label: 'Bongkar Kitchenset Lama (0-3m)', price: 2000000, unit: 'paket' }
+            }
+        }
     }
 };
 
 /**
  * ATURAN PROYEK MINIMUM & ONGKIR RESMI:
- * - Dalam Kota (Bandung & sekitarnya):
+ * - PL DK (Dalam Kota: Bandung & Tasikmalaya):
  *   Project < Rp 10.000.000 -> Ongkir Rp 500.000,- & penambahan biaya Rak Bumbu/Piring
- *   Project >= Rp 10.000.000 -> Gratis Ongkir Bandung
- * - Luar Kota (Jabodetabek, Pantura, Jatim, Jateng):
+ *   Project >= Rp 10.000.000 -> Gratis Ongkir Bandung & Tasikmalaya
+ * - PL LK (Luar Kota: Jabodetabek, Pantura, Jatim, Jateng):
  *   Project < Rp 15.000.000 -> Ongkir Rp 500.000,-
  *   Project >= Rp 15.000.000 -> Gratis Ongkir Jabodetabek & sekitarnya
  * - Finishing HPL Luar & Dalam: Tambahan Rp 700.000,- / meter
@@ -284,13 +414,13 @@ export const PROJECT_RULES = {
         minFreeOngkir: 10000000,
         ongkirUnderMin: 500000,
         finishingHplLuarDalamPerMeter: 700000,
-        areaLabel: 'Bandung & Tasikmalaya (Dalam Kota)'
+        areaLabel: 'PL DK (Bandung & Tasikmalaya - Dalam Kota)'
     },
     luar_kota: {
         minFreeOngkir: 15000000,
         ongkirUnderMin: 500000,
         finishingHplLuarDalamPerMeter: 700000,
-        areaLabel: 'Jabodetabek, Pantura, Jateng & Jatim (Luar Kota)'
+        areaLabel: 'PL LK (Jabodetabek, Pantura, Jateng & Jatim - Luar Kota)'
     }
 };
 
@@ -324,37 +454,52 @@ export const BACKSPLASH_PRICES = {
 
 /**
  * Mesin kalkulasi estimasi presisi untuk interior sales
+ * Sesuai rumus resmi dokumen PL INT SVY, PL DK, dan PL LK
  */
 export const calculateEstimate = ({
-    region = 'dalam_kota', // 'dalam_kota' | 'luar_kota'
-    category = 'KITCHEN_SET',
-    material = 'MULTIPLEKS', // 'BLOCKBOARD' | 'MULTIPLEKS' | 'DUCO_LUXURY' | 'DUCO'
-    style = 'MINIMALIS', // 'MINIMALIS' | 'SEMI_KLASIK' | 'KLASIK' | 'INDUSTRIAL' | 'DUCO_DOUBLE_PROFIL'
+    region = 'dalam_kota', // 'dalam_kota' (PL DK) | 'luar_kota' (PL LK)
+    category = 'KITCHEN_SET', // Master Area atau legacy category
+    subItem = undefined, // Sub-item di dalam Kamar Set, Living Room, Sipil/Bengkel
+    material = 'MULTIPLEKS', // 'BLOCKBOARD' | 'MULTIPLEKS' | 'DUCO_LUXURY' | 'DUCO' | 'PVC' | 'ALUMUNIUM'
+    style = 'MINIMALIS', // 'MINIMALIS' | 'SEMI_KLASIK' | 'KLASIK' | 'INDUSTRIAL'
     p = 3, // Panjang dalam meter
     t = 1, // Tinggi dalam meter
     l = 1, // Lebar dalam meter
+    // Kitchen Set Unified:
     cabinetBawah = undefined, // Panjang meter lari kabinet bawah
     cabinetAtas = undefined,  // Panjang meter lari kabinet atas
     isKusenBawahOnly = false, // Jika kabinet bawah hanya pintu/kusen cor beton
-    // Top Table & Backsplash Kitchen Set
     topTableOption = 'none', // 'none' | 'AICA' | 'QUADRA' | 'GRANIT'
     topTableLength = undefined, // default mengikuti cabinetBawah
     backsplashOption = 'none', // 'none' | 'AICA' | 'QUADRA' | 'GRANIT' | 'KERAMIK_BEVEL' | 'MOZAIC' | 'CERMIN_GREY'
     backsplashLength = undefined, // default mengikuti cabinetBawah
-    // Topi Bar, Box Elektronik & Hambalan (Disatukan ke Kitchen Set)
-    topiBarLength = 0, // panjang meter lari topi bar (0 jika tidak ada)
+    miniBarLength = 0, // Panjang Mini Bar / Meja Island (Rumus: P : 0.6 x Harga)
+    topiBarLength = 0, // Panjang meter lari topi bar (Rumus: P x Harga)
     boxElektronikType = 'none', // 'none' | 'LT_1M' | 'GT_1M'
     boxElektronikQty = 0, // jumlah unit box elektronik
     hambalanQty = 0, // jumlah pcs hambalan
     hambalanType = 'DENGAN_LAMPU', // 'DENGAN_LAMPU' | 'TANPA_LAMPU'
     plafonOption = 'none', // 'none' | 'lt_50' | '50_to_70'
+    // Kamar Set Specific:
+    pintuKaca = 'none', // 'none' | 'KACA_POLOS' | 'KACA_RIBEN' | 'CERMIN_BIASA' | 'CERMIN_BRONZE_GREY'
+    headboardOption = 'none', // 'none' | 'BLOCKBOARD' | 'MULTIPLEKS' | 'BLOCKBOARD_BUSA' | 'MULTIPLEKS_BUSA' | 'SEMI_KLASIK_BLOCKBOARD' | 'SEMI_KLASIK_MULTIPLEKS'
+    nakasQty = 0,
+    nakasOption = 'none', // 'none' | 'MINIMALIS' | 'SEMI_KLASIK' | 'KLASIK'
+    rangkaDipanTingkat = 'none', // 'none' | '90x200' | '100x200' | '120x200' | '160x200' | '180x200' | '200x200'
+    // Living Room Specific:
+    bawahTanggaKedalamanGt60 = false, // Jika > 60cm dihitung P x T x Harga penuh
+    partisiType = 'kisi', // 'kisi' | 'storage'
+    benchBusa = false, // +650k / meter
+    wallpanelType = 'MULTIPLEK', // 'MULTIPLEK' | 'CERMIN_BEVEL' | 'WPC'
+    sofaCover = 'standard', // 'standard' | 'KULIT_OSCAR' | 'KULIT_MBTECH' | 'CORDUROY_PREMIUM'
+    // Sipil & Bengkel Specific:
+    canopiType = 'HOLO_4X4_SPANDEK',
+    pagarType = 'MINIMALIS',
+    jasaSipilType = 'COR_MEJA_DAPUR',
+    jasaSipilQty = 1,
+    // Shared:
     isHplLuarDalam = false,
     pintuKusen = false,
-    pintuKaca = 'none', // 'none' | 'KACA_POLOS' | 'KACA_RIBEN' | 'CERMIN_BIASA' | 'CERMIN_BRONZE_GREY'
-    sofaCover = 'standard', // 'standard' | 'KULIT_OSCAR' | 'KULIT_MBTECH' | 'CORDUROY_PREMIUM'
-    headboardOption = 'none', // 'none' | 'BLOCKBOARD' | 'MULTIPLEKS' | 'BLOCKBOARD_BUSA' | 'MULTIPLEKS_BUSA'
-    rangkaDipanTingkat = 'none', // 'none' | '90x200' | '100x200' | ...
-    bawahTanggaKedalamanGt60 = false, // Jika > 60cm dihitung P x T x Harga penuh
     customAddons = 0 // Biaya tambahan manual
 }) => {
     const rules = PROJECT_RULES[region] || PROJECT_RULES.dalam_kota;
@@ -366,12 +511,37 @@ export const calculateEstimate = ({
     const numP = parseFloat(p) || 0;
     const numT = parseFloat(t) || 0;
     const numL = parseFloat(l) || 0;
+    const numMiniBar = parseFloat(miniBarLength) || 0;
     const numTopiBar = parseFloat(topiBarLength) || 0;
     const numBoxQty = parseInt(boxElektronikQty, 10) || 0;
     const numHambalan = parseInt(hambalanQty, 10) || 0;
+    const numNakas = parseInt(nakasQty, 10) || 0;
 
-    // 1. KITCHEN SET (Cabinet Bawah, Cabinet Atas, Top Table, Backsplash, Topi Bar, Box Elektronik, Hambalan)
-    if (category === 'KITCHEN_SET') {
+    // Normalisasi Kategori Utama & Sub-item
+    let resolvedCategory = category;
+    let resolvedSubItem = subItem;
+
+    if (category === 'KAMAR_SET') {
+        resolvedSubItem = subItem || 'LEMARI_WARDROBE';
+    } else if (category === 'LIVING_ROOM') {
+        resolvedSubItem = subItem || 'BACKDROP_TV';
+    } else if (category === 'SIPIL_BENGKEL') {
+        resolvedSubItem = subItem || 'CANOPI';
+    } else if (['LEMARI_WARDROBE', 'DIPAN_HEADBOARD', 'RANGKA_DIPAN_TINGKAT', 'MEJA_RIAS'].includes(category)) {
+        resolvedCategory = 'KAMAR_SET';
+        resolvedSubItem = category;
+    } else if (['BACKDROP_TV', 'LEMARI_BAWAH_TANGGA', 'CRADIENZA', 'PARTISI_BENCH', 'BENCH', 'WALLPANEL_KACA', 'SOFA'].includes(category)) {
+        resolvedCategory = 'LIVING_ROOM';
+        resolvedSubItem = category;
+    } else if (category === 'MINIBAR_ISLAND') {
+        // Mini bar standalone legacy call -> dihitung dengan rumus resmi P : 0.6 x Harga
+        resolvedCategory = 'KITCHEN_SET';
+    }
+
+    // =========================================================================
+    // 1. AREA KITCHEN SET (SATUKAN SEMUANYA: KABINET, TOP TABLE, BACKSPLASH, MINI BAR, TOPI BAR, BOX, HAMBALAN)
+    // =========================================================================
+    if (resolvedCategory === 'KITCHEN_SET') {
         const catPrices = PRICELIST_CATALOG.KITCHEN_SET[region]?.[material] || PRICELIST_CATALOG.KITCHEN_SET[region]?.MULTIPLEKS;
         const styleData = catPrices?.[style] || catPrices?.MINIMALIS || { base: 2500000 };
         baseUnitPrice = styleData.base;
@@ -381,7 +551,7 @@ export const calculateEstimate = ({
         const lenAtas = hasExplicitCabinets ? (parseFloat(cabinetAtas) || 0) : 0;
 
         if (hasExplicitCabinets && (lenBawah > 0 || lenAtas > 0)) {
-            // 1a. Cabinet Bawah
+            // 1a. Cabinet Bawah (m' x Harga)
             if (lenBawah > 0) {
                 if ((isKusenBawahOnly || pintuKusen) && styleData.kusen) {
                     const kusenCost = Math.round(lenBawah * styleData.kusen);
@@ -402,7 +572,7 @@ export const calculateEstimate = ({
                 }
             }
 
-            // 1b. Cabinet Atas
+            // 1b. Cabinet Atas (m' x Harga)
             if (lenAtas > 0) {
                 const costAtas = Math.round(lenAtas * baseUnitPrice);
                 subtotal += costAtas;
@@ -431,13 +601,22 @@ export const calculateEstimate = ({
                     });
                 }
             }
+        } else if (category === 'MINIBAR_ISLAND') {
+            // Standalone Mini bar legacy mode
+            const unitSlots = numP / 0.6;
+            const barCost = Math.round(unitSlots * baseUnitPrice);
+            subtotal += barCost;
+            itemBreakdown.push({
+                label: `Mini Bar / Meja Island (${material} ${style})`,
+                amount: barCost,
+                detail: `(Panjang ${numP}m / 0.6 = ${unitSlots.toFixed(2)} unit) x Rp ${baseUnitPrice.toLocaleString('id-ID')}`
+            });
         } else {
             // Fallback backward-compatible: single panjang P
             subtotal = Math.round(numP * baseUnitPrice);
             formulaText = `${numP}m x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
             itemBreakdown.push({ label: `Kitchen Set (${material} ${style})`, amount: subtotal, detail: formulaText });
 
-            // Kabinet Atas Full Plafon
             if (plafonOption === 'lt_50' && styleData.plafonLt50) {
                 const plafonCost = Math.round(numP * styleData.plafonLt50);
                 subtotal += plafonCost;
@@ -448,7 +627,6 @@ export const calculateEstimate = ({
                 itemBreakdown.push({ label: 'Kabinet Plafon Tingkat 2 (T 50-70cm)', amount: plafonCost, detail: `${numP}m x Rp ${styleData.plafon50to70.toLocaleString('id-ID')}` });
             }
 
-            // Pintu Kusen
             if (pintuKusen && styleData.kusen) {
                 const kusenCost = Math.round(numP * styleData.kusen);
                 subtotal += kusenCost;
@@ -495,7 +673,21 @@ export const calculateEstimate = ({
             }
         }
 
-        // 1e. Topi Bar (Disatukan ke Kitchen Set)
+        // 1e. Mini Bar / Meja Island (Disatukan ke Kitchen Set - Rumus: P : 0.6 x Harga)
+        if (numMiniBar > 0) {
+            const mbPrices = PRICELIST_CATALOG.MINIBAR_ISLAND[region]?.[material] || PRICELIST_CATALOG.MINIBAR_ISLAND[region]?.MULTIPLEKS;
+            const mbRate = mbPrices?.[style] || mbPrices?.MINIMALIS || 2500000;
+            const mbSlots = numMiniBar / 0.6;
+            const mbCost = Math.round(mbSlots * mbRate);
+            subtotal += mbCost;
+            itemBreakdown.push({
+                label: `Mini Bar / Meja Island (${material} ${style})`,
+                amount: mbCost,
+                detail: `(${numMiniBar}m / 0.6 = ${mbSlots.toFixed(2)} unit) x Rp ${mbRate.toLocaleString('id-ID')}`
+            });
+        }
+
+        // 1f. Topi Bar (Disatukan ke Kitchen Set - Rumus: P x Harga)
         if (numTopiBar > 0) {
             const tbPrices = PRICELIST_CATALOG.TOPI_BOX_HAMBALAN[region]?.TOPI_BAR || {};
             const isDuco = material === 'DUCO_LUXURY' || material === 'DUCO';
@@ -510,7 +702,7 @@ export const calculateEstimate = ({
             });
         }
 
-        // 1f. Box Elektronik (Disatukan ke Kitchen Set)
+        // 1g. Box Elektronik (Disatukan ke Kitchen Set)
         if (boxElektronikType && boxElektronikType !== 'none' && numBoxQty > 0) {
             const isBlock = material === 'BLOCKBOARD';
             const boxKey = isBlock ? 'BOX_ELEKTRONIK_BLOCKBOARD' : 'BOX_ELEKTRONIK_MULTIPLEKS';
@@ -526,7 +718,7 @@ export const calculateEstimate = ({
             });
         }
 
-        // 1g. Hambalan (Disatukan ke Kitchen Set)
+        // 1h. Hambalan (Disatukan ke Kitchen Set)
         if (numHambalan > 0) {
             const hbCatalog = PRICELIST_CATALOG.TOPI_BOX_HAMBALAN[region]?.HAMBALAN || {};
             const hbKey = hambalanType === 'TANPA_LAMPU' ? 'TANPA_LAMPU' : 'DENGAN_LAMPU';
@@ -542,138 +734,191 @@ export const calculateEstimate = ({
         }
     }
 
-    // 2. LEMARI BAWAH TANGGA
-    else if (category === 'LEMARI_BAWAH_TANGGA') {
-        const catPrices = PRICELIST_CATALOG.LEMARI_BAWAH_TANGGA[region]?.[material] || PRICELIST_CATALOG.LEMARI_BAWAH_TANGGA[region]?.MULTIPLEKS;
-        baseUnitPrice = catPrices?.[style] || catPrices?.MINIMALIS || 2500000;
-        
-        if (bawahTanggaKedalamanGt60) {
-            subtotal = Math.round(numP * numT * baseUnitPrice);
-            formulaText = `${numP}m x ${numT}m x Rp ${baseUnitPrice.toLocaleString('id-ID')} (Kedalaman > 60cm)`;
-        } else {
-            subtotal = Math.round(numP * numT * 0.8 * baseUnitPrice);
-            formulaText = `${numP}m x ${numT}m x 0.8 x Rp ${baseUnitPrice.toLocaleString('id-ID')} (Kedalaman standar 60cm)`;
+    // =========================================================================
+    // 2. AREA KAMAR SET (WARDROBE, DIPAN, HEADBOARD, NAKAS, RANGKA TINGKAT, MEJA RIAS)
+    // =========================================================================
+    else if (resolvedCategory === 'KAMAR_SET') {
+        if (resolvedSubItem === 'LEMARI_WARDROBE') {
+            const catPrices = PRICELIST_CATALOG.LEMARI_WARDROBE[region]?.[material] || PRICELIST_CATALOG.LEMARI_WARDROBE[region]?.MULTIPLEKS;
+            baseUnitPrice = catPrices?.[style] || catPrices?.MINIMALIS || 2500000;
+            const luasM2 = numP * numT;
+            subtotal = Math.round(luasM2 * baseUnitPrice);
+            formulaText = `${numP}m x ${numT}m (${luasM2.toFixed(2)} m2) x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
+            itemBreakdown.push({ label: `Lemari Wardrobe (${material} ${style})`, amount: subtotal, detail: formulaText });
+
+            if (pintuKaca !== 'none') {
+                const kacaPrices = PRICELIST_CATALOG.LEMARI_WARDROBE[region]?.PINTU_KACA || {};
+                const kacaRate = kacaPrices[pintuKaca] || 0;
+                if (kacaRate > 0) {
+                    const kacaCost = Math.round(luasM2 * kacaRate);
+                    subtotal += kacaCost;
+                    itemBreakdown.push({ label: `Add-on Pintu Kaca (${pintuKaca})`, amount: kacaCost, detail: `${luasM2.toFixed(2)} m2 x Rp ${kacaRate.toLocaleString('id-ID')}` });
+                }
+            }
+        } else if (resolvedSubItem === 'DIPAN_HEADBOARD') {
+            const isBlockboard = material === 'BLOCKBOARD';
+            baseUnitPrice = isBlockboard 
+                ? (PRICELIST_CATALOG.DIPAN_HEADBOARD[region]?.DIPAN_BLOCKBOARD_HPL || 2100000)
+                : (style === 'DUCO' ? (PRICELIST_CATALOG.DIPAN_HEADBOARD[region]?.DIPAN_MULTIPLEK_DUCO || 3100000) : (PRICELIST_CATALOG.DIPAN_HEADBOARD[region]?.DIPAN_MULTIPLEK_HPL || 2500000));
+            
+            const luasDipan = numP * numL;
+            const dipanCost = Math.round(luasDipan * baseUnitPrice);
+            subtotal += dipanCost;
+            formulaText = `${numP}m x ${numL}m (${luasDipan.toFixed(2)} m2) x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
+            itemBreakdown.push({ label: `Dipan Ranjang Termasuk 2 Laci (${material})`, amount: dipanCost, detail: formulaText });
+
+            // Headboard
+            if (headboardOption !== 'none') {
+                const hbPrices = PRICELIST_CATALOG.DIPAN_HEADBOARD[region]?.HEADBOARD || {};
+                const hbRate = hbPrices[headboardOption] || 1600000;
+                const hbCost = Math.round(numP * hbRate);
+                subtotal += hbCost;
+                itemBreakdown.push({ label: `Headboard Tinggi 70cm (${headboardOption})`, amount: hbCost, detail: `${numP}m x Rp ${hbRate.toLocaleString('id-ID')}` });
+            }
+
+            // Nakas
+            if (nakasOption !== 'none' && numNakas > 0) {
+                const nakasPrices = PRICELIST_CATALOG.DIPAN_HEADBOARD[region]?.NAKAS || {};
+                const nakasRate = nakasPrices[nakasOption] || 2500000;
+                const nakasCost = Math.round(numNakas * nakasRate);
+                subtotal += nakasCost;
+                itemBreakdown.push({ label: `Nakas Bedside Table (${nakasOption})`, amount: nakasCost, detail: `${numNakas} unit x Rp ${nakasRate.toLocaleString('id-ID')}` });
+            }
+        } else if (resolvedSubItem === 'RANGKA_DIPAN_TINGKAT') {
+            const sizeKey = rangkaDipanTingkat !== 'none' ? rangkaDipanTingkat : '160x200';
+            baseUnitPrice = PRICELIST_CATALOG.RANGKA_DIPAN_TINGKAT[region]?.[sizeKey] || 2750000;
+            subtotal = baseUnitPrice;
+            formulaText = `1 Unit Rangka Besi Hollow Lapis HPL (${sizeKey})`;
+            itemBreakdown.push({ label: `Penambahan Rangka Dipan Tingkat (${sizeKey})`, amount: subtotal, detail: formulaText });
+        } else if (resolvedSubItem === 'MEJA_RIAS') {
+            const mrCatalog = PRICELIST_CATALOG.MEJA_RIAS[region]?.[material] || PRICELIST_CATALOG.MEJA_RIAS[region]?.MULTIPLEKS;
+            baseUnitPrice = mrCatalog?.[style] || mrCatalog?.MINIMALIS || 2100000;
+            subtotal = Math.round(numP * baseUnitPrice);
+            formulaText = `${numP}m x Rp ${baseUnitPrice.toLocaleString('id-ID')} (Termasuk Cermin)`;
+            itemBreakdown.push({ label: `Meja Rias Custom (${material} ${style})`, amount: subtotal, detail: formulaText });
         }
-        itemBreakdown.push({ label: `Lemari Bawah Tangga (${material} ${style})`, amount: subtotal, detail: formulaText });
     }
 
-    // 3. LEMARI WARDROBE
-    else if (category === 'LEMARI_WARDROBE') {
-        const catPrices = PRICELIST_CATALOG.LEMARI_WARDROBE[region]?.[material] || PRICELIST_CATALOG.LEMARI_WARDROBE[region]?.MULTIPLEKS;
-        baseUnitPrice = catPrices?.[style] || catPrices?.MINIMALIS || 2500000;
-        const luasM2 = numP * numT;
-        subtotal = luasM2 * baseUnitPrice;
-        formulaText = `${numP}m x ${numT}m (${luasM2.toFixed(2)} m2) x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
-        itemBreakdown.push({ label: `Lemari Wardrobe (${material} ${style})`, amount: subtotal, detail: formulaText });
+    // =========================================================================
+    // 3. AREA LIVING ROOM (BACKDROP TV, BAWAH TANGGA, CRADIENZA, PARTISI, BENCH, WALLPANEL, SOFA)
+    // =========================================================================
+    else if (resolvedCategory === 'LIVING_ROOM') {
+        if (resolvedSubItem === 'BACKDROP_TV') {
+            const catPrices = PRICELIST_CATALOG.BACKDROP_TV[region]?.[material] || PRICELIST_CATALOG.BACKDROP_TV[region]?.MULTIPLEKS;
+            baseUnitPrice = catPrices?.[style] || catPrices?.MINIMALIS || 2300000;
+            const luasM2 = numP * numT;
+            subtotal = Math.round(luasM2 * baseUnitPrice);
+            formulaText = `${numP}m x ${numT}m (${luasM2.toFixed(2)} m2) x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
+            itemBreakdown.push({ label: `Backdrop TV (${material} ${style})`, amount: subtotal, detail: formulaText });
+        } else if (resolvedSubItem === 'LEMARI_BAWAH_TANGGA') {
+            const catPrices = PRICELIST_CATALOG.LEMARI_BAWAH_TANGGA[region]?.[material] || PRICELIST_CATALOG.LEMARI_BAWAH_TANGGA[region]?.MULTIPLEKS;
+            baseUnitPrice = catPrices?.[style] || catPrices?.MINIMALIS || 2500000;
+            if (bawahTanggaKedalamanGt60) {
+                subtotal = Math.round(numP * numT * baseUnitPrice);
+                formulaText = `${numP}m x ${numT}m x Rp ${baseUnitPrice.toLocaleString('id-ID')} (Kedalaman > 60cm)`;
+            } else {
+                subtotal = Math.round(numP * numT * 0.8 * baseUnitPrice);
+                formulaText = `${numP}m x ${numT}m x 0.8 x Rp ${baseUnitPrice.toLocaleString('id-ID')} (Kedalaman standar 60cm)`;
+            }
+            itemBreakdown.push({ label: `Lemari Bawah Tangga (${material} ${style})`, amount: subtotal, detail: formulaText });
+        } else if (resolvedSubItem === 'CRADIENZA') {
+            const catPrices = PRICELIST_CATALOG.CRADIENZA.all_regions[material] || PRICELIST_CATALOG.CRADIENZA.all_regions.MULTIPLEKS;
+            baseUnitPrice = catPrices?.[style] || catPrices?.MINIMALIS || 2100000;
+            subtotal = Math.round(numP * baseUnitPrice);
+            formulaText = `${numP}m x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
+            itemBreakdown.push({ label: `Cradienza / Kredensa (${material} ${style})`, amount: subtotal, detail: formulaText });
+        } else if (resolvedSubItem === 'PARTISI_BENCH') {
+            const partisiRate = material === 'BLOCKBOARD' 
+                ? (PRICELIST_CATALOG.PARTISI_BENCH[region]?.PARTISI_BLOCKBOARD || 2100000)
+                : (style === 'DUCO' ? (PRICELIST_CATALOG.PARTISI_BENCH[region]?.PARTISI_MULTIPLEK_DUCO || 4500000) : (PRICELIST_CATALOG.PARTISI_BENCH[region]?.PARTISI_MULTIPLEK_MINIMALIS || 2400000));
+            const luasPartisi = numP * numT;
+            subtotal = Math.round(luasPartisi * partisiRate);
+            const partisiLabel = partisiType === 'storage' ? 'Partisi Model Storage' : 'Partisi Kisi-Kisi Minimalis';
+            formulaText = `${numP}m x ${numT}m (${luasPartisi.toFixed(2)} m2) x Rp ${partisiRate.toLocaleString('id-ID')}`;
+            itemBreakdown.push({ label: `${partisiLabel} (${material})`, amount: subtotal, detail: formulaText });
+        } else if (resolvedSubItem === 'BENCH') {
+            const benchRate = material === 'BLOCKBOARD'
+                ? (PRICELIST_CATALOG.PARTISI_BENCH[region]?.BENCH_BLOCKBOARD || 2000000)
+                : (PRICELIST_CATALOG.PARTISI_BENCH[region]?.BENCH_MULTIPLEK || 2200000);
+            let benchCost = Math.round(numP * benchRate);
+            subtotal += benchCost;
+            itemBreakdown.push({ label: `Bench Dudukan (${material} ${style})`, amount: benchCost, detail: `${numP}m x Rp ${benchRate.toLocaleString('id-ID')}` });
 
-        // Add-on Pintu Kaca
-        if (pintuKaca !== 'none') {
-            const kacaPrices = PRICELIST_CATALOG.LEMARI_WARDROBE[region]?.PINTU_KACA || {};
-            const kacaRate = kacaPrices[pintuKaca] || 0;
-            if (kacaRate > 0) {
-                const kacaCost = luasM2 * kacaRate;
-                subtotal += kacaCost;
-                itemBreakdown.push({ label: `Add-on Pintu Kaca (${pintuKaca})`, amount: kacaCost, detail: `${luasM2.toFixed(2)} m2 x Rp ${kacaRate.toLocaleString('id-ID')}` });
+            if (benchBusa) {
+                const busaRate = PRICELIST_CATALOG.PARTISI_BENCH[region]?.BUSA_STANDARD || 650000;
+                const busaCost = Math.round(numP * busaRate);
+                subtotal += busaCost;
+                itemBreakdown.push({ label: 'Tambahan Busa Jok Standard', amount: busaCost, detail: `${numP}m x Rp ${busaRate.toLocaleString('id-ID')}` });
+            }
+        } else if (resolvedSubItem === 'WALLPANEL_KACA') {
+            const luasM2 = numP * numT;
+            if (wallpanelType === 'WPC') {
+                const wpcRate = PRICELIST_CATALOG.WALLPANEL_KACA.all_regions.WPC_PANEL[region] || 850000;
+                subtotal = Math.round(numP * wpcRate);
+                itemBreakdown.push({ label: 'Wallpanel WPC Modern', amount: subtotal, detail: `${numP}m x Rp ${wpcRate.toLocaleString('id-ID')}` });
+            } else if (wallpanelType === 'CERMIN_BEVEL') {
+                baseUnitPrice = PRICELIST_CATALOG.WALLPANEL_KACA.all_regions.KACA_BEVEL.CERMIN_BIASA;
+                subtotal = Math.round(luasM2 * baseUnitPrice);
+                itemBreakdown.push({ label: 'Kaca Cermin Bevel Polos', amount: subtotal, detail: `${numP}m x ${numT}m (${luasM2.toFixed(2)} m2) x Rp ${baseUnitPrice.toLocaleString('id-ID')}` });
+            } else {
+                const catPrices = PRICELIST_CATALOG.WALLPANEL_KACA.all_regions.WALLPANEL_MULTIPLEK;
+                baseUnitPrice = catPrices?.[style] || catPrices?.MINIMALIS || 1350000;
+                subtotal = Math.round(luasM2 * baseUnitPrice);
+                itemBreakdown.push({ label: `Wallpanel Multipleks HPL (${style})`, amount: subtotal, detail: `${numP}m x ${numT}m (${luasM2.toFixed(2)} m2) x Rp ${baseUnitPrice.toLocaleString('id-ID')}` });
+            }
+        } else if (resolvedSubItem === 'SOFA') {
+            baseUnitPrice = style === 'KLASIK' ? PRICELIST_CATALOG.SOFA.all_regions.KLASIK : PRICELIST_CATALOG.SOFA.all_regions.MINIMALIS;
+            const seatSlots = numP / 0.60;
+            subtotal = Math.round(seatSlots * baseUnitPrice);
+            formulaText = `(Panjang ${numP}m / 0.60 = ${seatSlots.toFixed(2)} seat) x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
+            itemBreakdown.push({ label: `Sofa Custom (${style})`, amount: subtotal, detail: formulaText });
+
+            if (sofaCover !== 'standard') {
+                const coverRate = PRICELIST_CATALOG.SOFA.all_regions.COVER_ADDON[sofaCover] || 0;
+                const coverCost = Math.round(numP * coverRate);
+                subtotal += coverCost;
+                itemBreakdown.push({ label: `Upgrade Cover Sofa (${sofaCover})`, amount: coverCost, detail: `${numP}m x Rp ${coverRate.toLocaleString('id-ID')}` });
             }
         }
     }
 
-    // 4. BACKDROP TV
-    else if (category === 'BACKDROP_TV') {
-        const catPrices = PRICELIST_CATALOG.BACKDROP_TV[region]?.[material] || PRICELIST_CATALOG.BACKDROP_TV[region]?.MULTIPLEKS;
-        baseUnitPrice = catPrices?.[style] || catPrices?.MINIMALIS || 2300000;
-        const luasM2 = numP * numT;
-        subtotal = luasM2 * baseUnitPrice;
-        formulaText = `${numP}m x ${numT}m (${luasM2.toFixed(2)} m2) x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
-        itemBreakdown.push({ label: `Backdrop TV (${material} ${style})`, amount: subtotal, detail: formulaText });
-    }
-
-    // 5. MINI BAR / MEJA ISLAND
-    else if (category === 'MINIBAR_ISLAND') {
-        const catPrices = PRICELIST_CATALOG.MINIBAR_ISLAND[region]?.[material] || PRICELIST_CATALOG.MINIBAR_ISLAND[region]?.MULTIPLEKS;
-        baseUnitPrice = catPrices?.[style] || catPrices?.MINIMALIS || 2500000;
-        // Formula: P : 0.6 x Harga
-        const unitSlots = numP / 0.6;
-        subtotal = unitSlots * baseUnitPrice;
-        formulaText = `(Panjang ${numP}m / 0.6 = ${unitSlots.toFixed(2)} unit) x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
-        itemBreakdown.push({ label: `Mini Bar / Meja Island (${material} ${style})`, amount: subtotal, detail: formulaText });
-    }
-
-    // 6. DIPAN & HEADBOARD
-    else if (category === 'DIPAN_HEADBOARD') {
-        const isBlockboard = material === 'BLOCKBOARD';
-        baseUnitPrice = isBlockboard 
-            ? (PRICELIST_CATALOG.DIPAN_HEADBOARD[region]?.DIPAN_BLOCKBOARD_HPL || 2100000)
-            : (style === 'DUCO' ? (PRICELIST_CATALOG.DIPAN_HEADBOARD[region]?.DIPAN_MULTIPLEK_DUCO || 3100000) : (PRICELIST_CATALOG.DIPAN_HEADBOARD[region]?.DIPAN_MULTIPLEK_HPL || 2500000));
-        
-        const luasDipan = numP * numL;
-        subtotal = luasDipan * baseUnitPrice;
-        formulaText = `${numP}m x ${numL}m (${luasDipan.toFixed(2)} m2) x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
-        itemBreakdown.push({ label: `Dipan Ranjang (${material})`, amount: subtotal, detail: formulaText });
-
-        // Headboard
-        if (headboardOption !== 'none') {
-            const hbPrices = PRICELIST_CATALOG.DIPAN_HEADBOARD[region]?.HEADBOARD || {};
-            const hbRate = hbPrices[headboardOption] || 1600000;
-            const hbCost = numP * hbRate;
-            subtotal += hbCost;
-            itemBreakdown.push({ label: `Headboard (${headboardOption})`, amount: hbCost, detail: `${numP}m x Rp ${hbRate.toLocaleString('id-ID')}` });
-        }
-    }
-
-    // 7. RANGKA DIPAN TINGKAT
-    else if (category === 'RANGKA_DIPAN_TINGKAT') {
-        const sizeKey = rangkaDipanTingkat !== 'none' ? rangkaDipanTingkat : '160x200';
-        baseUnitPrice = PRICELIST_CATALOG.RANGKA_DIPAN_TINGKAT[region]?.[sizeKey] || 2750000;
-        subtotal = baseUnitPrice;
-        formulaText = `1 Unit Rangka Besi Hollow Lapis HPL (${sizeKey})`;
-        itemBreakdown.push({ label: `Rangka Dipan Tingkat (${sizeKey})`, amount: subtotal, detail: formulaText });
-    }
-
-    // 8. CRADIENZA
-    else if (category === 'CRADIENZA') {
-        const catPrices = PRICELIST_CATALOG.CRADIENZA.all_regions[material] || PRICELIST_CATALOG.CRADIENZA.all_regions.MULTIPLEKS;
-        baseUnitPrice = catPrices?.[style] || catPrices?.MINIMALIS || 2100000;
-        subtotal = numP * baseUnitPrice;
-        formulaText = `${numP}m x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
-        itemBreakdown.push({ label: `Cradienza (${material} ${style})`, amount: subtotal, detail: formulaText });
-    }
-
-    // 9. WALLPANEL & KACA
-    else if (category === 'WALLPANEL_KACA') {
-        const luasM2 = numP * numT;
-        if (material === 'KACA_BEVEL') {
-            baseUnitPrice = PRICELIST_CATALOG.WALLPANEL_KACA.all_regions.KACA_BEVEL.CERMIN_BIASA;
-            subtotal = luasM2 * baseUnitPrice;
-            formulaText = `${numP}m x ${numT}m (${luasM2.toFixed(2)} m2) x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
-            itemBreakdown.push({ label: 'Cermin Bevel Biasa', amount: subtotal, detail: formulaText });
-        } else {
-            const catPrices = PRICELIST_CATALOG.WALLPANEL_KACA.all_regions.WALLPANEL_MULTIPLEK;
-            baseUnitPrice = catPrices?.[style] || catPrices?.MINIMALIS || 1350000;
-            subtotal = luasM2 * baseUnitPrice;
-            formulaText = `${numP}m x ${numT}m (${luasM2.toFixed(2)} m2) x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
-            itemBreakdown.push({ label: `Wallpanel Multiplek (${style})`, amount: subtotal, detail: formulaText });
-        }
-    }
-
-    // 10. SOFA
-    else if (category === 'SOFA') {
-        baseUnitPrice = style === 'KLASIK' ? PRICELIST_CATALOG.SOFA.all_regions.KLASIK : PRICELIST_CATALOG.SOFA.all_regions.MINIMALIS;
-        const seatSlots = numP / 0.60;
-        subtotal = seatSlots * baseUnitPrice;
-        formulaText = `(Panjang ${numP}m / 0.60 = ${seatSlots.toFixed(2)} seat) x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
-        itemBreakdown.push({ label: `Sofa (${style})`, amount: subtotal, detail: formulaText });
-
-        if (sofaCover !== 'standard') {
-            const coverRate = PRICELIST_CATALOG.SOFA.all_regions.COVER_ADDON[sofaCover] || 0;
-            const coverCost = numP * coverRate;
-            subtotal += coverCost;
-            itemBreakdown.push({ label: `Upgrade Cover Sofa (${sofaCover})`, amount: coverCost, detail: `${numP}m x Rp ${coverRate.toLocaleString('id-ID')}` });
+    // =========================================================================
+    // 4. SIPIL & BENGKEL LAS (CANOPI, PAGAR, JASA SIPIL & BONGKARAN)
+    // =========================================================================
+    else if (resolvedCategory === 'SIPIL_BENGKEL') {
+        if (resolvedSubItem === 'CANOPI') {
+            const canopiData = PRICELIST_CATALOG.SIPIL_BENGKEL.CANOPI[canopiType] || PRICELIST_CATALOG.SIPIL_BENGKEL.CANOPI.HOLO_4X4_SPANDEK;
+            const luasCanopi = numP * numL;
+            subtotal = Math.round(luasCanopi * canopiData.price);
+            itemBreakdown.push({
+                label: `Canopi (${canopiData.label})`,
+                amount: subtotal,
+                detail: `${numP}m x ${numL}m (${luasCanopi.toFixed(2)} m2) x Rp ${canopiData.price.toLocaleString('id-ID')}`
+            });
+        } else if (resolvedSubItem === 'PAGAR') {
+            const pagarData = PRICELIST_CATALOG.SIPIL_BENGKEL.PAGAR[pagarType] || PRICELIST_CATALOG.SIPIL_BENGKEL.PAGAR.MINIMALIS;
+            const luasPagar = numP * numT;
+            subtotal = Math.round(luasPagar * pagarData.price);
+            itemBreakdown.push({
+                label: `Pagar & Railing (${pagarData.label})`,
+                amount: subtotal,
+                detail: `${numP}m x ${numT}m (${luasPagar.toFixed(2)} m2) x Rp ${pagarData.price.toLocaleString('id-ID')}`
+            });
+        } else if (resolvedSubItem === 'JASA_SIPIL') {
+            const sipilCatalog = PRICELIST_CATALOG.SIPIL_BENGKEL.JASA_SIPIL[region] || PRICELIST_CATALOG.SIPIL_BENGKEL.JASA_SIPIL.dalam_kota;
+            const itemData = sipilCatalog[jasaSipilType] || sipilCatalog.COR_MEJA_DAPUR;
+            const qty = parseFloat(jasaSipilQty) || 1;
+            subtotal = Math.round(qty * itemData.price);
+            itemBreakdown.push({
+                label: `Pekerjaan Sipil (${itemData.label})`,
+                amount: subtotal,
+                detail: `${qty} ${itemData.unit} x Rp ${itemData.price.toLocaleString('id-ID')}`
+            });
         }
     }
 
     // Tambahan Finishing HPL Luar & Dalam jika dipilih
-    const hasExplicitCabinets = (category === 'KITCHEN_SET' && (cabinetBawah !== undefined || cabinetAtas !== undefined));
+    const hasExplicitCabinets = (resolvedCategory === 'KITCHEN_SET' && (cabinetBawah !== undefined || cabinetAtas !== undefined));
     const hplBaseLength = hasExplicitCabinets
         ? ((parseFloat(cabinetBawah) || 0) + (parseFloat(cabinetAtas) || 0))
         : numP;
@@ -703,7 +948,8 @@ export const calculateEstimate = ({
     return {
         region,
         regionLabel: rules.areaLabel,
-        category,
+        category: resolvedCategory,
+        subItem: resolvedSubItem,
         material,
         style,
         dimensions: {
@@ -714,6 +960,7 @@ export const calculateEstimate = ({
             cabinetAtas: (cabinetAtas !== undefined) ? (parseFloat(cabinetAtas) || 0) : undefined,
             topTable: topTableOption !== 'none' ? topTableOption : undefined,
             backsplash: backsplashOption !== 'none' ? backsplashOption : undefined,
+            miniBarLength: numMiniBar > 0 ? numMiniBar : undefined,
             topiBarLength: numTopiBar > 0 ? numTopiBar : undefined,
             boxElektronikQty: numBoxQty > 0 ? numBoxQty : undefined,
             hambalanQty: numHambalan > 0 ? numHambalan : undefined

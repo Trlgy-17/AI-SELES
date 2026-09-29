@@ -5,7 +5,15 @@ import { TelemetryService } from '../src/js/services/telemetry.js';
 import { ResponseParser } from '../src/js/services/ai/ResponseParser.js';
 import { CustomerMemoryEngine } from '../src/js/services/ai/CustomerMemoryEngine.js';
 import { ConversationAnalyzer } from '../src/js/services/ai/ConversationAnalyzer.js';
-import { calculateEstimate, formatEstimateForWhatsApp } from '../src/js/services/calculatorData.js';
+import { 
+    calculateEstimate, 
+    formatEstimateForWhatsApp,
+    ESTIMATOR_CATEGORIES,
+    KAMAR_SET_ITEMS,
+    LIVING_ROOM_ITEMS,
+    SIPIL_BENGKEL_ITEMS,
+    PROJECT_RULES
+} from '../src/js/services/calculatorData.js';
 import { exportEstimateToPDF, getApplicableWarrantyText } from '../src/js/utils/pdfExport.js';
 import { INITIAL_BRANDS, INITIAL_USERS, GLOBAL_CORE_KNOWLEDGE, DEFAULT_BRAND_OVERRIDES } from '../src/js/constants.js';
 import fs from 'node:fs';
@@ -426,6 +434,89 @@ assert(estKitchenAddons.subtotal === 15675000, 'Kitchen Set with Topi Bar, Box E
 assert(estKitchenAddons.itemBreakdown.some(i => i.label.includes('Topi Bar')), 'Item breakdown includes Topi Bar');
 assert(estKitchenAddons.itemBreakdown.some(i => i.label.includes('Box Elektronik')), 'Item breakdown includes Box Elektronik');
 assert(estKitchenAddons.itemBreakdown.some(i => i.label.includes('Hambalan')), 'Item breakdown includes Hambalan');
+
+// 11. Unified 4 Master Areas & Official File Categorization Assertions
+assert(ESTIMATOR_CATEGORIES.length === 4, 'Exactly 4 unified master areas configured');
+assert(ESTIMATOR_CATEGORIES.some(c => c.id === 'KITCHEN_SET'), 'Master Area KITCHEN_SET present');
+assert(ESTIMATOR_CATEGORIES.some(c => c.id === 'KAMAR_SET'), 'Master Area KAMAR_SET present');
+assert(ESTIMATOR_CATEGORIES.some(c => c.id === 'LIVING_ROOM'), 'Master Area LIVING_ROOM present');
+assert(ESTIMATOR_CATEGORIES.some(c => c.id === 'SIPIL_BENGKEL'), 'Master Area SIPIL_BENGKEL present');
+
+// Sub-items verification matching official document structure
+assert(KAMAR_SET_ITEMS.length >= 4, 'Kamar Set contains official sub-items');
+assert(KAMAR_SET_ITEMS.some(i => i.id === 'LEMARI_WARDROBE'), 'Wardrobe in Kamar Set');
+assert(KAMAR_SET_ITEMS.some(i => i.id === 'DIPAN_HEADBOARD'), 'Dipan & Headboard in Kamar Set');
+assert(KAMAR_SET_ITEMS.some(i => i.id === 'RANGKA_DIPAN_TINGKAT'), 'Rangka Dipan Tingkat in Kamar Set');
+assert(KAMAR_SET_ITEMS.some(i => i.id === 'MEJA_RIAS'), 'Meja Rias in Kamar Set');
+
+assert(LIVING_ROOM_ITEMS.length >= 6, 'Living Room contains official sub-items');
+assert(LIVING_ROOM_ITEMS.some(i => i.id === 'BACKDROP_TV'), 'Backdrop TV in Living Room');
+assert(LIVING_ROOM_ITEMS.some(i => i.id === 'LEMARI_BAWAH_TANGGA'), 'Lemari Bawah Tangga in Living Room');
+assert(LIVING_ROOM_ITEMS.some(i => i.id === 'CRADIENZA'), 'Cradienza in Living Room');
+assert(LIVING_ROOM_ITEMS.some(i => i.id === 'WALLPANEL_KACA'), 'Wallpanel & Cermin in Living Room');
+assert(LIVING_ROOM_ITEMS.some(i => i.id === 'SOFA'), 'Sofa Custom in Living Room');
+
+assert(SIPIL_BENGKEL_ITEMS.some(i => i.id === 'CANOPI'), 'Canopi in Sipil & Bengkel');
+assert(SIPIL_BENGKEL_ITEMS.some(i => i.id === 'PAGAR'), 'Pagar & Railing in Sipil & Bengkel');
+assert(SIPIL_BENGKEL_ITEMS.some(i => i.id === 'JASA_SIPIL'), 'Jasa Sipil in Sipil & Bengkel');
+
+// PL DK and PL LK regional definition assertions
+assert(PROJECT_RULES.dalam_kota.areaLabel.includes('PL DK'), 'Dalam kota label explicitly includes PL DK');
+assert(PROJECT_RULES.dalam_kota.areaLabel.includes('Bandung'), 'PL DK includes Bandung & Tasikmalaya');
+assert(PROJECT_RULES.luar_kota.areaLabel.includes('PL LK'), 'Luar kota label explicitly includes PL LK');
+assert(PROJECT_RULES.luar_kota.areaLabel.includes('Jabodetabek'), 'PL LK includes Jabodetabek');
+
+// Kitchen Set All-in-One with Mini Bar (Rumus PL INT SVY: P : 0.6 x Harga)
+const estKitchenAllInOne = calculateEstimate({
+    region: 'dalam_kota',
+    category: 'KITCHEN_SET',
+    material: 'MULTIPLEKS',
+    style: 'MINIMALIS',
+    cabinetBawah: 2,
+    cabinetAtas: 2,
+    miniBarLength: 1.8 // 1.8 / 0.6 = 3 unit x 2.500.000 = 7.500.000
+});
+// 2m CB (5jt) + 2m CA (5jt) + Mini Bar (7.5jt) = 17.500.000
+assert(estKitchenAllInOne.subtotal === 17500000, 'Kitchen Set with Mini Bar (P:0.6 x Harga) subtotal is 17.500.000');
+assert(estKitchenAllInOne.itemBreakdown.some(i => i.label.includes('Mini Bar')), 'Item breakdown includes Mini Bar');
+
+// Kamar Set Wardrobe calculation (P x T x Harga)
+const estWardrobe = calculateEstimate({
+    region: 'dalam_kota',
+    category: 'KAMAR_SET',
+    subItem: 'LEMARI_WARDROBE',
+    material: 'MULTIPLEKS',
+    style: 'MINIMALIS',
+    p: 2,
+    t: 2.8
+});
+// 2m x 2.8m = 5.6 m2 x 2.500.000 = 14.000.000
+assert(estWardrobe.subtotal === 14000000, 'Kamar Set Wardrobe (2m x 2.8m x 2.5jt) subtotal is 14.000.000');
+
+// Living Room Backdrop TV calculation (P x T x Harga)
+const estBackdrop = calculateEstimate({
+    region: 'dalam_kota',
+    category: 'LIVING_ROOM',
+    subItem: 'BACKDROP_TV',
+    material: 'MULTIPLEKS',
+    style: 'MINIMALIS',
+    p: 2.5,
+    t: 2.4
+});
+// 2.5m x 2.4m = 6.0 m2 x 2.300.000 = 13.800.000
+assert(estBackdrop.subtotal === 13800000, 'Living Room Backdrop TV (2.5m x 2.4m x 2.3jt) subtotal is 13.800.000');
+
+// Sipil & Bengkel Canopi calculation (P x L x Harga)
+const estCanopi = calculateEstimate({
+    region: 'dalam_kota',
+    category: 'SIPIL_BENGKEL',
+    subItem: 'CANOPI',
+    canopiType: 'HOLO_4X4_SPANDEK',
+    p: 4,
+    l: 3
+});
+// 4m x 3m = 12 m2 x 1.200.000 = 14.400.000
+assert(estCanopi.subtotal === 14400000, 'Canopi Spandek (4m x 3m x 1.2jt) subtotal is 14.400.000');
 
 // ----------------------------------------------------
 // TEST 11: Modern Brand-Specific PDF Quotation Export (Clean Signature)
