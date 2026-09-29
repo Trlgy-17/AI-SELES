@@ -417,6 +417,10 @@ assert(estTopTableAica.subtotal === 11700000, 'Kitchen Set with Aica Top Table s
 assert(estTopTableAica.itemBreakdown.some(i => i.label.includes('Aica') && i.amount === 4200000), 'Aica Top Table calculated at 1.4jt/m');
 
 // 10. Kitchen Set dengan Topi Bar, Box Elektronik & Hambalan disatukan
+// - Hambalan per meter: Rp 650.000/m'
+// - Box Elektronik: Material Kitchen Set + Rp 100.000
+//   * P > 1m: dihitung Tinggi nya saja (T x Harga)
+//   * P <= 1m: dihitung Panjang x Tinggi (P x T x Harga)
 const estKitchenAddons = calculateEstimate({
     region: 'dalam_kota',
     category: 'KITCHEN_SET',
@@ -425,15 +429,61 @@ const estKitchenAddons = calculateEstimate({
     cabinetBawah: 2,
     cabinetAtas: 2,
     topiBarLength: 1.5,
-    boxElektronikType: 'LT_1M',
-    boxElektronikQty: 1,
-    hambalanQty: 2,
-    hambalanType: 'DENGAN_LAMPU'
+    boxElektronikType: 'box_kulkas',
+    boxP: 0.8,
+    boxT: 2.0,
+    boxQty: 1,
+    hambalanLength: 2
 });
-assert(estKitchenAddons.subtotal === 15675000, 'Kitchen Set with Topi Bar, Box Elektronik & Hambalan subtotal is 15.675.000');
+// Subtotal: CB (5jt) + CA (5jt) + Topi Bar (1.5 x 1.45jt = 2.175jt) + Box (0.8 x 2.0 x 2.6jt = 4.16jt) + Hambalan (2 x 650rb = 1.3jt) = 17.635.000
+assert(estKitchenAddons.subtotal === 17635000, 'Kitchen Set with Topi Bar, Box Elektronik & Hambalan subtotal is 17.635.000');
 assert(estKitchenAddons.itemBreakdown.some(i => i.label.includes('Topi Bar')), 'Item breakdown includes Topi Bar');
 assert(estKitchenAddons.itemBreakdown.some(i => i.label.includes('Box Elektronik')), 'Item breakdown includes Box Elektronik');
 assert(estKitchenAddons.itemBreakdown.some(i => i.label.includes('Hambalan')), 'Item breakdown includes Hambalan');
+
+// Test Box Elektronik P > 1m (Hitung Tinggi saja: T x Harga) & Blockboard DK (2jt + 100rb = 2.1jt)
+const estBoxGt1m = calculateEstimate({
+    region: 'dalam_kota',
+    category: 'KITCHEN_SET',
+    material: 'BLOCKBOARD',
+    style: 'MINIMALIS',
+    cabinetBawah: 0,
+    cabinetAtas: 0,
+    boxElektronikType: 'box_kulkas',
+    boxP: 1.2, // P > 1m
+    boxT: 2.0, // T = 2.0m -> volume = 2.0m'
+    boxQty: 1
+});
+// 2.0m' x 2.100.000 = 4.200.000
+assert(estBoxGt1m.subtotal === 4200000, 'Box Elektronik P > 1m (Blockboard DK 2.1jt) hitung Tinggi saja (2m x 2.1jt = 4.2jt)');
+
+// Test Box Elektronik P <= 1m (Hitung P x T: P x T x Harga) & Blockboard DK (2jt + 100rb = 2.1jt)
+const estBoxLt1m = calculateEstimate({
+    region: 'dalam_kota',
+    category: 'KITCHEN_SET',
+    material: 'BLOCKBOARD',
+    style: 'MINIMALIS',
+    cabinetBawah: 0,
+    cabinetAtas: 0,
+    boxElektronikType: 'box_kulkas',
+    boxP: 0.8, // P <= 1m
+    boxT: 2.0, // T = 2.0m -> volume = 0.8 * 2.0 = 1.6m²
+    boxQty: 1
+});
+// 1.6m² x 2.100.000 = 3.360.000
+assert(estBoxLt1m.subtotal === 3360000, 'Box Elektronik P <= 1m (Blockboard DK 2.1jt) hitung P x T (1.6m² x 2.1jt = 3.36jt)');
+
+// Test Hambalan Floating permeter: 3m x 650.000 = 1.950.000
+const estHambalanPermeter = calculateEstimate({
+    region: 'dalam_kota',
+    category: 'KITCHEN_SET',
+    material: 'MULTIPLEKS',
+    style: 'MINIMALIS',
+    cabinetBawah: 0,
+    cabinetAtas: 0,
+    hambalanLength: 3
+});
+assert(estHambalanPermeter.subtotal === 1950000, 'Hambalan 3m x 650.000 = 1.950.000');
 
 // 11. Unified 4 Master Areas & Official File Categorization Assertions
 assert(ESTIMATOR_CATEGORIES.length === 4, 'Exactly 4 unified master areas configured');

@@ -165,15 +165,19 @@ export const PRICELIST_CATALOG = {
     TOPI_BOX_HAMBALAN: {
         dalam_kota: {
             TOPI_BAR: { BLOCKBOARD: 1250000, MULTIPLEK: 1450000, DUCO: 2100000 },
+            BOX_ELEKTRONIK_ADDON: 100000, // Harga material dasar kitchen set + Rp 100.000
             BOX_ELEKTRONIK_BLOCKBOARD: { LT_1M: 2100000, GT_1M: 2200000 },
-            BOX_ELEKTRONIK_MULTIPLEKS: { LT_1M: 2500000, GT_1M: 2600000 },
-            HAMBALAN: { DENGAN_LAMPU: 500000, TANPA_LAMPU: 450000 }
+            BOX_ELEKTRONIK_MULTIPLEKS: { LT_1M: 2600000, GT_1M: 2700000 },
+            HAMBALAN_PER_METER: 650000,
+            HAMBALAN: { DENGAN_LAMPU: 650000, TANPA_LAMPU: 650000, PER_METER: 650000 }
         },
         luar_kota: {
             TOPI_BAR: { BLOCKBOARD: 1350000, MULTIPLEK: 1450000, DUCO: 2100000 },
-            BOX_ELEKTRONIK_BLOCKBOARD: { LT_1M: 2300000, GT_1M: 2400000 },
-            BOX_ELEKTRONIK_MULTIPLEKS: { LT_1M: 2600000, GT_1M: 2700000 },
-            HAMBALAN: { DENGAN_LAMPU: 600000, TANPA_LAMPU: 550000 }
+            BOX_ELEKTRONIK_ADDON: 100000,
+            BOX_ELEKTRONIK_BLOCKBOARD: { LT_1M: 2400000, GT_1M: 2500000 },
+            BOX_ELEKTRONIK_MULTIPLEKS: { LT_1M: 2700000, GT_1M: 2800000 },
+            HAMBALAN_PER_METER: 650000,
+            HAMBALAN: { DENGAN_LAMPU: 650000, TANPA_LAMPU: 650000, PER_METER: 650000 }
         }
     },
 
@@ -485,10 +489,14 @@ export const calculateEstimate = ({
     backsplashLength = undefined, // default mengikuti cabinetBawah
     miniBarLength = 0, // Panjang Mini Bar / Meja Island (Rumus: P : 0.6 x Harga)
     topiBarLength = 0, // Panjang meter lari topi bar (Rumus: P x Harga)
-    boxElektronikType = 'none', // 'none' | 'LT_1M' | 'GT_1M'
+    boxElektronikType = 'none', // 'none' | 'box_kulkas' | 'LT_1M' | 'GT_1M'
     boxElektronikQty = 0, // jumlah unit box elektronik
-    hambalanQty = 0, // jumlah pcs hambalan
-    hambalanType = 'DENGAN_LAMPU', // 'DENGAN_LAMPU' | 'TANPA_LAMPU'
+    boxP = 0, // Panjang Box (m)
+    boxT = 0, // Tinggi Box (m)
+    boxQty = 1, // Jumlah unit box kulkas/oven
+    hambalanQty = 0, // backward compat
+    hambalanLength = 0, // Panjang meter lari hambalan (Rp 650.000/m')
+    hambalanType = 'PER_METER', // 'DENGAN_LAMPU' | 'TANPA_LAMPU'
     plafonOption = 'none', // 'none' | 'lt_50' | '50_to_70'
     // Kamar Set Specific:
     pintuKaca = 'none', // 'none' | 'KACA_POLOS' | 'KACA_RIBEN' | 'CERMIN_BIASA' | 'CERMIN_BRONZE_GREY'
@@ -523,7 +531,13 @@ export const calculateEstimate = ({
     const numL = parseFloat(l) || 0;
     const numMiniBar = parseFloat(miniBarLength) || 0;
     const numTopiBar = parseFloat(topiBarLength) || 0;
+    const numBoxP = parseFloat(boxP) || 0;
+    const numBoxT = parseFloat(boxT) || 0;
+    const numBoxQuantity = parseInt(boxQty, 10) || (parseInt(boxElektronikQty, 10) || 1);
     const numBoxQty = parseInt(boxElektronikQty, 10) || 0;
+    const numHambalanLen = (hambalanLength !== undefined && hambalanLength !== null && hambalanLength !== '' && parseFloat(hambalanLength) > 0)
+        ? (parseFloat(hambalanLength) || 0)
+        : (parseFloat(hambalanQty) || 0);
     const numHambalan = parseInt(hambalanQty, 10) || 0;
     const numNakas = parseInt(nakasQty, 10) || 0;
 
@@ -567,7 +581,7 @@ export const calculateEstimate = ({
         const lenBawah = hasExplicitCabinets ? (parseFloat(cabinetBawah) || 0) : 0;
         const lenAtas = hasExplicitCabinets ? (parseFloat(cabinetAtas) || 0) : 0;
 
-        if (hasExplicitCabinets && (lenBawah > 0 || lenAtas > 0)) {
+        if (hasExplicitCabinets) {
             // 1a. Cabinet Bawah (m' x Harga)
             if (lenBawah > 0) {
                 if ((isKusenBawahOnly || pintuKusen) && styleData.kusen) {
@@ -724,33 +738,66 @@ export const calculateEstimate = ({
         }
 
         // 1g. Box Elektronik (Disatukan ke Kitchen Set)
-        if (boxElektronikType && boxElektronikType !== 'none' && numBoxQty > 0) {
-            const isBlock = material === 'BLOCKBOARD';
-            const boxKey = isBlock ? 'BOX_ELEKTRONIK_BLOCKBOARD' : 'BOX_ELEKTRONIK_MULTIPLEKS';
-            const boxCatalog = PRICELIST_CATALOG.TOPI_BOX_HAMBALAN[region]?.[boxKey] || {};
-            const boxRate = boxCatalog[boxElektronikType] || (isBlock ? 2100000 : 2500000);
-            const boxCost = Math.round(numBoxQty * boxRate);
+        // Aturan Resmi:
+        // - Harga: Lebih Rp 100.000 dari harga material kitchen set yang ada (contoh Blockboard DK 2jt -> Box 2,1jt)
+        // - Jika Panjang > 1m: dihitung Tinggi nya saja (T x Harga)
+        // - Jika Panjang <= 1m: dihitung Panjang x Tinggi (P x T x Harga)
+
+        const isBoxActive = (boxElektronikType && boxElektronikType !== 'none') || (numBoxP > 0 && numBoxT > 0);
+
+        if (isBoxActive && (numBoxP > 0 || numBoxT > 0 || boxElektronikType === 'LT_1M' || boxElektronikType === 'GT_1M' || boxElektronikType === 'box_kulkas')) {
+            const boxRate = baseUnitPrice + 100000;
+            let effectiveP = numBoxP;
+            let effectiveT = numBoxT;
+
+            // Backward compat jika caller lama hanya oper boxElektronikType tanpa P & T
+            if (effectiveP === 0 && effectiveT === 0) {
+                if (boxElektronikType === 'GT_1M') {
+                    effectiveP = 1.2;
+                    effectiveT = 2.0;
+                } else {
+                    effectiveP = 0.8;
+                    effectiveT = 2.0;
+                }
+            }
+
+            let boxVolume = 0;
+            let detailFormula = '';
+
+            if (effectiveP > 1) {
+                // Panjang > 1m: dihitung tingginya saja
+                boxVolume = effectiveT;
+                detailFormula = `Tinggi ${effectiveT}m' (P ${effectiveP}m > 1m) x Rp ${boxRate.toLocaleString('id-ID')}`;
+            } else {
+                // Panjang <= 1m: dihitung Panjang x Tinggi
+                boxVolume = effectiveP * effectiveT;
+                detailFormula = `${effectiveP}m x ${effectiveT}m = ${boxVolume.toFixed(2)}m² (P ≤ 1m) x Rp ${boxRate.toLocaleString('id-ID')}`;
+            }
+
+            if (numBoxQuantity > 1) {
+                detailFormula += ` x ${numBoxQuantity} unit`;
+            }
+
+            const boxCost = Math.round(boxVolume * boxRate * numBoxQuantity);
             subtotal += boxCost;
-            const typeLabel = boxElektronikType === 'GT_1M' ? 'T > 1m' : 'T < 1m';
             itemBreakdown.push({
-                label: `Box Elektronik ${typeLabel} (${material})`,
+                label: `Box Elektronik / Kulkas (${material} ${styleDisplayName})`,
                 amount: boxCost,
-                detail: `${numBoxQty} unit x Rp ${boxRate.toLocaleString('id-ID')}`
+                detail: detailFormula
             });
         }
 
-        // 1h. Hambalan (Disatukan ke Kitchen Set)
-        if (numHambalan > 0) {
-            const hbCatalog = PRICELIST_CATALOG.TOPI_BOX_HAMBALAN[region]?.HAMBALAN || {};
-            const hbKey = hambalanType === 'TANPA_LAMPU' ? 'TANPA_LAMPU' : 'DENGAN_LAMPU';
-            const hbRate = hbCatalog[hbKey] || (hbKey === 'DENGAN_LAMPU' ? 500000 : 450000);
-            const hbCost = Math.round(numHambalan * hbRate);
+        // 1h. Hambalan Floating (Disatukan ke Kitchen Set) - Dihitung Permeter Rp 650.000 / m'
+
+
+        if (numHambalanLen > 0) {
+            const hbRate = 650000; // Rp 650.000 / m'
+            const hbCost = Math.round(numHambalanLen * hbRate);
             subtotal += hbCost;
-            const lightLabel = hbKey === 'DENGAN_LAMPU' ? 'Dengan LED Strip' : 'Tanpa Lampu';
             itemBreakdown.push({
-                label: `Hambalan Floating Shelf (${lightLabel})`,
+                label: `Hambalan Floating Shelf`,
                 amount: hbCost,
-                detail: `${numHambalan} pcs x Rp ${hbRate.toLocaleString('id-ID')}`
+                detail: `${numHambalanLen}m' x Rp ${hbRate.toLocaleString('id-ID')}`
             });
         }
     }
@@ -990,8 +1037,10 @@ export const calculateEstimate = ({
             backsplash: backsplashOption !== 'none' ? backsplashOption : undefined,
             miniBarLength: numMiniBar > 0 ? numMiniBar : undefined,
             topiBarLength: numTopiBar > 0 ? numTopiBar : undefined,
-            boxElektronikQty: numBoxQty > 0 ? numBoxQty : undefined,
-            hambalanQty: numHambalan > 0 ? numHambalan : undefined
+            boxP: numBoxP > 0 ? numBoxP : undefined,
+            boxT: numBoxT > 0 ? numBoxT : undefined,
+            boxQty: numBoxQuantity > 1 ? numBoxQuantity : undefined,
+            hambalanLength: numHambalanLen > 0 ? numHambalanLen : undefined
         },
         subtotal,
         isFreeOngkir,

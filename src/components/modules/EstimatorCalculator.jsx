@@ -50,10 +50,11 @@ export const EstimatorCalculator = ({
     // Kitchen Set Unified: Mini Bar, Topi Bar, Box Elektronik & Hambalan
     const [miniBarLength, setMiniBarLength] = useState(0); // Rumus: P : 0.6 x Harga
     const [topiBarLength, setTopiBarLength] = useState(0); // Rumus: P x Harga
-    const [boxElektronikType, setBoxElektronikType] = useState('none'); // 'none' | 'LT_1M' | 'GT_1M'
-    const [boxElektronikQty, setBoxElektronikQty] = useState(1);
-    const [hambalanQty, setHambalanQty] = useState(0);
-    const [hambalanType, setHambalanType] = useState('DENGAN_LAMPU'); // 'DENGAN_LAMPU' | 'TANPA_LAMPU'
+    const [boxElektronikType, setBoxElektronikType] = useState('none'); // 'none' | 'box_kulkas'
+    const [boxP, setBoxP] = useState(0.8);
+    const [boxT, setBoxT] = useState(2.0);
+    const [boxQty, setBoxQty] = useState(1);
+    const [hambalanLength, setHambalanLength] = useState(0); // Rumus resmi: Rp 650.000 / m'
     const [plafonOption, setPlafonOption] = useState('none'); // 'none' | 'lt_50' | '50_to_70'
 
     // Kamar Set Specific
@@ -118,9 +119,11 @@ export const EstimatorCalculator = ({
             miniBarLength: category === 'KITCHEN_SET' ? miniBarLength : 0,
             topiBarLength: category === 'KITCHEN_SET' ? topiBarLength : 0,
             boxElektronikType: category === 'KITCHEN_SET' ? boxElektronikType : 'none',
-            boxElektronikQty: category === 'KITCHEN_SET' ? boxElektronikQty : 0,
-            hambalanQty: category === 'KITCHEN_SET' ? hambalanQty : 0,
-            hambalanType: category === 'KITCHEN_SET' ? hambalanType : 'DENGAN_LAMPU',
+            boxP: category === 'KITCHEN_SET' ? boxP : 0,
+            boxT: category === 'KITCHEN_SET' ? boxT : 0,
+            boxQty: category === 'KITCHEN_SET' ? boxQty : 1,
+            hambalanLength: category === 'KITCHEN_SET' ? hambalanLength : 0,
+            hambalanQty: category === 'KITCHEN_SET' ? hambalanLength : 0,
             plafonOption,
             // Kamar Set
             pintuKaca,
@@ -147,12 +150,23 @@ export const EstimatorCalculator = ({
         region, category, subItem, material, style, p, t, l,
         cabinetBawah, cabinetAtas, isKusenBawahOnly,
         topTableOption, topTableLength, backsplashOption, backsplashLength,
-        miniBarLength, topiBarLength, boxElektronikType, boxElektronikQty, hambalanQty, hambalanType,
+        miniBarLength, topiBarLength, boxElektronikType, boxP, boxT, boxQty, hambalanLength,
         plafonOption, pintuKaca, headboardOption, nakasQty, nakasOption, rangkaDipanTingkat,
         bawahTanggaKedalamanGt60, partisiType, benchBusa, wallpanelType, sofaCover,
         canopiType, pagarType, jasaSipilType, jasaSipilQty,
         isHplLuarDalam, customAddons
     ]);
+
+    // Tarif dasar Box Elektronik = Material Kitchen Set + Rp 100.000
+    const boxUnitPrice = useMemo(() => {
+        const catPrices = PRICELIST_CATALOG.KITCHEN_SET[region]?.[material] || PRICELIST_CATALOG.KITCHEN_SET[region]?.MULTIPLEKS;
+        let resolvedStyle = style;
+        if (material === 'ALUMUNIUM') {
+            resolvedStyle = (style === 'DOUBLE_LAYER' || style === 'SEMI_KLASIK' || style === 'KLASIK') ? 'DOUBLE_LAYER' : 'SINGLE_LAYER';
+        }
+        const styleData = catPrices?.[resolvedStyle] || catPrices?.[style] || catPrices?.MINIMALIS || { base: 2000000 };
+        return (styleData.base || 2000000) + 100000;
+    }, [region, material, style]);
 
     const formattedWhatsAppText = useMemo(() => {
         return formatEstimateForWhatsApp(estimate, brandName);
@@ -652,70 +666,115 @@ export const EstimatorCalculator = ({
                                     </div>
 
                                     {/* Box Elektronik */}
-                                    <div className="p-2.5 bg-[#121216] rounded-xl border border-[#26262d] space-y-1.5">
-                                        <label className="text-[11px] font-bold text-zinc-300 block">Box Elektronik (Kulkas/Oven)</label>
+                                    <div className="p-2.5 bg-[#121216] rounded-xl border border-[#26262d] space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-[11px] font-bold text-zinc-300 block">Box Elektronik (Kulkas/Oven)</label>
+                                            <span className="text-[10px] text-[#c5a059] font-mono">Rp {(boxUnitPrice / 1000000).toFixed(1)}jt/m</span>
+                                        </div>
                                         <select
                                             value={boxElektronikType}
-                                            onChange={(e) => setBoxElektronikType(e.target.value)}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                setBoxElektronikType(val);
+                                                if (val !== 'none') {
+                                                    if (!boxP) setBoxP(0.8);
+                                                    if (!boxT) setBoxT(2.0);
+                                                }
+                                            }}
                                             className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-lg px-2 py-1 text-xs text-white focus:border-[#c5a059] focus:outline-none"
                                         >
                                             <option value="none">Tanpa Box</option>
-                                            <option value="LT_1M">Tinggi &lt; 1m (Rp 2.5jt/unit)</option>
-                                            <option value="GT_1M">Tinggi &gt; 1m (Rp 2.6jt/unit)</option>
+                                            <option value="box_kulkas">Ada Box Kulkas / Oven</option>
                                         </select>
                                         {boxElektronikType !== 'none' && (
-                                            <div className="flex items-center gap-1 mt-1">
-                                                <span className="text-[10px] text-zinc-400">Qty:</span>
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    value={boxElektronikQty}
-                                                    onChange={(e) => setBoxElektronikQty(parseInt(e.target.value, 10) || 1)}
-                                                    className="w-16 bg-[#1b1b22] border border-[#2e2e38] rounded px-1.5 py-0.5 text-xs text-white font-mono"
-                                                />
-                                                <span className="text-[10px] text-zinc-500">unit</span>
+                                            <div className="space-y-1.5 pt-1 border-t border-[#26262d]">
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label className="text-[10px] text-zinc-400 block">Panjang (m)</label>
+                                                        <div className="flex items-center">
+                                                            <input
+                                                                type="number"
+                                                                step="0.1"
+                                                                min="0"
+                                                                value={boxP}
+                                                                onChange={(e) => setBoxP(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                                                                placeholder="0.8"
+                                                                className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded px-2 py-1 text-xs text-white font-mono focus:border-[#c5a059] focus:outline-none"
+                                                            />
+                                                            <span className="text-[10px] text-zinc-500 ml-1 font-mono">m</span>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] text-zinc-400 block">Tinggi (m)</label>
+                                                        <div className="flex items-center">
+                                                            <input
+                                                                type="number"
+                                                                step="0.1"
+                                                                min="0"
+                                                                value={boxT}
+                                                                onChange={(e) => setBoxT(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                                                                placeholder="2.0"
+                                                                className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded px-2 py-1 text-xs text-white font-mono focus:border-[#c5a059] focus:outline-none"
+                                                            />
+                                                            <span className="text-[10px] text-zinc-500 ml-1 font-mono">m</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center justify-between text-[10px] text-zinc-400 pt-0.5">
+                                                    <span>Qty Box:</span>
+                                                    <div className="flex items-center gap-1">
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            value={boxQty}
+                                                            onChange={(e) => setBoxQty(parseInt(e.target.value, 10) || 1)}
+                                                            className="w-12 bg-[#1b1b22] border border-[#2e2e38] rounded px-1.5 py-0.5 text-xs text-white font-mono text-center"
+                                                        />
+                                                        <span className="text-zinc-500 text-[10px]">unit</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="text-[9px] leading-tight text-zinc-400 bg-[#17171e] p-1.5 rounded border border-[#26262d]">
+                                                    {parseFloat(boxP) > 1 ? (
+                                                        <span className="text-emerald-400">
+                                                            P &gt; 1m → Dihitung Tinggi saja: <strong className="text-white font-mono">{boxT || 0}m'</strong>
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-amber-400">
+                                                            P ≤ 1m → Dihitung P x T: <strong className="text-white font-mono">{((parseFloat(boxP) || 0) * (parseFloat(boxT) || 0)).toFixed(2)}m²</strong>
+                                                        </span>
+                                                    )}
+                                                    <div className="text-zinc-500 mt-0.5">
+                                                        Tarif: Rp {boxUnitPrice.toLocaleString('id-ID')} (+100rb dr material)
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* Hambalan */}
+                                    {/* Hambalan Floating */}
                                     <div className="p-2.5 bg-[#121216] rounded-xl border border-[#26262d] space-y-1.5">
-                                        <label className="text-[11px] font-bold text-zinc-300 block">Hambalan Floating (pcs)</label>
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-[11px] font-bold text-zinc-300 block">Hambalan Floating (m')</label>
+                                            <span className="text-[10px] text-[#c5a059] font-mono">Rp 650rb/m'</span>
+                                        </div>
                                         <div className="flex items-center">
                                             <input
                                                 type="number"
+                                                step="0.1"
                                                 min="0"
-                                                value={hambalanQty}
-                                                onChange={(e) => setHambalanQty(parseInt(e.target.value, 10) || 0)}
+                                                value={hambalanLength}
+                                                onChange={(e) => setHambalanLength(parseFloat(e.target.value) >= 0 ? parseFloat(e.target.value) : 0)}
                                                 className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-[#c5a059] focus:outline-none"
                                                 placeholder="0"
                                             />
-                                            <span className="text-xs text-zinc-500 ml-1.5 font-mono">pcs</span>
+                                            <span className="text-xs text-zinc-500 ml-1.5 font-mono">m'</span>
                                         </div>
-                                        {hambalanQty > 0 && (
-                                            <div className="flex items-center gap-1.5 pt-1">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setHambalanType('DENGAN_LAMPU')}
-                                                    className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
-                                                        hambalanType === 'DENGAN_LAMPU'
-                                                            ? 'bg-[#c5a059] text-black border-[#c5a059]'
-                                                            : 'bg-[#1b1b22] text-zinc-400 border-[#2e2e38]'
-                                                    }`}
-                                                >
-                                                    +LED (500k)
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setHambalanType('TANPA_LAMPU')}
-                                                    className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
-                                                        hambalanType === 'TANPA_LAMPU'
-                                                            ? 'bg-[#c5a059] text-black border-[#c5a059]'
-                                                            : 'bg-[#1b1b22] text-zinc-400 border-[#2e2e38]'
-                                                    }`}
-                                                >
-                                                    Polos (450k)
-                                                </button>
+                                        <div className="text-[9px] text-zinc-500">Hitungan resmi permeter: Rp 650.000/m'</div>
+                                        {parseFloat(hambalanLength) > 0 && (
+                                            <div className="text-[9.5px] text-[#c5a059] font-mono bg-[#17171e] px-1.5 py-0.5 rounded border border-[#26262d]">
+                                                {hambalanLength}m' x Rp 650.000 = Rp {Math.round(parseFloat(hambalanLength) * 650000).toLocaleString('id-ID')}
                                             </div>
                                         )}
                                     </div>
