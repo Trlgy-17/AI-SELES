@@ -125,7 +125,7 @@ export const exportEstimateToPDF = (estimate, activeBrand = {}) => {
         doc.setFont('helvetica', 'bold');
         doc.text('Layanan Desain', midColX, currentY + 7);
         doc.setFont('helvetica', 'normal');
-        doc.text(': Free Survei & 3D', midColX + 32, currentY + 7);
+        doc.text(': Free Survey & 2D', midColX + 32, currentY + 7);
 
         doc.setFont('helvetica', 'bold');
         doc.text('Bahan & Model', midColX, currentY + 14);

@@ -642,6 +642,7 @@ const pdfExportSrc = fs.readFileSync('src/js/utils/pdfExport.js', 'utf-8');
 assert(!pdfExportSrc.includes('Konsultan Marketing'), 'Admin Marketing placeholder removed from PDF signature');
 assert(!pdfExportSrc.includes('Sistem Interior Sales AI Copilot'), 'AI Copilot watermark removed from PDF signature');
 assert(!pdfExportSrc.includes('100% GRATIS tanpa komitmen'), 'Point 1 (Konsultasi & survei 100% gratis) removed from PDF terms');
+assert(pdfExportSrc.includes('Free Survey & 2D'), 'PDF export Layanan Desain is Free Survey & 2D');
 
 // Dynamic Warranty Logic Assertions
 const bbWarranty = getApplicableWarrantyText({ material: 'BLOCKBOARD', grandTotal: 25000000 });
