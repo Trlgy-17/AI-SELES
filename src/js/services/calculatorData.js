@@ -99,8 +99,11 @@ export const PRICELIST_CATALOG = {
                 KLASIK: { base: 4800000, plafonLt50: 4500000, plafon50to70: 4700000, kusen: 1850000 }
             },
             ALUMUNIUM: {
-                MINIMALIS: { base: 3300000, kusen: 1650000 },
-                SEMI_KLASIK: { base: 3750000, kusen: 1850000 }
+                SINGLE_LAYER: { base: 4000000, plafonLt50: 3800000, plafon50to70: 4000000, kusen: 1750000 },
+                DOUBLE_LAYER: { base: 5500000, plafonLt50: 5200000, plafon50to70: 5500000, kusen: 2150000 },
+                MINIMALIS: { base: 4000000, plafonLt50: 3800000, plafon50to70: 4000000, kusen: 1750000 },
+                SEMI_KLASIK: { base: 5500000, plafonLt50: 5200000, plafon50to70: 5500000, kusen: 2150000 },
+                KLASIK: { base: 5500000, plafonLt50: 5200000, plafon50to70: 5500000, kusen: 2150000 }
             }
         },
         luar_kota: {
@@ -129,8 +132,11 @@ export const PRICELIST_CATALOG = {
                 KLASIK: { base: 4800000, plafonLt50: 4500000, plafon50to70: 4700000, kusen: 1850000 }
             },
             ALUMUNIUM: {
-                MINIMALIS: { base: 3500000, kusen: 1750000 },
-                SEMI_KLASIK: { base: 5000000, kusen: 1950000 },
+                SINGLE_LAYER: { base: 4000000, plafonLt50: 3800000, plafon50to70: 4000000, kusen: 1750000 },
+                DOUBLE_LAYER: { base: 5500000, plafonLt50: 5200000, plafon50to70: 5500000, kusen: 2150000 },
+                MINIMALIS: { base: 4000000, plafonLt50: 3800000, plafon50to70: 4000000, kusen: 1750000 },
+                SEMI_KLASIK: { base: 5500000, plafonLt50: 5200000, plafon50to70: 5500000, kusen: 2150000 },
+                KLASIK: { base: 5500000, plafonLt50: 5200000, plafon50to70: 5500000, kusen: 2150000 },
                 LUXURY_FRAMELESS: { base: 5500000, kusen: 2150000 }
             }
         }
@@ -143,11 +149,13 @@ export const PRICELIST_CATALOG = {
     MINIBAR_ISLAND: {
         dalam_kota: {
             BLOCKBOARD: { MINIMALIS: 2100000, SEMI_KLASIK: 2500000, KLASIK: 2500000, INDUSTRIAL: 2100000, RANGKA_BESI: 1800000, RANGKA_WIREMESH: 2000000 },
-            MULTIPLEKS: { MINIMALIS: 2500000, SEMI_KLASIK: 2700000, KLASIK: 2700000, INDUSTRIAL: 2500000, RANGKA_BESI: 1800000, RANGKA_WIREMESH: 2000000 }
+            MULTIPLEKS: { MINIMALIS: 2500000, SEMI_KLASIK: 2700000, KLASIK: 2700000, INDUSTRIAL: 2500000, RANGKA_BESI: 1800000, RANGKA_WIREMESH: 2000000 },
+            ALUMUNIUM: { SINGLE_LAYER: 4000000, DOUBLE_LAYER: 5500000, MINIMALIS: 4000000, SEMI_KLASIK: 5500000, KLASIK: 5500000 }
         },
         luar_kota: {
             BLOCKBOARD: { MINIMALIS: 2300000, SEMI_KLASIK: 2700000, KLASIK: 2700000, INDUSTRIAL: 2300000, RANGKA_BESI: 2100000, RANGKA_WIREMESH: 2300000 },
-            MULTIPLEKS: { MINIMALIS: 2500000, SEMI_KLASIK: 2700000, KLASIK: 2700000, INDUSTRIAL: 2500000, RANGKA_BESI: 2100000, RANGKA_WIREMESH: 2300000 }
+            MULTIPLEKS: { MINIMALIS: 2500000, SEMI_KLASIK: 2700000, KLASIK: 2700000, INDUSTRIAL: 2500000, RANGKA_BESI: 2100000, RANGKA_WIREMESH: 2300000 },
+            ALUMUNIUM: { SINGLE_LAYER: 4000000, DOUBLE_LAYER: 5500000, MINIMALIS: 4000000, SEMI_KLASIK: 5500000, KLASIK: 5500000 }
         }
     },
 
@@ -178,12 +186,14 @@ export const PRICELIST_CATALOG = {
             BLOCKBOARD: { MINIMALIS: 2300000, SEMI_KLASIK: 2700000, KLASIK: 2950000 },
             MULTIPLEKS: { MINIMALIS: 2500000, SEMI_KLASIK: 2750000, KLASIK: 3000000 },
             DUCO: { MINIMALIS: 4800000, SEMI_KLASIK: 5300000, KLASIK: 6300000 },
+            ALUMUNIUM: { SINGLE_LAYER: 4000000, DOUBLE_LAYER: 5500000, MINIMALIS: 4000000, SEMI_KLASIK: 5500000, KLASIK: 5500000 },
             PINTU_KACA: { KACA_POLOS: 650000, KACA_RIBEN: 1250000, CERMIN_BIASA: 750000, CERMIN_BRONZE_GREY: 1850000 }
         },
         luar_kota: {
             BLOCKBOARD: { MINIMALIS: 2400000, SEMI_KLASIK: 2800000, KLASIK: 3050000 },
             MULTIPLEKS: { MINIMALIS: 2600000, SEMI_KLASIK: 2850000, KLASIK: 3100000 },
             DUCO: { MINIMALIS: 4800000, SEMI_KLASIK: 5300000, KLASIK: 6300000 },
+            ALUMUNIUM: { SINGLE_LAYER: 4000000, DOUBLE_LAYER: 5500000, MINIMALIS: 4000000, SEMI_KLASIK: 5500000, KLASIK: 5500000 },
             PINTU_KACA: { KACA_POLOS: 750000, KACA_RIBEN: 1250000, CERMIN_BIASA: 850000, CERMIN_BRONZE_GREY: 1850000 }
         }
     },
@@ -543,8 +553,15 @@ export const calculateEstimate = ({
     // =========================================================================
     if (resolvedCategory === 'KITCHEN_SET') {
         const catPrices = PRICELIST_CATALOG.KITCHEN_SET[region]?.[material] || PRICELIST_CATALOG.KITCHEN_SET[region]?.MULTIPLEKS;
-        const styleData = catPrices?.[style] || catPrices?.MINIMALIS || { base: 2500000 };
+        let resolvedStyle = style;
+        if (material === 'ALUMUNIUM') {
+            resolvedStyle = (style === 'DOUBLE_LAYER' || style === 'SEMI_KLASIK' || style === 'KLASIK' || style === 'LUXURY_FRAMELESS') ? 'DOUBLE_LAYER' : 'SINGLE_LAYER';
+        }
+        const styleData = catPrices?.[resolvedStyle] || catPrices?.[style] || catPrices?.MINIMALIS || { base: 2500000 };
         baseUnitPrice = styleData.base;
+        const styleDisplayName = material === 'ALUMUNIUM'
+            ? (resolvedStyle === 'DOUBLE_LAYER' ? 'Double Layer' : 'Single Layer')
+            : style;
 
         const hasExplicitCabinets = (cabinetBawah !== undefined || cabinetAtas !== undefined);
         const lenBawah = hasExplicitCabinets ? (parseFloat(cabinetBawah) || 0) : 0;
@@ -565,7 +582,7 @@ export const calculateEstimate = ({
                     const costBawah = Math.round(lenBawah * baseUnitPrice);
                     subtotal += costBawah;
                     itemBreakdown.push({
-                        label: `Cabinet Bawah (${material} ${style})`,
+                        label: `Cabinet Bawah (${material} ${styleDisplayName})`,
                         amount: costBawah,
                         detail: `${lenBawah}m' x Rp ${baseUnitPrice.toLocaleString('id-ID')}`
                     });
@@ -577,7 +594,7 @@ export const calculateEstimate = ({
                 const costAtas = Math.round(lenAtas * baseUnitPrice);
                 subtotal += costAtas;
                 itemBreakdown.push({
-                    label: `Cabinet Atas (${material} ${style})`,
+                    label: `Cabinet Atas (${material} ${styleDisplayName})`,
                     amount: costAtas,
                     detail: `${lenAtas}m' x Rp ${baseUnitPrice.toLocaleString('id-ID')}`
                 });
@@ -615,7 +632,7 @@ export const calculateEstimate = ({
             // Fallback backward-compatible: single panjang P
             subtotal = Math.round(numP * baseUnitPrice);
             formulaText = `${numP}m x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
-            itemBreakdown.push({ label: `Kitchen Set (${material} ${style})`, amount: subtotal, detail: formulaText });
+            itemBreakdown.push({ label: `Kitchen Set (${material} ${styleDisplayName})`, amount: subtotal, detail: formulaText });
 
             if (plafonOption === 'lt_50' && styleData.plafonLt50) {
                 const plafonCost = Math.round(numP * styleData.plafonLt50);
@@ -676,12 +693,16 @@ export const calculateEstimate = ({
         // 1e. Mini Bar / Meja Island (Disatukan ke Kitchen Set - Rumus: P : 0.6 x Harga)
         if (numMiniBar > 0) {
             const mbPrices = PRICELIST_CATALOG.MINIBAR_ISLAND[region]?.[material] || PRICELIST_CATALOG.MINIBAR_ISLAND[region]?.MULTIPLEKS;
-            const mbRate = mbPrices?.[style] || mbPrices?.MINIMALIS || 2500000;
+            let mbResolvedStyle = style;
+            if (material === 'ALUMUNIUM') {
+                mbResolvedStyle = (style === 'DOUBLE_LAYER' || style === 'SEMI_KLASIK' || style === 'KLASIK') ? 'DOUBLE_LAYER' : 'SINGLE_LAYER';
+            }
+            const mbRate = mbPrices?.[mbResolvedStyle] || mbPrices?.[style] || mbPrices?.MINIMALIS || 2500000;
             const mbSlots = numMiniBar / 0.6;
             const mbCost = Math.round(mbSlots * mbRate);
             subtotal += mbCost;
             itemBreakdown.push({
-                label: `Mini Bar / Meja Island (${material} ${style})`,
+                label: `Mini Bar / Meja Island (${material} ${styleDisplayName})`,
                 amount: mbCost,
                 detail: `(${numMiniBar}m / 0.6 = ${mbSlots.toFixed(2)} unit) x Rp ${mbRate.toLocaleString('id-ID')}`
             });
@@ -740,11 +761,18 @@ export const calculateEstimate = ({
     else if (resolvedCategory === 'KAMAR_SET') {
         if (resolvedSubItem === 'LEMARI_WARDROBE') {
             const catPrices = PRICELIST_CATALOG.LEMARI_WARDROBE[region]?.[material] || PRICELIST_CATALOG.LEMARI_WARDROBE[region]?.MULTIPLEKS;
-            baseUnitPrice = catPrices?.[style] || catPrices?.MINIMALIS || 2500000;
+            let wardResolvedStyle = style;
+            if (material === 'ALUMUNIUM') {
+                wardResolvedStyle = (style === 'DOUBLE_LAYER' || style === 'SEMI_KLASIK' || style === 'KLASIK') ? 'DOUBLE_LAYER' : 'SINGLE_LAYER';
+            }
+            baseUnitPrice = catPrices?.[wardResolvedStyle] || catPrices?.[style] || catPrices?.MINIMALIS || 2500000;
+            const wardStyleDisplayName = material === 'ALUMUNIUM'
+                ? (wardResolvedStyle === 'DOUBLE_LAYER' ? 'Double Layer' : 'Single Layer')
+                : style;
             const luasM2 = numP * numT;
             subtotal = Math.round(luasM2 * baseUnitPrice);
             formulaText = `${numP}m x ${numT}m (${luasM2.toFixed(2)} m2) x Rp ${baseUnitPrice.toLocaleString('id-ID')}`;
-            itemBreakdown.push({ label: `Lemari Wardrobe (${material} ${style})`, amount: subtotal, detail: formulaText });
+            itemBreakdown.push({ label: `Lemari Wardrobe (${material} ${wardStyleDisplayName})`, amount: subtotal, detail: formulaText });
 
             if (pintuKaca !== 'none') {
                 const kacaPrices = PRICELIST_CATALOG.LEMARI_WARDROBE[region]?.PINTU_KACA || {};

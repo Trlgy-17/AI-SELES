@@ -340,7 +340,14 @@ export const EstimatorCalculator = ({
                                     <button
                                         key={mat.id}
                                         type="button"
-                                        onClick={() => setMaterial(mat.id)}
+                                        onClick={() => {
+                                            setMaterial(mat.id);
+                                            if (mat.id === 'ALUMUNIUM' && style !== 'SINGLE_LAYER' && style !== 'DOUBLE_LAYER') {
+                                                setStyle('SINGLE_LAYER');
+                                            } else if (mat.id !== 'ALUMUNIUM' && (style === 'SINGLE_LAYER' || style === 'DOUBLE_LAYER')) {
+                                                setStyle('MINIMALIS');
+                                            }
+                                        }}
                                         className={`p-3 rounded-2xl border text-left transition-all ${
                                             material === mat.id
                                                 ? 'bg-[#c5a059]/15 border-[#c5a059] text-white shadow-sm ring-1 ring-[#c5a059]/50'
@@ -359,27 +366,54 @@ export const EstimatorCalculator = ({
                     {category !== 'SIPIL_BENGKEL' && subItem !== 'RANGKA_DIPAN_TINGKAT' && subItem !== 'WALLPANEL_KACA' && (
                         <div>
                             <label className="text-xs font-bold text-zinc-300 block mb-2">Model Desain & Finishing</label>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                {[
-                                    { id: 'MINIMALIS', label: 'Minimalis Modern' },
-                                    { id: 'SEMI_KLASIK', label: 'Semi Klasik' },
-                                    { id: 'KLASIK', label: 'Klasik Profil Mewah' },
-                                    { id: 'INDUSTRIAL', label: 'Industrial (Besi)' }
-                                ].map((st) => (
-                                    <button
-                                        key={st.id}
-                                        type="button"
-                                        onClick={() => setStyle(st.id)}
-                                        className={`p-2.5 rounded-xl border text-center text-xs font-bold transition-all ${
-                                            style === st.id
-                                                ? 'bg-[#c5a059] text-black border-[#c5a059] shadow-sm font-black'
-                                                : 'bg-[#1b1b22] border-[#2e2e38] text-zinc-300 hover:text-white'
-                                        }`}
-                                    >
-                                        {st.label}
-                                    </button>
-                                ))}
-                            </div>
+                            {material === 'ALUMUNIUM' ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    {[
+                                        { id: 'SINGLE_LAYER', label: 'Alumunium Single Layer', price: 'Rp 4.000.000 / m\'', desc: 'Visible frame kokoh & minimalis clean' },
+                                        { id: 'DOUBLE_LAYER', label: 'Alumunium Double Layer', price: 'Rp 5.500.000 / m\'', desc: 'Double skin frameless mewah & solid' }
+                                    ].map((st) => {
+                                        const isSelected = style === st.id || (st.id === 'SINGLE_LAYER' && (style === 'MINIMALIS' || !style)) || (st.id === 'DOUBLE_LAYER' && (style === 'SEMI_KLASIK' || style === 'KLASIK' || style === 'INDUSTRIAL'));
+                                        return (
+                                            <button
+                                                key={st.id}
+                                                type="button"
+                                                onClick={() => setStyle(st.id)}
+                                                className={`p-3 rounded-2xl border text-left transition-all ${
+                                                    isSelected
+                                                        ? 'bg-[#c5a059] text-black border-[#c5a059] shadow-sm font-black ring-1 ring-[#c5a059]'
+                                                        : 'bg-[#1b1b22] border-[#2e2e38] text-zinc-300 hover:text-white'
+                                                }`}
+                                            >
+                                                <div className="text-xs font-bold">{st.label}</div>
+                                                <div className={`text-[11px] font-mono mt-0.5 ${isSelected ? 'text-black/80 font-bold' : 'text-[#c5a059]'}`}>{st.price}</div>
+                                                <div className={`text-[10px] mt-0.5 ${isSelected ? 'text-black/70' : 'text-zinc-500'}`}>{st.desc}</div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                    {[
+                                        { id: 'MINIMALIS', label: 'Minimalis Modern' },
+                                        { id: 'SEMI_KLASIK', label: 'Semi Klasik' },
+                                        { id: 'KLASIK', label: 'Klasik Profil Mewah' },
+                                        { id: 'INDUSTRIAL', label: 'Industrial (Besi)' }
+                                    ].map((st) => (
+                                        <button
+                                            key={st.id}
+                                            type="button"
+                                            onClick={() => setStyle(st.id)}
+                                            className={`p-2.5 rounded-xl border text-center text-xs font-bold transition-all ${
+                                                style === st.id
+                                                    ? 'bg-[#c5a059] text-black border-[#c5a059] shadow-sm font-black'
+                                                    : 'bg-[#1b1b22] border-[#2e2e38] text-zinc-300 hover:text-white'
+                                            }`}
+                                        >
+                                            {st.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 

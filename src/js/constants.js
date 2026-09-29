@@ -177,9 +177,9 @@ export const GLOBAL_CORE_KNOWLEDGE = [
   - Klasik: Rp 4.800.000,-/m
   (Note: Finishing HPL Luar & Dalam +Rp 700.000,-/m. Sangat direkomendasikan untuk area sink/bawah wastafel)
 
-• Bahan Alumunium ACP 4mm (Grade A Non Kayu):
-  - Minimalis: Rp 3.300.000,-/m
-  - Semi Klasik: Rp 3.750.000,-/m
+• Bahan Alumunium ACP 4mm (Grade A Non Kayu — Kokoh & Tahan Karat):
+  - Alumunium Single Layer: Rp 4.000.000,-/m
+  - Alumunium Double Layer: Rp 5.500.000,-/m
   (Note: Finishing ACP Luar & Dalam +Rp 700.000,-/m)
 
 • Bahan Multipleks Finishing Cat Duco:
@@ -226,10 +226,8 @@ export const GLOBAL_CORE_KNOWLEDGE = [
   (Note: Finishing HPL Luar & Dalam +Rp 700.000,-/m)
 
 • Bahan Alumunium ACP 4mm:
-  - Minimalis (Visible Frame): Rp 3.500.000,-/m
-  - Premium (Visible Frame): Rp 4.500.000,-/m
-  - Semi Klasik (Visible Frame Mix PVC): Rp 5.000.000,-/m
-  - Luxury (Frameless): Rp 5.500.000,-/m
+  - Alumunium Single Layer: Rp 4.000.000,-/m
+  - Alumunium Double Layer: Rp 5.500.000,-/m
   (Note: Finishing ACP Luar & Dalam)
 
 • Bahan Multipleks Finishing Cat Duco:

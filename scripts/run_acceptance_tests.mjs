@@ -518,6 +518,32 @@ const estCanopi = calculateEstimate({
 // 4m x 3m = 12 m2 x 1.200.000 = 14.400.000
 assert(estCanopi.subtotal === 14400000, 'Canopi Spandek (4m x 3m x 1.2jt) subtotal is 14.400.000');
 
+// Alumunium ACP Single Layer (4.000.000 / m)
+const estAlumuniumSingle = calculateEstimate({
+    region: 'dalam_kota',
+    category: 'KITCHEN_SET',
+    material: 'ALUMUNIUM',
+    style: 'SINGLE_LAYER',
+    cabinetBawah: 2,
+    cabinetAtas: 2
+});
+// 4m total x 4.000.000 = 16.000.000
+assert(estAlumuniumSingle.subtotal === 16000000, 'Alumunium ACP Single Layer 4m is 16.000.000 (4jt/m)');
+assert(estAlumuniumSingle.itemBreakdown.some(i => i.label.includes('Single Layer')), 'Breakdown label contains Single Layer');
+
+// Alumunium ACP Double Layer (5.500.000 / m)
+const estAlumuniumDouble = calculateEstimate({
+    region: 'dalam_kota',
+    category: 'KITCHEN_SET',
+    material: 'ALUMUNIUM',
+    style: 'DOUBLE_LAYER',
+    cabinetBawah: 2,
+    cabinetAtas: 2
+});
+// 4m total x 5.500.000 = 22.000.000
+assert(estAlumuniumDouble.subtotal === 22000000, 'Alumunium ACP Double Layer 4m is 22.000.000 (5.5jt/m)');
+assert(estAlumuniumDouble.itemBreakdown.some(i => i.label.includes('Double Layer')), 'Breakdown label contains Double Layer');
+
 // ----------------------------------------------------
 // TEST 11: Modern Brand-Specific PDF Quotation Export (Clean Signature)
 // ----------------------------------------------------
