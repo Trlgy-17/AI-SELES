@@ -15,6 +15,9 @@ import {
 } from '../../js/services/calculatorData.js';
 import { copyToClipboard } from '../../js/utils/clipboard.js';
 import { exportEstimateToPDF } from '../../js/utils/pdfExport.js';
+import { LayoutAnalyzerService } from '../../js/services/layoutAnalyzer.js';
+import { StorageService } from '../../js/services/storage.js';
+import { DEFAULT_GEMINI_API_KEY, DEFAULT_GEMINI_MODEL } from '../../js/constants.js';
 
 export const EstimatorCalculator = ({ 
     activeBrand, 
@@ -23,6 +26,95 @@ export const EstimatorCalculator = ({
 }) => {
     const brandName = activeBrand?.brandName || 'PUTRA INTERIOR';
     const [isExportingPDF, setIsExportingPDF] = useState(false);
+
+    // File Drop & Layout/Photo Extraction States
+    const [droppedFile, setDroppedFile] = useState(null);
+    const [filePreview, setFilePreview] = useState(null);
+    const [isAnalyzingFile, setIsAnalyzingFile] = useState(false);
+    const [analysisResult, setAnalysisResult] = useState(null);
+    const [isDraggingFile, setIsDraggingFile] = useState(false);
+    const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
+
+    const removeDroppedFile = () => {
+        setDroppedFile(null);
+        setFilePreview(null);
+        setAnalysisResult(null);
+    };
+
+    const handleFileDrop = async (file) => {
+        if (!file) return;
+        setDroppedFile(file);
+        setIsAnalyzingFile(true);
+
+        if (file.type && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => setFilePreview(e.target.result);
+            reader.readAsDataURL(file);
+        } else {
+            setFilePreview(null);
+        }
+
+        try {
+            const apiKey = StorageService.getItem('nacira_gemini_api_key', '') || DEFAULT_GEMINI_API_KEY;
+            const model = StorageService.getItem('nacira_gemini_model', '') || 'gemini-flash-latest';
+            const proxyUrl = StorageService.getItem('nacira_custom_proxy_url', '');
+
+            const result = await LayoutAnalyzerService.analyzeFile({
+                file,
+                customApiKey: apiKey,
+                selectedModel: model,
+                customProxyUrl: proxyUrl,
+                activeBrand
+            });
+
+            setAnalysisResult(result);
+
+            // Terapkan hasil ekstraksi langsung ke form kalkulator
+            if (result.category) setCategory(result.category);
+            if (result.subItem) setSubItem(result.subItem);
+            if (result.material) setMaterial(result.material);
+            if (result.style) setStyle(result.style);
+
+            if (result.category === 'KITCHEN_SET' || !result.category) {
+                if (result.cabinetBawah !== undefined && result.cabinetBawah !== null) setCabinetBawah(parseFloat(result.cabinetBawah) || 0);
+                if (result.cabinetAtas !== undefined && result.cabinetAtas !== null) setCabinetAtas(parseFloat(result.cabinetAtas) || 0);
+                if (result.isKusenBawahOnly !== undefined) setIsKusenBawahOnly(!!result.isKusenBawahOnly);
+                if (result.topTableOption) setTopTableOption(result.topTableOption);
+                if (result.topTableLength !== undefined) setTopTableLength(result.topTableLength || '');
+                if (result.backsplashOption) setBacksplashOption(result.backsplashOption);
+                if (result.backsplashLength !== undefined) setBacksplashLength(result.backsplashLength || '');
+                if (result.miniBarLength !== undefined) setMiniBarLength(parseFloat(result.miniBarLength) || 0);
+                if (result.topiBarLength !== undefined) setTopiBarLength(parseFloat(result.topiBarLength) || 0);
+                if (result.hambalanLength !== undefined) setHambalanLength(parseFloat(result.hambalanLength) || 0);
+
+                if (result.boxElektronik) {
+                    if (result.boxElektronik.active) {
+                        setBoxElektronikType('box_kulkas');
+                        if (result.boxElektronik.boxP !== undefined) setBoxP(parseFloat(result.boxElektronik.boxP) || 0.8);
+                        if (result.boxElektronik.boxT !== undefined) setBoxT(parseFloat(result.boxElektronik.boxT) || 2.0);
+                        if (result.boxElektronik.boxQty !== undefined) setBoxQty(parseInt(result.boxElektronik.boxQty, 10) || 1);
+                    } else {
+                        setBoxElektronikType('none');
+                    }
+                }
+            } else {
+                if (result.p !== undefined) setP(parseFloat(result.p) || 3.0);
+                if (result.t !== undefined) setT(parseFloat(result.t) || 2.8);
+                if (result.l !== undefined) setL(parseFloat(result.l) || 0.6);
+            }
+
+            if (showToast) {
+                showToast("✨ Ukuran & denah berhasil dianalisis AI dan dimasukkan ke Kalkulator RAB!");
+            }
+        } catch (err) {
+            console.error("Gagal analisis layout file:", err);
+            if (showToast) {
+                showToast("Gagal analisis file: " + (err.message || 'Coba file gambar lain.'));
+            }
+        } finally {
+            setIsAnalyzingFile(false);
+        }
+    };
 
     // Form States
     const [region, setRegion] = useState('dalam_kota'); // 'dalam_kota' (PL DK) | 'luar_kota' (PL LK)
@@ -275,6 +367,220 @@ export const EstimatorCalculator = ({
                         100% Bebas Biaya Survei & Desain 3D
                     </span>
                 </div>
+            </div>
+
+            {/* ========================================================================= */}
+            {/* DROP FILE DENAH / UKURAN / FOTO RUANGAN UNTUK HITUNG LANGSUNG OTOMATIS */}
+            {/* ========================================================================= */}
+            <div className="bg-[#15151a] p-4 md:p-5 rounded-3xl border border-[#26262d] shadow-xl space-y-3">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <span className="text-base">📸</span>
+                        <span className="text-xs md:text-sm font-bold text-white">
+                            Scan AI Denah, Ukuran, Layout &amp; Foto Ruangan
+                        </span>
+                        <span className="text-[10px] bg-[#c5a059]/20 text-[#c5a059] px-2 py-0.5 rounded-full font-mono font-semibold border border-[#c5a059]/40">
+                            Hitung Langsung
+                        </span>
+                    </div>
+                    {droppedFile && (
+                        <button
+                            type="button"
+                            onClick={removeDroppedFile}
+                            className="text-xs text-rose-400 hover:text-rose-300 font-medium transition-colors"
+                        >
+                            Hapus File
+                        </button>
+                    )}
+                </div>
+
+                {!droppedFile ? (
+                    <div
+                        onDragOver={(e) => { e.preventDefault(); setIsDraggingFile(true); }}
+                        onDragLeave={() => setIsDraggingFile(false)}
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            setIsDraggingFile(false);
+                            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                                handleFileDrop(e.dataTransfer.files[0]);
+                            }
+                        }}
+                        className={`border-2 border-dashed rounded-2xl p-4 sm:p-6 text-center transition-all cursor-pointer relative ${
+                            isDraggingFile
+                                ? 'border-[#c5a059] bg-[#c5a059]/10 ring-2 ring-[#c5a059]/30'
+                                : 'border-[#2e2e38] hover:border-[#c5a059]/50 bg-[#101014] hover:bg-[#121217]'
+                        }`}
+                    >
+                        <input
+                            type="file"
+                            accept="image/*, application/pdf, text/*"
+                            onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                    handleFileDrop(e.target.files[0]);
+                                }
+                            }}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        />
+                        <div className="flex flex-col items-center justify-center gap-2 pointer-events-none">
+                            <div className="w-12 h-12 rounded-2xl bg-[#1b1b22] border border-[#2e2e38] flex items-center justify-center text-xl text-[#c5a059] shadow-inner">
+                                📐
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-zinc-200">
+                                    Drop file denah, layout arsitektural, sketsa ukuran, atau foto lokasi di sini
+                                </p>
+                                <p className="text-[11px] text-zinc-400 mt-0.5">
+                                    Mendukung gambar (JPG, PNG, WebP), dokumen PDF, atau catatan teks ukuran
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                                <span className="text-[10px] bg-[#1e1e27] text-zinc-400 px-2.5 py-1 rounded-lg border border-[#2e2e38] font-mono">
+                                    ⚡ AI membaca dimensi fisik &amp; langsung menghitung total RAB
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="p-3 bg-[#101014] rounded-2xl border border-[#2a2a35] space-y-3">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                {filePreview ? (
+                                    <div 
+                                        className="relative group cursor-pointer"
+                                        onClick={() => setIsPreviewExpanded(!isPreviewExpanded)}
+                                    >
+                                        <img
+                                            src={filePreview}
+                                            alt="File Denah"
+                                            className="w-14 h-14 object-cover rounded-xl border border-[#333342] group-hover:opacity-80 transition-opacity"
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity text-[10px] text-white">
+                                            🔍
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="w-14 h-14 rounded-xl bg-[#1b1b22] border border-[#2e2e38] flex items-center justify-center text-2xl">
+                                        📄
+                                    </div>
+                                )}
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-bold text-white truncate max-w-[200px] sm:max-w-xs">
+                                            {droppedFile.name}
+                                        </span>
+                                        <span className="text-[10px] text-zinc-500 font-mono">
+                                            ({Math.round(droppedFile.size / 1024)} KB)
+                                        </span>
+                                    </div>
+                                    {isAnalyzingFile ? (
+                                        <div className="flex items-center gap-2 mt-1 text-xs text-[#c5a059] font-medium animate-pulse">
+                                            <span className="inline-block w-2 h-2 rounded-full bg-[#c5a059] animate-ping" />
+                                            <span>AI sedang membaca denah dan mendeteksi ukuran...</span>
+                                        </div>
+                                    ) : analysisResult ? (
+                                        <div className="text-[11px] text-emerald-400 font-medium flex items-center gap-1.5 mt-0.5">
+                                            <span>✅</span>
+                                            <span>Ukuran berhasil diekstrak &amp; langsung dihitung di bawah</span>
+                                        </div>
+                                    ) : null}
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <label className="cursor-pointer px-3 py-1.5 rounded-xl bg-[#1c1c24] border border-[#2e2e38] text-xs text-zinc-300 hover:text-white font-medium transition-all text-center flex-1 sm:flex-initial">
+                                    Ganti File
+                                    <input
+                                        type="file"
+                                        accept="image/*, application/pdf, text/*"
+                                        onChange={(e) => {
+                                            if (e.target.files && e.target.files[0]) {
+                                                handleFileDrop(e.target.files[0]);
+                                            }
+                                        }}
+                                        className="hidden"
+                                    />
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => handleFileDrop(droppedFile)}
+                                    disabled={isAnalyzingFile}
+                                    className="px-3 py-1.5 rounded-xl bg-[#c5a059] text-black font-bold text-xs hover:bg-[#d8b168] transition-all disabled:opacity-50 text-center flex-1 sm:flex-initial"
+                                >
+                                    {isAnalyzingFile ? 'Menganalisis...' : 'Analisis Ulang'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Preview modal jika gambar diklik */}
+                        {isPreviewExpanded && filePreview && (
+                            <div 
+                                className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 animate-fade-in"
+                                onClick={() => setIsPreviewExpanded(false)}
+                            >
+                                <div className="relative max-w-3xl max-h-[85vh] bg-[#15151a] p-2 rounded-2xl border border-[#333] shadow-2xl">
+                                    <img src={filePreview} alt="Denah Full" className="max-w-full max-h-[80vh] object-contain rounded-xl" />
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setIsPreviewExpanded(false)}
+                                        className="absolute top-4 right-4 bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Box Hasil Ekstraksi AI */}
+                        {analysisResult && (
+                            <div className="p-3 bg-[#16161d] rounded-xl border border-[#2b2b36] space-y-2">
+                                <div className="flex items-center justify-between text-[11px]">
+                                    <span className="font-bold text-[#c5a059] flex items-center gap-1.5">
+                                        <span>💡</span>
+                                        <span>Hasil Analisis AI Denah &amp; Ukuran:</span>
+                                    </span>
+                                    <span className="text-[10px] font-mono text-zinc-500">
+                                        {analysisResult.source === 'ai_vision' ? '✨ Gemini Vision AI' : '⚡ Smart Scanner'}
+                                    </span>
+                                </div>
+                                <p className="text-xs text-zinc-300 leading-relaxed">
+                                    {analysisResult.detectedSummary}
+                                </p>
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                    {analysisResult.category && (
+                                        <span className="text-[10px] bg-[#1e1e28] text-zinc-300 px-2 py-0.5 rounded border border-[#333342]">
+                                            Area: <strong>{analysisResult.category.replace(/_/g, ' ')}</strong>
+                                        </span>
+                                    )}
+                                    {analysisResult.cabinetBawah > 0 && (
+                                        <span className="text-[10px] bg-[#1e1e28] text-zinc-300 px-2 py-0.5 rounded border border-[#333342]">
+                                            Bawah: <strong>{analysisResult.cabinetBawah}m'</strong>
+                                        </span>
+                                    )}
+                                    {analysisResult.cabinetAtas > 0 && (
+                                        <span className="text-[10px] bg-[#1e1e28] text-zinc-300 px-2 py-0.5 rounded border border-[#333342]">
+                                            Atas: <strong>{analysisResult.cabinetAtas}m'</strong>
+                                        </span>
+                                    )}
+                                    {analysisResult.boxElektronik?.active && (
+                                        <span className="text-[10px] bg-[#1e1e28] text-zinc-300 px-2 py-0.5 rounded border border-[#333342]">
+                                            Box: <strong>P {analysisResult.boxElektronik.boxP}m x T {analysisResult.boxElektronik.boxT}m</strong>
+                                        </span>
+                                    )}
+                                    {analysisResult.hambalanLength > 0 && (
+                                        <span className="text-[10px] bg-[#1e1e28] text-zinc-300 px-2 py-0.5 rounded border border-[#333342]">
+                                            Hambalan: <strong>{analysisResult.hambalanLength}m'</strong>
+                                        </span>
+                                    )}
+                                    {analysisResult.topTableOption && analysisResult.topTableOption !== 'none' && (
+                                        <span className="text-[10px] bg-[#1e1e28] text-zinc-300 px-2 py-0.5 rounded border border-[#333342]">
+                                            Top Table: <strong>{analysisResult.topTableOption}</strong>
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* 4 Master Category Selector Tabs (Area Kitchen Set, Area Kamar Set, Area Living Room, Sipil & Bengkel Las) */}
