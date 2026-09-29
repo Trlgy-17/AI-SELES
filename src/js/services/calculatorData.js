@@ -531,8 +531,9 @@ export const calculateEstimate = ({
     const numL = parseFloat(l) || 0;
     const numMiniBar = parseFloat(miniBarLength) || 0;
     const numTopiBar = parseFloat(topiBarLength) || 0;
-    const numBoxP = parseFloat(boxP) || 0;
-    const numBoxT = parseFloat(boxT) || 0;
+    const isBoxActive = Boolean(boxElektronikType && boxElektronikType !== 'none');
+    const numBoxP = isBoxActive ? (parseFloat(boxP) || 0) : 0;
+    const numBoxT = isBoxActive ? (parseFloat(boxT) || 0) : 0;
     const numBoxQuantity = parseInt(boxQty, 10) || (parseInt(boxElektronikQty, 10) || 1);
     const numBoxQty = parseInt(boxElektronikQty, 10) || 0;
     const numHambalanLen = (hambalanLength !== undefined && hambalanLength !== null && hambalanLength !== '' && parseFloat(hambalanLength) > 0)
@@ -743,7 +744,7 @@ export const calculateEstimate = ({
         // - Jika Panjang > 1m: dihitung Tinggi nya saja (T x Harga)
         // - Jika Panjang <= 1m: dihitung Panjang x Tinggi (P x T x Harga)
 
-        const isBoxActive = (boxElektronikType && boxElektronikType !== 'none') || (numBoxP > 0 && numBoxT > 0);
+        const isBoxActive = Boolean(boxElektronikType && boxElektronikType !== 'none');
 
         if (isBoxActive && (numBoxP > 0 || numBoxT > 0 || boxElektronikType === 'LT_1M' || boxElektronikType === 'GT_1M' || boxElektronikType === 'box_kulkas')) {
             const boxRate = baseUnitPrice + 100000;
@@ -1041,9 +1042,9 @@ export const calculateEstimate = ({
             backsplash: backsplashOption !== 'none' ? backsplashOption : undefined,
             miniBarLength: numMiniBar > 0 ? numMiniBar : undefined,
             topiBarLength: numTopiBar > 0 ? numTopiBar : undefined,
-            boxP: numBoxP > 0 ? numBoxP : undefined,
-            boxT: numBoxT > 0 ? numBoxT : undefined,
-            boxQty: numBoxQuantity > 1 ? numBoxQuantity : undefined,
+            boxP: isBoxActive && numBoxP > 0 ? numBoxP : undefined,
+            boxT: isBoxActive && numBoxT > 0 ? numBoxT : undefined,
+            boxQty: isBoxActive && numBoxQuantity > 1 ? numBoxQuantity : undefined,
             hambalanLength: numHambalanLen > 0 ? numHambalanLen : undefined
         },
         subtotal,

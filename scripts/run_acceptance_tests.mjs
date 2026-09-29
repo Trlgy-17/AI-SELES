@@ -499,6 +499,26 @@ const estHambalanPermeter = calculateEstimate({
 });
 assert(estHambalanPermeter.subtotal === 1950000, 'Hambalan 3m x 650.000 = 1.950.000');
 
+// Test: Ketika Tanpa Box dipilih, Box Elektronik tidak boleh masuk ke RAB hasil hitungan
+const estTanpaBox = calculateEstimate({
+    region: 'luar_kota',
+    category: 'KITCHEN_SET',
+    material: 'BLOCKBOARD',
+    style: 'MINIMALIS',
+    cabinetBawah: 6.01,
+    cabinetAtas: 6.21,
+    topTableOption: 'AICA',
+    topTableLength: 6.01,
+    backsplashOption: 'AICA',
+    backsplashLength: 6.61,
+    boxElektronikType: 'none',
+    boxP: 0.8,
+    boxT: 2.0,
+    boxQty: 1
+});
+assert(!estTanpaBox.itemBreakdown.some(i => i.label.toLowerCase().includes('box')), 'Ketika Tanpa Box, box elektronik tidak masuk ke rincian RAB');
+assert(estTanpaBox.subtotal === 45774000, 'Subtotal Tanpa Box persis sama tanpa biaya box 4.8jt');
+
 // 11. Unified 4 Master Areas & Official File Categorization Assertions
 assert(ESTIMATOR_CATEGORIES.length === 4, 'Exactly 4 unified master areas configured');
 assert(ESTIMATOR_CATEGORIES.some(c => c.id === 'KITCHEN_SET'), 'Master Area KITCHEN_SET present');
