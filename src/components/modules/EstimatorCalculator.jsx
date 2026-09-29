@@ -736,15 +736,31 @@ export const EstimatorCalculator = ({
                                                 </div>
 
                                                 <div className="text-[9px] leading-tight text-zinc-400 bg-[#17171e] p-1.5 rounded border border-[#26262d]">
-                                                    {parseFloat(boxP) > 1 ? (
-                                                        <span className="text-emerald-400">
-                                                            P &gt; 1m → Dihitung Tinggi saja: <strong className="text-white font-mono">{boxT || 0}m'</strong>
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-amber-400">
-                                                            P ≤ 1m → Dihitung P x T: <strong className="text-white font-mono">{((parseFloat(boxP) || 0) * (parseFloat(boxT) || 0)).toFixed(2)}m²</strong>
-                                                        </span>
-                                                    )}
+                                                    {(() => {
+                                                        const pVal = parseFloat(boxP) || 0;
+                                                        const tVal = parseFloat(boxT) || 0;
+                                                        if (pVal > 1 && tVal > 1) {
+                                                            return (
+                                                                <span className="text-emerald-400">
+                                                                    P &amp; T &gt; 1m → Dihitung P x T: <strong className="text-white font-mono">{(pVal * tVal).toFixed(2)}m²</strong>
+                                                                </span>
+                                                            );
+                                                        } else if (pVal < 1 && tVal < 1) {
+                                                            const maxVal = Math.max(pVal, tVal);
+                                                            return (
+                                                                <span className="text-amber-400">
+                                                                    P &amp; T &lt; 1m → Ambil tertinggi: <strong className="text-white font-mono">{maxVal.toFixed(2)}m'</strong>
+                                                                </span>
+                                                            );
+                                                        } else {
+                                                            const maxVal = Math.max(pVal, tVal);
+                                                            return (
+                                                                <span className="text-amber-400">
+                                                                    Salah satu &lt; 1m → Ambil terbesar: <strong className="text-white font-mono">{maxVal.toFixed(2)}m'</strong>
+                                                                </span>
+                                                            );
+                                                        }
+                                                    })()}
                                                     <div className="text-zinc-500 mt-0.5">
                                                         Tarif: Rp {boxUnitPrice.toLocaleString('id-ID')} (+100rb dr material)
                                                     </div>

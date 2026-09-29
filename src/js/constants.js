@@ -640,7 +640,7 @@ export const GLOBAL_CORE_KNOWLEDGE = [
      * Cermin Bronze / Grey Bevel: Rp 1.850.000/m
    - Elemen Kitchen Set Tambahan:
      * Topi Bar: Blockboard Rp 1.250.000 - Rp 1.350.000/m | Multipleks Rp 1.450.000/m | Duco Rp 2.100.000/m
-     * Box Elektronik (Kulkas/Oven): Harga Material Kitchen Set + Rp 100.000/m (P > 1m hitung Tinggi saja: T x Harga | P <= 1m hitung: P x T x Harga)
+     * Box Elektronik (Kulkas/Oven): Harga Material Kitchen Set + Rp 100.000/m (P & T > 1m: P x T x Harga | P & T < 1m: ambil ukuran tertinggi x Harga | Salah satu < 1m: ambil ukuran terbesar x Harga)
      * Hambalan Floating: Rp 650.000 / meter lari (m')
 
 2. LEMARI BAWAH TANGGA:
@@ -669,7 +669,7 @@ export const GLOBAL_CORE_KNOWLEDGE = [
 
 6. TOPI BAR, BOX ELEKTRONIK & HAMBALAN:
    - Topi Bar: Blockboard Rp 1.250.000 - Rp 1.350.000/m | Multiplek Rp 1.450.000/m | Duco Rp 2.100.000/m
-   - Box Elektronik (Kulkas/Oven): Harga Material Kitchen Set + Rp 100.000 (P > 1m hitung Tinggi saja: T x Harga | P <= 1m hitung: P x T x Harga)
+   - Box Elektronik (Kulkas/Oven): Harga Material Kitchen Set + Rp 100.000 (P & T > 1m: P x T x Harga | P & T < 1m: ambil ukuran tertinggi x Harga | Salah satu < 1m: ambil ukuran terbesar x Harga)
    - Hambalan: Rp 650.000 / meter (m')
 
 7. DIPAN, HEADBOARD & NAKAS:

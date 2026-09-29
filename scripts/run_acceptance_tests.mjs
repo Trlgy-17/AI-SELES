@@ -419,8 +419,9 @@ assert(estTopTableAica.itemBreakdown.some(i => i.label.includes('Aica') && i.amo
 // 10. Kitchen Set dengan Topi Bar, Box Elektronik & Hambalan disatukan
 // - Hambalan per meter: Rp 650.000/m'
 // - Box Elektronik: Material Kitchen Set + Rp 100.000
-//   * P > 1m: dihitung Tinggi nya saja (T x Harga)
-//   * P <= 1m: dihitung Panjang x Tinggi (P x T x Harga)
+//   * P & T > 1m: dihitung Panjang x Tinggi x Harga
+//   * P & T < 1m: ambil ukuran tertinggi dikali harga
+//   * Salah satu < 1m: ambil ukuran terbesar dikali harga
 const estKitchenAddons = calculateEstimate({
     region: 'dalam_kota',
     category: 'KITCHEN_SET',
@@ -435,14 +436,14 @@ const estKitchenAddons = calculateEstimate({
     boxQty: 1,
     hambalanLength: 2
 });
-// Subtotal: CB (5jt) + CA (5jt) + Topi Bar (1.5 x 1.45jt = 2.175jt) + Box (0.8 x 2.0 x 2.6jt = 4.16jt) + Hambalan (2 x 650rb = 1.3jt) = 17.635.000
-assert(estKitchenAddons.subtotal === 17635000, 'Kitchen Set with Topi Bar, Box Elektronik & Hambalan subtotal is 17.635.000');
+// Subtotal: CB (5jt) + CA (5jt) + Topi Bar (1.5 x 1.45jt = 2.175jt) + Box (salah satu < 1m ambil terbesar: 2.0m x 2.6jt = 5.2jt) + Hambalan (2 x 650rb = 1.3jt) = 18.675.000
+assert(estKitchenAddons.subtotal === 18675000, 'Kitchen Set with Topi Bar, Box Elektronik & Hambalan subtotal is 18.675.000');
 assert(estKitchenAddons.itemBreakdown.some(i => i.label.includes('Topi Bar')), 'Item breakdown includes Topi Bar');
 assert(estKitchenAddons.itemBreakdown.some(i => i.label.includes('Box Elektronik')), 'Item breakdown includes Box Elektronik');
 assert(estKitchenAddons.itemBreakdown.some(i => i.label.includes('Hambalan')), 'Item breakdown includes Hambalan');
 
-// Test Box Elektronik P > 1m (Hitung Tinggi saja: T x Harga) & Blockboard DK (2jt + 100rb = 2.1jt)
-const estBoxGt1m = calculateEstimate({
+// Kasus 1: P & T < 1m (Contoh User: P=0.5, T=0.8 pada Blockboard DK 2.1jt) -> Ambil ukuran tertinggi (0.8m x 2.1jt = 1.680.000)
+const estBoxBothLt1m = calculateEstimate({
     region: 'dalam_kota',
     category: 'KITCHEN_SET',
     material: 'BLOCKBOARD',
@@ -450,15 +451,14 @@ const estBoxGt1m = calculateEstimate({
     cabinetBawah: 0,
     cabinetAtas: 0,
     boxElektronikType: 'box_kulkas',
-    boxP: 1.2, // P > 1m
-    boxT: 2.0, // T = 2.0m -> volume = 2.0m'
+    boxP: 0.5,
+    boxT: 0.8,
     boxQty: 1
 });
-// 2.0m' x 2.100.000 = 4.200.000
-assert(estBoxGt1m.subtotal === 4200000, 'Box Elektronik P > 1m (Blockboard DK 2.1jt) hitung Tinggi saja (2m x 2.1jt = 4.2jt)');
+assert(estBoxBothLt1m.subtotal === 1680000, 'Box Elektronik P & T < 1m (P=0.5, T=0.8) ambil ukuran tertinggi (0.8m x 2.1jt = 1.680.000)');
 
-// Test Box Elektronik P <= 1m (Hitung P x T: P x T x Harga) & Blockboard DK (2jt + 100rb = 2.1jt)
-const estBoxLt1m = calculateEstimate({
+// Kasus 2: P & T > 1m (P=1.2, T=2.0 pada Blockboard DK 2.1jt) -> Dihitung P x T x Harga (2.4m² x 2.1jt = 5.040.000)
+const estBoxBothGt1m = calculateEstimate({
     region: 'dalam_kota',
     category: 'KITCHEN_SET',
     material: 'BLOCKBOARD',
@@ -466,12 +466,26 @@ const estBoxLt1m = calculateEstimate({
     cabinetBawah: 0,
     cabinetAtas: 0,
     boxElektronikType: 'box_kulkas',
-    boxP: 0.8, // P <= 1m
-    boxT: 2.0, // T = 2.0m -> volume = 0.8 * 2.0 = 1.6m²
+    boxP: 1.2,
+    boxT: 2.0,
     boxQty: 1
 });
-// 1.6m² x 2.100.000 = 3.360.000
-assert(estBoxLt1m.subtotal === 3360000, 'Box Elektronik P <= 1m (Blockboard DK 2.1jt) hitung P x T (1.6m² x 2.1jt = 3.36jt)');
+assert(estBoxBothGt1m.subtotal === 5040000, 'Box Elektronik P & T > 1m (P=1.2, T=2.0) hitung P x T x Harga (2.4m² x 2.1jt = 5.040.000)');
+
+// Kasus 3: Salah satu < 1m (P=0.8, T=2.0 pada Blockboard DK 2.1jt) -> Ambil ukuran terbesar (2.0m x 2.1jt = 4.200.000)
+const estBoxOneLt1m = calculateEstimate({
+    region: 'dalam_kota',
+    category: 'KITCHEN_SET',
+    material: 'BLOCKBOARD',
+    style: 'MINIMALIS',
+    cabinetBawah: 0,
+    cabinetAtas: 0,
+    boxElektronikType: 'box_kulkas',
+    boxP: 0.8,
+    boxT: 2.0,
+    boxQty: 1
+});
+assert(estBoxOneLt1m.subtotal === 4200000, 'Box Elektronik Salah satu < 1m (P=0.8, T=2.0) ambil ukuran terbesar (2m x 2.1jt = 4.200.000)');
 
 // Test Hambalan Floating permeter: 3m x 650.000 = 1.950.000
 const estHambalanPermeter = calculateEstimate({

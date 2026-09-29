@@ -764,14 +764,18 @@ export const calculateEstimate = ({
             let boxVolume = 0;
             let detailFormula = '';
 
-            if (effectiveP > 1) {
-                // Panjang > 1m: dihitung tingginya saja
-                boxVolume = effectiveT;
-                detailFormula = `Tinggi ${effectiveT}m' (P ${effectiveP}m > 1m) x Rp ${boxRate.toLocaleString('id-ID')}`;
-            } else {
-                // Panjang <= 1m: dihitung Panjang x Tinggi
+            if (effectiveP > 1 && effectiveT > 1) {
+                // Panjang & Lebar/Tinggi keduanya > 1m: dihitung Panjang x Tinggi x Harga
                 boxVolume = effectiveP * effectiveT;
-                detailFormula = `${effectiveP}m x ${effectiveT}m = ${boxVolume.toFixed(2)}m² (P ≤ 1m) x Rp ${boxRate.toLocaleString('id-ID')}`;
+                detailFormula = `P & T > 1m (P x T): ${effectiveP}m x ${effectiveT}m = ${boxVolume.toFixed(2)}m² x Rp ${boxRate.toLocaleString('id-ID')}`;
+            } else if (effectiveP < 1 && effectiveT < 1) {
+                // Panjang & Lebar/Tinggi keduanya < 1m: ambil ukuran tertinggi dikali harga
+                boxVolume = Math.max(effectiveP, effectiveT);
+                detailFormula = `P & T < 1m (Ambil tertinggi): ${boxVolume}m' x Rp ${boxRate.toLocaleString('id-ID')}`;
+            } else {
+                // Salah satu di antara Panjang & Lebar/Tinggi ada yang < 1m: ambil ukuran terbesar dikali harga
+                boxVolume = Math.max(effectiveP, effectiveT);
+                detailFormula = `Salah satu < 1m (Ambil terbesar): ${boxVolume}m' x Rp ${boxRate.toLocaleString('id-ID')}`;
             }
 
             if (numBoxQuantity > 1) {
