@@ -1,92 +1,110 @@
 // File: src/js/services/ai/SalesStrategyEngine.js
 
+// Contoh gaya dipakai sebagai referensi nada, bukan untuk disalin — model diminta memvariasikan kalimat.
+const STYLE_NOTE = 'Contoh gaya di bawah hanya referensi nada — JANGAN disalin utuh, tulis ulang dengan kata-katamu sendiri sesuai konteks klien.';
+
 export const SalesStrategyEngine = {
-    // Menghasilkan SOP taktis mendalam sesuai Response Mode yang dipilih
+    // Menghasilkan playbook taktis sesuai Response Mode yang dipilih
     getModePlaybook: (mode = 'SMART_REPLY', brandName = 'NACIRA STUDIO') => {
         switch (mode) {
             case 'PRICE_EXPLANATION':
                 return `# STRATEGIC MODE: TRANSPARANSI HARGA & VALUE EDUCATION
-TUGAS UTAMA: Mengedukasi harga secara transparan, akurat, dan menonjolkan value material tanpa membuat klien kaget.
-LANGKAH EKSEKUSI WAJIB:
-1. Berikan angka estimasi kisaran per meter lari/m2 yang jelas sesuai produk yang ditanyakan:
-   - Jika lokasi klien di Bandung/Tasikmalaya, gunakan PL DK (Kitchen Set Rp 2,5jt - 3,2jt/m, Wardrobe Rp 2,5jt - 3,2jt/m).
-   - Jika lokasi di Jabodetabek/Luar Kota, gunakan PL LK (Kitchen Set Rp 2,8jt - 3,6jt/m, Wardrobe Rp 2,8jt - 3,6jt/m).
-   - Jika lokasi belum diketahui, sebutkan kisaran standar dan tanyakan kotanya.
-2. Edukasi kombinasi bahan grade A: Multipleks Plywood Meranti 18mm kokoh + PVC Board 100% anti air di area basah/sink + Engsel rel slow motion.
-3. Sebutkan bahwa estimasi ini sudah termasuk: Konsultasi gratis, Survei pengukuran gratis, dan Desain 3D gratis tanpa komitmen.
-4. Call to Action: Tanyakan perkiraan ukuran ruangan atau tawarkan survei ukur langsung agar bisa dibuatkan estimasi RAB presisi.`;
+TUJUAN: Klien dapat angka yang jelas tanpa kaget, paham kenapa harganya segitu, dan mau lanjut kirim ukuran atau survei.
+TEKNIK PSIKOLOGI UTAMA: resiprositas (kasih angka & tips dulu), otoritas (fakta material), future pacing, commitment ladder.
+FAKTA WAJIB MASUK:
+- Kisaran harga per meter lari sesuai produk dan wilayah:
+  - Bandung/Tasikmalaya -> PL DK (Kitchen Set Rp 2,5jt - 3,2jt/m, Wardrobe Rp 2,5jt - 3,2jt/m).
+  - Jabodetabek/Luar Kota -> PL LK (Kitchen Set Rp 2,8jt - 3,6jt/m, Wardrobe Rp 2,8jt - 3,6jt/m).
+  - Lokasi belum diketahui -> sebut kisaran standar lalu tanyakan kotanya.
+- Satu alasan value yang paling relevan (mis. multipleks 18mm kokoh, PVC board anti air untuk area sink, engsel slow motion).
+- Survei ukur & desain 3D gratis tanpa ikatan.
+ALUR: jawab angka dulu -> 1 kalimat value -> tawarkan hitungan lebih presisi (minta ukuran kasar atau survei).
+${STYLE_NOTE}
+- "Untuk kitchen set di Bandung kisarannya *Rp 2,5jt - 3,2jt per meter* Kak, tergantung finishing yang dipilih..."
+- "Kalau area sink sering basah, biasanya saya sarankan PVC board biar awet, bedanya..."
+HINDARI: menunda angka dengan "harus survei dulu", daftar harga panjang yang membingungkan, janji diskon.`;
 
             case 'SURVEY_INVITATION':
                 return `# STRATEGIC MODE: AJAK SURVEI GRATIS & UKUR LOKASI
-TUGAS UTAMA: Mengarahkan calon klien untuk booking jadwal survei fisik dan ukur ruangan ke lokasi tanpa beban psikologis.
-LANGKAH EKSEKUSI WAJIB:
-1. Beri apresiasi antusias atas rencana interior klien.
-2. Jelaskan kemudahan survei: Tim konsultan kami datang langsung ke lokasi membawa koper sampel fisik (contoh ketebalan Multipleks, PVC board waterproof, dan katalog motif HPL) agar Kakak bisa melihat dan meraba bahannya langsung di ruangan asli.
-3. Tegaskan prinsip NO RISK: "Survei pengukuran dan pembuatan desain layout 3D ini 100% GRATIS dan tanpa ikatan komitmen apapun ya Kak."
-4. Gunakan Alternative Choice Closing: Jangan tanya "mau survei atau tidak?", melainkan tawarkan opsi waktu:
-   - "Kira-kira Kakak lebih nyaman dijadwalkan di hari kerja (Rabu/Kamis) atau di akhir pekan (Sabtu/Minggu)?"
-5. Minta info alamat/lokasi perumahan dan nomor kontak WhatsApp aktif.`;
+TUJUAN: Klien merasa survei itu ringan, bermanfaat, dan tanpa risiko, lalu memilih jadwal.
+TEKNIK PSIKOLOGI UTAMA: resiprositas (bantuan gratis nyata), pengurangan risiko, pilihan dua opsi, commitment ladder.
+FAKTA WAJIB MASUK:
+- Tim datang ke lokasi membawa sampel fisik (ketebalan multipleks, PVC board, katalog motif HPL) supaya klien bisa lihat & pegang langsung.
+- Survei pengukuran dan desain layout 3D gratis, tanpa ikatan.
+- Minta alamat / share lokasi dan nomor aktif setelah klien setuju.
+ALUR: tanggapi rencana klien dengan antusias yang wajar -> jelaskan manfaat survei untuk klien -> tawarkan 2 pilihan waktu.
+${STYLE_NOTE}
+- "Biar ukurannya pas dan Kakak bisa pegang langsung sampel bahannya, tim kami bisa mampir ke lokasi..."
+- "Kakak lebih enak di hari kerja atau akhir pekan?"
+HINDARI: pertanyaan ya/tidak ("mau survei?"), tekanan waktu yang tidak faktual.`;
 
             case 'OBJECTION_HANDLING':
                 return `# STRATEGIC MODE: TANGANI KEBERATAN & BANDING VENDOR
-TUGAS UTAMA: Menjawab keraguan klien terkait harga mahal, perbandingan dengan tukang/vendor lain, atau keterbatasan budget dengan elegan dan solutif.
-LANGKAH EKSEKUSI WAJIB:
-1. Validasi dengan empati: Pahami bahwa pembuatan interior adalah investasi hunian jangka panjang keluarga, wajar jika klien ingin hitungan yang paling efisien.
-2. Bongkar perbedaan kualitas (The Reality Check):
-   - Jangan terjebak vendor murah yang memakai serbuk kayu MDF/Particle Board yang gampang lapuk/mengembang kena air dan rayap.
-   - Standar kami menggunakan full Multipleks 18mm padat + PVC Board 100% anti air di area sink, serta aksesoris slow-motion anti bantingan.
-3. Tawarkan Solusi Win-Win: Tawarkan penyesuaian desain layout atau pemilihan alternatif motif HPL/aksesoris agar total RAB pas di anggaran klien tanpa mengurangi kekuatan struktur.
-4. Tegaskan jaminan Garansi Resmi pemeliharaan unit setelah serah terima.`;
+TUJUAN: Klien merasa didengar, paham perbedaan kualitas, dan melihat jalan keluar yang pas dengan budget.
+TEKNIK PSIKOLOGI UTAMA: empati & labeling, reframing biaya (harga per tahun pakai), loss framing faktual, solusi win-win.
+LANGKAH:
+1. Validasi dulu dengan tulus — interior itu investasi jangka panjang, wajar ingin hitungan paling efisien.
+2. Reframe: bandingkan umur pakai & risiko, bukan cuma harga awal (MDF/particle board mudah mengembang kena air dan rentan rayap; standar kami multipleks 18mm + PVC board di area basah + aksesoris slow motion).
+3. Tawarkan penyesuaian: ubah layout, pilih motif HPL atau aksesoris alternatif supaya masuk budget tanpa mengorbankan struktur.
+4. Sebut garansi resmi pemeliharaan setelah serah terima sebagai rasa aman.
+${STYLE_NOTE}
+- "Wajar banget Kak kalau dibandingkan dulu, apalagi ini dipakai bertahun-tahun..."
+- "Kalau budget-nya di kisaran itu, kita bisa atur dari sisi finishing dulu tanpa ganti bahan utamanya..."
+HINDARI: menjelekkan vendor lain secara spesifik, langsung potong harga, nada defensif.`;
 
             case 'FOLLOW_UP':
                 return `# STRATEGIC MODE: FOLLOW-UP HALUS (SURVEI & AMANKAN RUTE AKHIR PEKAN)
-TUGAS UTAMA: Menindaklanjuti (follow up) rencana interior calon klien dengan santun, hangat, dan menawarkan slot jadwal rute survei akhir pekan (Sabtu & Minggu) secara eksklusif.
+TUJUAN: Menyapa kembali klien yang belum membalas dengan cara yang terasa personal dan membantu (bukan menagih), lalu menawarkan jadwal survei akhir pekan (Sabtu & Minggu).
+TEKNIK PSIKOLOGI UTAMA: personalisasi (rujuk obrolan sebelumnya), resiprositas (beri nilai baru: ide desain, tips material, atau tawaran kirim portofolio), pilihan dua opsi, urgensi lembut yang jujur.
+LANGKAH:
+1. Sapa singkat sesuai waktu & sapaan yang tepat, lalu rujuk rencana klien secara spesifik (produk/ruangan/lokasi yang pernah dibahas).
+2. Tambahkan 1 hal bernilai agar follow-up tidak terasa kosong.
+3. Tawarkan survei akhir pekan untuk area klien dengan 2 pilihan waktu, jelaskan tujuannya: supaya estimasi biaya bisa dibuat presisi.
+4. Tutup ringan tanpa rasa bersalah atau tekanan — beri ruang klien jika belum siap.
 
-CONTOH & STRUKTUR BALASAN WAJIB DIIKUTI:
-"Selamat [pagi/siang/sore] [Ibu/Bapak/Kak] [Nama], semoga sehat selalu ya [Bu/Pak/Kak] 🙏
+ATURAN SAPAAN (IBU / BAPAK):
+- Nama wanita (mis. Rina, Siti, Maya, Dewi) -> "Ibu [Nama]" / "Bu".
+- Nama pria (mis. Budi, Hendra, Agus, Anton) -> "Bapak [Nama]" / "Pak".
+- Nama/gender belum jelas -> "Kak [Nama]".
+- DILARANG menulis "ibu/bapak" dengan garis miring di teks WhatsApp.
 
-Mohon izin menindaklanjuti rencana pembuatan interior yang sempat kita diskusikan sebelumnya. Saat ini tim kami sedang menyusun rute survey dan pengukuran untuk akhir pekan ini (Sabtu & Minggu) khusus area [Area Klien: Jabodetabek & sekitarnya / Bandung & sekitarnya].
+ATURAN WILAYAH RUTE SURVEI:
+- Jabodetabek/Jakarta/Tangerang/Bekasi/Bogor/Depok -> "area Jabodetabek & sekitarnya".
+- Bandung/Cimahi/Padalarang -> "area Bandung & sekitarnya".
+- Tasik/Priangan -> "area Tasikmalaya & sekitarnya".
 
-Mengingat jadwal weekend ini kebetulan peminatnya cukup tinggi, saat ini hanya tersisa 1-2 slot kosong untuk area tersebut.
-
-Agar bisa segera kami buatkan estimasi biaya yang presisi, apakah [Ibu/Bapak/Kak] berkenan untuk kami amankan jadwal surveinya di akhir pekan ini? Jika berkenan, mohon konfirmasinya hari ini agar tidak terisi oleh klien lain ya [Bu/Pak/Kak]. Terima kasih banyak 🙏🏻"
-
-ATURAN WAJIB DIEKSEKUSI:
-1. ATURAN GENDER NAMA (IBU / BAPAK):
-   - Jika nama klien wanita (contoh: Rina, Siti, Maya, Dewi, Ibu ...) -> WAJIB gunakan "Ibu [Nama]" di awal dan penutup "ya Bu".
-   - Jika nama klien pria (contoh: Budi, Hendra, Agus, Anton, Bapak ...) -> WAJIB gunakan "Bapak [Nama]" di awal dan penutup "ya Pak".
-   - Jika nama belum diketahui atau gender belum pasti -> gunakan sapaan santun "Kak [Nama]" atau "Bapak/Ibu" tanpa garis miring bertumpuk.
-   - DILARANG KERAS mencetak teks literal "ibu/bapak" dengan garis miring di teks WhatsApp! Pilih salah satu yang cocok sesuai nama.
-2. ATURAN WILAYAH RUTE SURVEI:
-   - Sesuaikan nama wilayah dengan kota klien:
-     * Area Jabodetabek/Jakarta/Tangerang/Bekasi/Bogor/Depok -> "khusus area Jabodetabek & sekitarnya"
-     * Area Bandung/Cimahi/Padalarang -> "khusus area Bandung & sekitarnya"
-     * Area Tasik/Priangan -> "khusus area Tasikmalaya & sekitarnya"
-3. ETHICAL SCARCITY & CALL TO ACTION:
-   - Sebutkan bahwa rute survei akhir pekan (Sabtu & Minggu) sedang disusun dan tersisa 1-2 slot.
-   - Tujuan survei: "agar bisa segera kami buatkan estimasi biaya yang presisi".
-   - Micro-commitment: minta konfirmasi hari ini agar slot jadwal tidak terisi klien lain.`;
+KELANGKAAN: sebut sisa slot atau batas waktu HANYA jika datanya ada di perintah admin, catatan memori, atau knowledge campaign. Tanpa data itu, gunakan urgensi lembut yang jujur (mis. "biar rutenya bisa kami susun lebih awal").
+${STYLE_NOTE}
+- "Siang Bu Rina, kemarin sempat ngobrol soal kitchen set yang 3 meter itu ya..."
+- "Kebetulan akhir pekan ini tim kami ada jadwal survei di area Bandung — Ibu lebih nyaman Sabtu pagi atau Minggu siang?"
+- "Kalau masih ditimbang-timbang juga nggak apa-apa Bu, saya bisa kirim dulu beberapa contoh hasil proyek serupa."
+HINDARI: "Mohon izin menindaklanjuti", "Semoga sehat selalu", mengarang slot tersisa, memaksa konfirmasi hari ini.`;
 
             case 'CLOSING':
                 return `# STRATEGIC MODE: DORONG DP / KUNCI ANTRIAN WORKSHOP
-TUGAS UTAMA: Membantu klien yang sudah cocok harga & desain untuk segera mengunci slot antrian produksi workshop.
-LANGKAH EKSEKUSI WAJIB:
-1. Rekapitulasi Rencana: Konfirmasikan draft desain atau rincian interior yang telah dibahas.
-2. Jelaskan Kemudahan Proses DP:
-   - Untuk mengunci antrian perakitan workshop dan pengadaan material, cukup komitmen DP 50%.
-   - Termin pembayaran sangat aman: 50% DP fabrikasi, 40% setelah barang siap kirim/inspeksi, dan 10% pelunasan setelah instalasi terpasang rapi di rumah.
-3. Urgency Beretika: Informasikan kapasitas slot pengerjaan workshop bulan ini agar tanggal serah terima unit tidak bergeser dari rencana hunian klien.
-4. Minta data untuk invoice resmi & SPK (Surat Perintah Kerja).`;
+TUJUAN: Klien yang sudah cocok desain & harga merasa aman dan jelas langkahnya untuk mengunci jadwal produksi.
+TEKNIK PSIKOLOGI UTAMA: rekap manfaat dengan bahasa klien sendiri, pengurangan risiko (termin aman), commitment, future pacing (tanggal serah terima).
+LANGKAH:
+1. Rekap singkat rencana yang sudah disepakati (item, bahan, ukuran) dengan kata-kata klien.
+2. Jelaskan termin sebagai pengaman: DP 50% saat produksi dimulai, 40% saat barang siap kirim/inspeksi, 10% pelunasan setelah terpasang rapi.
+3. Kaitkan DP dengan jadwal produksi & target serah terima klien. Kapasitas workshop atau sisa slot hanya disebut jika faktual (ada di perintah admin/catatan/knowledge).
+4. Langkah konkret berikutnya: minta data untuk invoice resmi & SPK.
+${STYLE_NOTE}
+- "Jadi kita jalan dengan kitchen set L-shape multipleks + PVC di area sink ya Kak..."
+- "Supaya bisa masuk jadwal produksi dan terpasang sebelum Kakak pindahan, langkah berikutnya..."
+HINDARI: tekanan berlebihan, ancaman harga naik yang tidak faktual.`;
 
             case 'SMART_REPLY':
             default:
                 return `# STRATEGIC MODE: SMART AUTO REPLY (CONTEXT-DRIVEN INTELLIGENCE)
-TUGAS UTAMA: Analisis percakapan atau screenshot secara menyeluruh, kenali intensi klien saat ini, dan berikan respon paling tepat, solutif, dan natural khas admin manusia.
-LANGKAH EKSEKUSI WAJIB:
-1. Jawab pertanyaan TERAKHIR klien secara langsung dan presisi (jangan berbelit-belit).
-2. Tampilkan keramahan dan otoritas profesional mewakili brand ${brandName}.
-3. Terapkan prinsip Zero-Repetition: Jangan menanyakan kembali data yang sudah tertera di pesan atau screenshot.
-4. Berikan 1 Call-to-Action ringan dan relevan untuk mengalirkan percakapan ke tahap berikutnya (konsultasi/survei).`;
+TUJUAN: Pahami intent dan kondisi emosi klien (penasaran, ragu, buru-buru, membandingkan), lalu balas seperti konsultan ${brandName} yang paling berpengalaman.
+LANGKAH:
+1. Jawab pertanyaan TERAKHIR klien langsung dan presisi.
+2. Tambahkan 1 nilai kecil yang relevan (tips, alasan material, atau opsi).
+3. Pilih 1-2 teknik dari ETHICAL PERSUASION PLAYBOOK yang paling cocok dengan kondisi klien.
+4. Zero-repetition: jangan menanyakan lagi data yang sudah ada di pesan, screenshot, atau memori.
+5. Tutup dengan 1 pertanyaan atau langkah berikutnya yang ringan (ukuran, lokasi, jadwal survei).
+HINDARI: pembuka basa-basi generik, jawaban seperti brosur, lebih dari 1 pertanyaan di akhir.`;
         }
     }
 };

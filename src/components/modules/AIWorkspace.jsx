@@ -1,30 +1,74 @@
 // File: src/components/modules/AIWorkspace.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import { Icons } from '../Icons.jsx';
+import {
+    Bot, BadgeDollarSign, Ruler, ShieldCheck, Clock3, Handshake, MapPin, UserRound, PanelsTopLeft,
+    Brain, ChevronDown, ChevronRight, ClipboardPaste, Eraser, ImagePlus, RefreshCw, Trash2, Copy, Check,
+    ThumbsUp, ThumbsDown, ArrowRight, BookOpen, MessageSquareText, Send, LoaderCircle, CircleAlert, Settings2,
+    Plus, Flame, Snowflake, Zap, CalendarClock, HandCoins, Wallet
+} from 'lucide-react';
 import { FormField } from '../common/FormField.jsx';
 import { ApiKeyModal } from '../modals/ApiKeyModal.jsx';
+import { Button, IconButton } from '../ui/Button.jsx';
+import { Input, Select } from '../ui/Input.jsx';
+import { Badge, Panel, SectionTitle, EmptyState, Skeleton, Chip } from '../ui/Surface.jsx';
+import { cn } from '../../js/utils/cn.js';
 import { StorageService } from '../../js/services/storage.js';
 import { AIService } from '../../js/services/ai.js';
 import { copyToClipboard } from '../../js/utils/clipboard.js';
 import { optimizeImageForAI } from '../../js/utils/image.js';
-import { DEFAULT_GEMINI_API_KEY, DEFAULT_GEMINI_MODEL, AI_RESPONSE_MODES } from '../../js/constants.js';
-import { buildWaLink, formatDisplayPhone } from '../../js/utils/phone.js';
+import { DEFAULT_GEMINI_MODEL, AI_RESPONSE_MODES } from '../../js/constants.js';
+import { AiApi } from '../../js/services/api.js';
 import { TelemetryService } from '../../js/services/telemetry.js';
 
 const ADMIN_DIRECTIVE_SHORTCUTS = [
-    { label: 'Follow Up Survei Weekend', text: 'follow up rencana interior klien ini dan tawarkan slot rute survei akhir pekan (Sabtu & Minggu) dengan sapaan sopan Ibu/Bapak', icon: '📍', mode: 'FOLLOW_UP' },
-    { label: 'Arahkan ke Survei', text: 'arahkan klien untuk booking jadwal survei pengukuran lokasi gratis tanpa ikatan', icon: '📐', mode: 'SURVEY_INVITATION' },
-    { label: 'Edukasi Harga & Bahan', text: 'jelaskan kisaran harga per meter transparan dan keunggulan bahan multipleks 18mm padat + PVC waterproof', icon: '💰', mode: 'PRICE_EXPLANATION' },
-    { label: 'Atasi Ragu / Budget', text: 'atasi keberatan harga klien dengan solusi fleksibel dan bandingkan mutu multipleks vs serbuk kayu mdf', icon: '🛡️', mode: 'OBJECTION_HANDLING' },
-    { label: 'Kunci DP Antrian', text: 'rekapitulasi rencana dan tawarkan untuk kunci slot antrian produksi workshop dengan komitmen DP aman 50%', icon: '🤝', mode: 'CLOSING' },
-    { label: 'Tanyakan Ukuran', text: 'tanyakan perkiraan ukuran ruangan atau denah layout yang sudah ada secara santun', icon: '📏', mode: 'SMART_REPLY' }
+    { label: 'Follow-up survei weekend', text: 'follow up rencana interior klien ini dan tawarkan slot rute survei akhir pekan (Sabtu & Minggu) dengan sapaan sopan sesuai nama klien (Ibu, Bapak, atau Kak bila belum tahu)', icon: CalendarClock, mode: 'FOLLOW_UP' },
+    { label: 'Arahkan survei', text: 'arahkan klien untuk booking jadwal survei pengukuran lokasi gratis tanpa ikatan', icon: Ruler, mode: 'SURVEY_INVITATION' },
+    { label: 'Jelaskan harga', text: 'jelaskan kisaran harga per meter transparan dan keunggulan bahan multipleks 18mm padat + PVC waterproof', icon: BadgeDollarSign, mode: 'PRICE_EXPLANATION' },
+    { label: 'Atasi budget', text: 'atasi keberatan harga klien dengan solusi fleksibel dan bandingkan mutu multipleks vs serbuk kayu mdf', icon: Wallet, mode: 'OBJECTION_HANDLING' },
+    { label: 'Kunci DP', text: 'rekapitulasi rencana dan tawarkan untuk kunci slot antrian produksi workshop dengan komitmen DP aman 50%', icon: HandCoins, mode: 'CLOSING' },
+    { label: 'Tanyakan ukuran', text: 'tanyakan perkiraan ukuran ruangan atau denah layout yang sudah ada secara santun', icon: Ruler, mode: 'SMART_REPLY' }
 ];
+
+const MODE_META = {
+    SMART_REPLY: { icon: Bot, short: 'Smart Auto' },
+    PRICE_EXPLANATION: { icon: BadgeDollarSign, short: 'Harga' },
+    SURVEY_INVITATION: { icon: Ruler, short: 'Survei' },
+    OBJECTION_HANDLING: { icon: ShieldCheck, short: 'Keberatan' },
+    FOLLOW_UP: { icon: Clock3, short: 'Follow-up' },
+    CLOSING: { icon: Handshake, short: 'Closing' }
+};
+
+const CITY_LOCKS = [
+    { label: 'Bandung (DK)', loc: 'Bandung Raya' },
+    { label: 'Tasikmalaya (DK)', loc: 'Tasikmalaya' },
+    { label: 'Cimahi (DK)', loc: 'Cimahi' },
+    { label: 'Jabodetabek (LK)', loc: 'Jabodetabek' },
+    { label: 'Jakarta (LK)', loc: 'Jakarta' },
+    { label: 'Bekasi/Depok (LK)', loc: 'Bekasi/Depok' }
+];
+
+const stripEmoji = (label = '') => label.replace(/^[^\p{L}\p{N}]+/u, '').trim();
+
+const temperatureBadge = (temp) => {
+    const t = (temp || 'WARM').toUpperCase();
+    if (t === 'HOT') return <Badge variant="danger" icon={Flame}>Hot</Badge>;
+    if (t === 'COLD') return <Badge variant="neutral" icon={Snowflake}>Cold</Badge>;
+    return <Badge variant="warning" icon={Zap}>Warm</Badge>;
+};
+
+const WhatsAppIcon = () => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.61-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.07c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2-1.41.25-.7.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35M12.05 21.5h-.01a9.4 9.4 0 0 1-4.8-1.31l-.34-.2-3.57.93.95-3.48-.22-.36a9.4 9.4 0 0 1-1.44-5.02c0-5.2 4.23-9.43 9.44-9.43a9.37 9.37 0 0 1 6.67 2.77 9.37 9.37 0 0 1 2.76 6.67c0 5.2-4.24 9.43-9.44 9.43m8.03-17.46A11.28 11.28 0 0 0 12.05.72C5.8.72.7 5.8.7 12.07c0 2 .52 3.95 1.52 5.67L.6 23.64l6.03-1.58a11.33 11.33 0 0 0 5.42 1.38h.01c6.26 0 11.35-5.09 11.35-11.35 0-3.03-1.18-5.88-3.33-8.03" />
+    </svg>
+);
 
 export const AIWorkspace = ({ 
     activeBrand, 
     currentUser, 
-    crmLeads = [], 
-    showToast 
+    crmLeads = [],
+    showToast,
+    prefillLead = null,
+    onPrefillHandled
 }) => {
     const [inputText, setInputText] = useState('');
     const [selectedImage, setSelectedImage] = useState(null);
@@ -53,16 +97,8 @@ export const AIWorkspace = ({
     });
     const [showMemoryDrawer, setShowMemoryDrawer] = useState(false);
 
-    // AI Provider States
+    // AI provider preferences (API keys live only on the server)
     const [aiProvider, setAiProvider] = useState(() => StorageService.getItem('nacira_ai_provider', 'gemini'));
-    const [customApiKey, setCustomApiKey] = useState(() => {
-        const storedKey = sessionStorage.getItem('nacira_session_gemini_key') || StorageService.getItem('nacira_gemini_api_key', '');
-        return storedKey || DEFAULT_GEMINI_API_KEY;
-    });
-    const [keyStorageMode, setKeyStorageMode] = useState(() => {
-        if (sessionStorage.getItem('nacira_session_gemini_key') || sessionStorage.getItem('nacira_session_openai_key')) return 'session';
-        return 'local';
-    });
     const [selectedModel, setSelectedModel] = useState(() => {
         const saved = StorageService.getItem('nacira_gemini_model', '');
         if (!saved || saved === 'gemini-1.5-flash' || saved === 'gemini-2.5-flash') {
@@ -70,14 +106,8 @@ export const AIWorkspace = ({
         }
         return saved;
     });
-    const [customProxyUrl, setCustomProxyUrl] = useState(() => StorageService.getItem('nacira_custom_proxy_url', ''));
-
-    // OpenAI / Custom Provider States
-    const [openaiBaseUrl, setOpenaiBaseUrl] = useState(() => StorageService.getItem('nacira_openai_base_url', 'https://api.openai.com/v1'));
-    const [openaiApiKey, setOpenaiApiKey] = useState(() => {
-        return sessionStorage.getItem('nacira_session_openai_key') || StorageService.getItem('nacira_openai_api_key', '');
-    });
     const [openaiModel, setOpenaiModel] = useState(() => StorageService.getItem('nacira_openai_model', 'gpt-4o-mini'));
+    const [generationId, setGenerationId] = useState(null);
 
     const [showApiKeyModal, setShowApiKeyModal] = useState(false);
     const fileInputRef = useRef(null);
@@ -94,6 +124,26 @@ export const AIWorkspace = ({
     const adminName = activeBrand?.adminName || 'Admin Marketing';
     const serviceArea = activeBrand?.serviceArea || 'Bandung & Jabodetabek';
 
+    const applyLeadToMemory = (found) => {
+        setClientMemory(prev => ({
+            ...prev,
+            name: found.name || '',
+            location: found.location || prev.location,
+            dimensions: found.dimensions || prev.dimensions,
+            projectType: found.project || '',
+            budget: found.value ? `Rp ${Number(found.value).toLocaleString('id-ID')}` : prev.budget,
+            notes: found.notes || prev.notes
+        }));
+        setShowMemoryDrawer(true);
+    };
+
+    useEffect(() => {
+        if (!prefillLead) return;
+        setSelectedLeadId(prefillLead.id);
+        applyLeadToMemory(prefillLead);
+        onPrefillHandled?.();
+    }, [prefillLead]);
+
     // Sinkronkan memori klien jika lead dipilih dari dropdown
     const handleSelectLead = (e) => {
         const leadId = e.target.value;
@@ -104,63 +154,20 @@ export const AIWorkspace = ({
         }
         const found = crmLeads.find(l => l.id === leadId);
         if (found) {
-            setClientMemory(prev => ({
-                ...prev,
-                name: found.name || '',
-                projectType: found.project || '',
-                budget: found.value ? `Rp ${found.value.toLocaleString('id-ID')}` : prev.budget
-            }));
-            setShowMemoryDrawer(true);
+            applyLeadToMemory(found);
             showToast(`Memori klien "${found.name}" dimuat.`);
         }
     };
 
-    const handleSaveKeySettings = ({ 
-        provider, 
-        apiKey, 
-        model, 
-        proxyUrl, 
-        openaiBaseUrl: newBaseUrl, 
-        openaiApiKey: newOpenaiKey, 
-        openaiModel: newOpenaiModel, 
-        storageMode 
-    }) => {
-        const cleanGeminiKey = apiKey.trim();
-        const geminiKeyToUse = cleanGeminiKey || DEFAULT_GEMINI_API_KEY;
-        const cleanOpenaiKey = (newOpenaiKey || '').trim();
-        const cleanOpenaiBase = (newBaseUrl || 'https://api.openai.com/v1').trim();
-        const cleanOpenaiModel = (newOpenaiModel || 'gpt-4o-mini').trim();
-
+    const handleSaveKeySettings = ({ provider, model, openaiModel: newOpenaiModel }) => {
         setAiProvider(provider || 'gemini');
-        setCustomApiKey(geminiKeyToUse);
-        setKeyStorageMode(storageMode);
         setSelectedModel(model || DEFAULT_GEMINI_MODEL);
-        setCustomProxyUrl((proxyUrl || '').trim());
-
-        setOpenaiBaseUrl(cleanOpenaiBase);
-        setOpenaiApiKey(cleanOpenaiKey);
-        setOpenaiModel(cleanOpenaiModel);
-
+        setOpenaiModel(newOpenaiModel || 'gpt-4o-mini');
         StorageService.setItem('nacira_ai_provider', provider || 'gemini');
         StorageService.setItem('nacira_gemini_model', model || DEFAULT_GEMINI_MODEL);
-        StorageService.setItem('nacira_custom_proxy_url', (proxyUrl || '').trim());
-        StorageService.setItem('nacira_openai_base_url', cleanOpenaiBase);
-        StorageService.setItem('nacira_openai_model', cleanOpenaiModel);
-
-        if (storageMode === 'session') {
-            sessionStorage.setItem('nacira_session_gemini_key', cleanGeminiKey);
-            sessionStorage.setItem('nacira_session_openai_key', cleanOpenaiKey);
-            StorageService.removeItem('nacira_gemini_api_key');
-            StorageService.removeItem('nacira_openai_api_key');
-        } else {
-            StorageService.setItem('nacira_gemini_api_key', cleanGeminiKey);
-            StorageService.setItem('nacira_openai_api_key', cleanOpenaiKey);
-            sessionStorage.removeItem('nacira_session_gemini_key');
-            sessionStorage.removeItem('nacira_session_openai_key');
-        }
-
+        StorageService.setItem('nacira_openai_model', newOpenaiModel || 'gpt-4o-mini');
         setShowApiKeyModal(false);
-        showToast("Pengaturan AI Provider & API berhasil disimpan!");
+        showToast("Pengaturan model AI disimpan.");
     };
 
     const handleApplyCalculatorEstimate = (calcData) => {
@@ -259,24 +266,6 @@ export const AIWorkspace = ({
             return;
         }
 
-        const activeGeminiKey = customApiKey.trim();
-        const proxyUrl = customProxyUrl.trim();
-
-        if (aiProvider === 'gemini') {
-            if (!activeGeminiKey && !proxyUrl) {
-                setAiError("API Key Gemini belum diatur. Klik 'Atur API Key' di atas.");
-                setShowApiKeyModal(true);
-                return;
-            }
-        } else if (aiProvider === 'openai') {
-            const cleanBase = (openaiBaseUrl || '').trim();
-            if (!cleanBase) {
-                setAiError("Base URL OpenAI belum diisi. Klik 'Atur API Key' untuk mengonfigurasi.");
-                setShowApiKeyModal(true);
-                return;
-            }
-        }
-
         if (isLoading) return;
 
         setIsLoading(true);
@@ -284,6 +273,7 @@ export const AIWorkspace = ({
         setAiResponse(null);
         setStreamingReply('');
         setFeedbackGiven(null);
+        setGenerationId(null);
 
         try {
             const imagePart = optimizedImagePart || (imagePreview ? {
@@ -309,15 +299,12 @@ export const AIWorkspace = ({
                     if (partialReply) setStreamingReply(partialReply);
                     if (isDone) setStreamingReply('');
                 },
-                customApiKey: activeGeminiKey,
                 selectedModel,
-                customProxyUrl: proxyUrl,
-                openaiBaseUrl,
-                openaiApiKey,
                 openaiModel
             });
 
             setAiResponse(result);
+            setGenerationId(result.generationId || null);
             setActiveReplyTab('recommended');
 
             // Auto-update extracted memory jika ada informasi baru terdeteksi
@@ -359,6 +346,9 @@ export const AIWorkspace = ({
 
     const handleGiveFeedback = (feedbackType) => {
         setFeedbackGiven(feedbackType);
+        if (generationId) {
+            AiApi.feedback(generationId, feedbackType === 'POSITIVE' ? 'GOOD' : 'NEEDS_WORK').catch(() => {});
+        }
         TelemetryService.logEvent('AI_FEEDBACK_GIVEN', {
             brandId: activeBrand?.id,
             brandName: activeBrand?.brandName,
@@ -379,684 +369,522 @@ export const AIWorkspace = ({
         showToast(`Arahan diterapkan: "${directiveText}"`);
     };
 
-    // Helper untuk warna suhu prospek (HOT / WARM / COLD)
-    const getTemperatureBadge = (temp) => {
-        const t = (temp || 'WARM').toUpperCase();
-        if (t === 'HOT') {
-            return (
-                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center gap-1 animate-pulse">
-                    🔥 HOT PROSPECT
-                </span>
-            );
-        }
-        if (t === 'COLD') {
-            return (
-                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center gap-1">
-                    ❄️ COLD / GHOSTING
-                </span>
-            );
-        }
-        return (
-            <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center gap-1">
-                ⚡ WARM LEAD
-            </span>
-        );
-    };
-
     const primaryReplyText = aiResponse?.reply || aiResponse?.replies?.recommended || '';
 
-    return (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12 animate-fade-in">
-            {/* SISI KIRI: INPUT CHAT & SCREENSHOT */}
-            <div className="lg:col-span-6 space-y-6">
-                <div className="glass-panel rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl border border-[#26262d]">
-                    {/* Brand Banner Header */}
-                    <div className="flex items-center justify-between mb-5 flex-wrap gap-3 pb-4 border-b border-[#26262d]">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-2xl bg-[#202028] text-[#c5a059] flex items-center justify-center font-bold text-sm border border-[#33333d]">
-                                <Icons.MessageSquare />
-                            </div>
-                            <div>
-                                <div className="text-xs text-zinc-400 font-medium">Workspace Brand Aktif:</div>
-                                <div className="text-sm font-bold text-white flex items-center gap-2">
-                                    <span className="text-[#c5a059]">{brandName}</span>
-                                    <span className="text-[10px] text-zinc-400 px-2 py-0.5 rounded-full bg-[#1b1b22] border border-[#2e2e38]">
-                                        Admin: {adminName}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+    const activeModeObj = AI_RESPONSE_MODES.find((m) => m.id === selectedMode) || AI_RESPONSE_MODES[0];
+    const hasImage = Boolean(selectedImage || imagePreview);
+    const hasMemory = Boolean(clientMemory.name || clientMemory.location || clientMemory.dimensions || clientMemory.budget || clientMemory.projectType);
+    const providerLabel = aiProvider === 'openai' ? `OpenAI · ${openaiModel}` : `Gemini · ${selectedModel}`;
+    const analysis = aiResponse?.clientAnalysis;
 
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <button 
+    const handlePasteText = async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (text) setInputText((prev) => (prev ? `${prev}\n${text}` : text));
+        } catch {
+            showToast('Izin clipboard ditolak. Gunakan Ctrl+V di kolom pesan.', 'warning');
+        }
+    };
+
+    const resetMemory = () => {
+        setClientMemory({ name: '', location: '', dimensions: '', budget: '', projectType: '', notes: '' });
+        setSelectedLeadId('');
+        showToast('Memori klien berhasil dikosongkan.');
+    };
+
+    const memoryFields = [
+        { key: 'name', label: 'Nama klien', placeholder: 'Ibu Rina / Pak Budi' },
+        { key: 'location', label: 'Lokasi', placeholder: 'Podomoro Park Bandung' },
+        { key: 'dimensions', label: 'Ukuran ruangan', placeholder: '3.5 m lari (L-shape)' },
+        { key: 'budget', label: 'Budget', placeholder: 'Rp 25jt – 30jt' }
+    ];
+
+    const memorySummary = [
+        { key: 'name', icon: UserRound, value: clientMemory.name },
+        { key: 'location', icon: MapPin, value: clientMemory.location },
+        { key: 'dimensions', icon: Ruler, value: clientMemory.dimensions },
+        { key: 'budget', icon: BadgeDollarSign, value: clientMemory.budget },
+        { key: 'projectType', icon: PanelsTopLeft, value: clientMemory.projectType }
+    ].filter((m) => m.value);
+
+    return (
+        <div className="grid grid-cols-1 gap-5 pb-8 animate-fade-in lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] xl:grid-cols-[minmax(420px,0.9fr)_minmax(500px,1.1fr)] lg:gap-6">
+            {/* LEFT: customer context & input */}
+            <div className="min-w-0 space-y-4">
+                <Panel className="space-y-5">
+                    {/* Strategy */}
+                    <div>
+                        <div className="mb-2.5 flex items-center justify-between gap-2">
+                            <h2 className="text-label font-medium text-fg-2" id="strategy-label">Strategi respon</h2>
+                            <button
+                                type="button"
                                 onClick={() => setShowApiKeyModal(true)}
-                                className="min-h-[40px] text-xs font-semibold px-3 py-1.5 bg-[#202028] hover:bg-[#282832] text-[#c5a059] rounded-full border border-[#33333d] flex items-center gap-1.5 transition-colors shadow-sm active:scale-95"
-                                title={aiProvider === 'openai' ? `OpenAI Base: ${openaiBaseUrl} | Model: ${openaiModel}` : `Google Gemini | Model: ${selectedModel}`}
+                                className="inline-flex h-7 max-w-[60%] items-center gap-1.5 rounded-xs px-2 text-caption text-fg-3 hover:bg-surface-hover hover:text-fg"
+                                title={aiProvider === 'openai' ? `OpenAI-compatible | Model: ${openaiModel}` : `Google Gemini | Model: ${selectedModel}`}
                             >
-                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                                <Icons.Key /> {aiProvider === 'openai' ? `OpenAI (${openaiModel})` : `Gemini (${selectedModel})`}
+                                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" aria-hidden="true" />
+                                <span className="truncate">{providerLabel}</span>
+                                <Settings2 size={12} className="shrink-0" aria-hidden="true" />
                             </button>
                         </div>
-                    </div>
-
-                    {/* Mode Respon Selector */}
-                    <div className="mb-5">
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
-                                <span>🎯</span> Mode Respon Strategis:
-                            </label>
-                            <span className="text-[10px] text-zinc-400 font-medium">
-                                Klik untuk mengarahkan taktik AI
-                            </span>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
+                        <div role="radiogroup" aria-labelledby="strategy-label" className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 lg:grid-cols-3 xl:grid-cols-6">
                             {AI_RESPONSE_MODES.map((mode) => {
+                                const meta = MODE_META[mode.id] || { icon: Bot, short: stripEmoji(mode.label) };
+                                const Icon = meta.icon;
                                 const isSelected = selectedMode === mode.id;
                                 return (
                                     <button
                                         key={mode.id}
                                         type="button"
+                                        role="radio"
+                                        aria-checked={isSelected}
                                         onClick={() => setSelectedMode(mode.id)}
-                                        className={`min-h-[72px] p-2.5 sm:p-3 rounded-2xl text-left border transition-all flex flex-col justify-between relative group active:scale-[0.98] ${
+                                        title={stripEmoji(mode.label)}
+                                        className={cn(
+                                            'flex min-h-[44px] flex-col items-center justify-center gap-1 rounded-sm border px-1 py-2 text-caption font-medium transition-colors duration-150',
                                             isSelected
-                                                ? 'bg-gradient-to-b from-[#c5a059]/20 to-[#1a1712] border-[#c5a059] text-white shadow-lg shadow-[#c5a059]/15 ring-1 ring-[#c5a059]/30'
-                                                : 'bg-[#15151a] border-[#26262d] text-zinc-400 hover:border-[#383844] hover:text-zinc-200'
-                                        }`}
+                                                ? 'border-primary/50 bg-primary-subtle text-primary-text'
+                                                : 'border-border bg-surface-2 text-fg-3 hover:border-border-strong hover:text-fg'
+                                        )}
                                     >
-                                        <div className="flex items-start justify-between gap-1 mb-1">
-                                            <span className="text-xs font-bold block text-white leading-tight">
-                                                {mode.label}
-                                            </span>
-                                            {mode.badge && (
-                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider ${
-                                                    isSelected ? 'bg-[#c5a059] text-[#0d0d0d]' : 'bg-[#202028] text-zinc-400'
-                                                }`}>
-                                                    {mode.badge}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <span className={`text-[11px] font-medium leading-snug line-clamp-2 ${
-                                            isSelected ? 'text-amber-200/90' : 'text-zinc-400 group-hover:text-zinc-300'
-                                        }`}>
-                                            {mode.desc}
-                                        </span>
+                                        <Icon size={16} strokeWidth={1.9} aria-hidden="true" />
+                                        <span className="truncate max-w-full">{meta.short}</span>
                                     </button>
                                 );
                             })}
                         </div>
-
-                        {/* Active Strategy Guidance Callout */}
-                        {(() => {
-                            const activeModeObj = AI_RESPONSE_MODES.find(m => m.id === selectedMode) || AI_RESPONSE_MODES[0];
-                            return (
-                                <div className="mt-2.5 px-3 sm:px-3.5 py-2.5 rounded-xl bg-[#1a1a24] border border-[#c5a059]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs animate-fade-in shadow-inner">
-                                    <span className="text-zinc-300 font-medium flex items-center gap-2">
-                                        <span className="w-2 h-2 rounded-full bg-[#c5a059] animate-pulse shrink-0"></span>
-                                        <strong className="text-[#c5a059] shrink-0">Fokus Taktis:</strong>
-                                        <span className="text-zinc-200">{activeModeObj.desc}</span>
-                                    </span>
-                                    <span className="text-[10px] text-zinc-400 bg-[#22222d] px-2 py-0.5 rounded-full border border-[#30303e] shrink-0 self-end sm:self-auto">
-                                        Tersinkronisasi ke SOP {brandName}
-                                    </span>
-                                </div>
-                            );
-                        })()}
-                    </div>
-
-                    {/* Tautkan Klien & Client Memory Drawer Toggle */}
-                    <div className="mb-5 bg-[#15151a] border border-[#26262d] rounded-2xl p-4 transition-all">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[#c5a059] text-base"><Icons.Brain /></span>
-                                <div>
-                                    <span className="text-xs font-bold text-white block">Memori Klien (Anti-Tanya Ulang)</span>
-                                    <span className="text-[10px] text-zinc-400">Data terkunci tidak akan ditanyakan lagi oleh AI</span>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {(clientMemory.name || clientMemory.location || clientMemory.dimensions || clientMemory.budget) && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setClientMemory({ name: '', location: '', dimensions: '', budget: '', projectType: '', notes: '' });
-                                            setSelectedLeadId('');
-                                            showToast("Memori klien berhasil dikosongkan.");
-                                        }}
-                                        className="text-[11px] text-rose-400 hover:text-rose-300 font-medium px-2 py-0.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 transition-colors"
-                                        title="Kosongkan seluruh data memori"
-                                    >
-                                        Reset
-                                    </button>
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={() => setShowMemoryDrawer(!showMemoryDrawer)}
-                                    className="text-xs text-[#c5a059] hover:underline font-bold px-2.5 py-1 rounded-xl bg-[#202028] border border-[#33333e]"
-                                >
-                                    {showMemoryDrawer ? 'Tutup Memori' : (clientMemory.location || clientMemory.name ? '✏️ Edit Memori' : '+ Isi Memori')}
-                                </button>
-                            </div>
+                        <div className="mt-2.5 flex items-start gap-2 rounded-sm bg-surface-2 px-3 py-2">
+                            {selectedMode === 'SMART_REPLY' ? (
+                                <Badge variant="primary">AUTO</Badge>
+                            ) : (
+                                <Badge variant="neutral">{activeModeObj.badge}</Badge>
+                            )}
+                            <p className="min-w-0 text-body-sm text-fg-2">
+                                <span className="font-medium text-fg">{stripEmoji(activeModeObj.label)}.</span>{' '}
+                                {selectedMode === 'SMART_REPLY' ? 'AI menentukan strategi berdasarkan konteks percakapan.' : activeModeObj.desc}
+                            </p>
                         </div>
-
-                        {/* Quick Active Memory Pills (Ketika Drawer Tertutup) */}
-                        {!showMemoryDrawer && (clientMemory.name || clientMemory.location || clientMemory.dimensions || clientMemory.budget || clientMemory.projectType) && (
-                            <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-3 border-t border-[#26262d] animate-fade-in">
-                                {clientMemory.name && (
-                                    <span className="px-2.5 py-1 rounded-xl bg-[#202028] text-zinc-200 text-[11px] font-semibold border border-[#323240] flex items-center gap-1">
-                                        👤 {clientMemory.name}
-                                    </span>
-                                )}
-                                {clientMemory.location && (
-                                    <span className="px-2.5 py-1 rounded-xl bg-emerald-500/15 text-emerald-400 text-[11px] font-semibold border border-emerald-500/35 flex items-center gap-1">
-                                        📍 {clientMemory.location}
-                                    </span>
-                                )}
-                                {clientMemory.dimensions && (
-                                    <span className="px-2.5 py-1 rounded-xl bg-cyan-500/15 text-cyan-400 text-[11px] font-semibold border border-cyan-500/35 flex items-center gap-1">
-                                        📏 {clientMemory.dimensions}
-                                    </span>
-                                )}
-                                {clientMemory.budget && (
-                                    <span className="px-2.5 py-1 rounded-xl bg-amber-500/15 text-amber-400 text-[11px] font-semibold border border-amber-500/35 flex items-center gap-1">
-                                        💰 {clientMemory.budget}
-                                    </span>
-                                )}
-                                {clientMemory.projectType && (
-                                    <span className="px-2.5 py-1 rounded-xl bg-purple-500/15 text-purple-400 text-[11px] font-semibold border border-purple-500/35 flex items-center gap-1">
-                                        🏠 {clientMemory.projectType}
-                                    </span>
-                                )}
-                            </div>
-                        )}
-
-                        {/* CRM Lead Selector Dropdown */}
-                        {crmLeads && crmLeads.length > 0 && (
-                            <div className="mt-3">
-                                <select
-                                    value={selectedLeadId}
-                                    onChange={handleSelectLead}
-                                    className="w-full bg-[#1b1b22] border border-[#2a2a34] rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-[#c5a059]"
-                                >
-                                    <option value="">-- Hubungkan dengan Data Klien CRM (Opsional) --</option>
-                                    {crmLeads.map(lead => (
-                                        <option key={lead.id} value={lead.id}>
-                                            {lead.name} {lead.project ? `(${lead.project})` : ''} - {lead.status}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-
-                        {/* Drawer Input Memori Klien */}
-                        {showMemoryDrawer && (
-                            <div className="mt-3 pt-3 border-t border-[#26262d] space-y-3 animate-fade-in">
-                                {/* Quick 1-Click City Lock */}
-                                <div>
-                                    <span className="text-[10px] text-zinc-400 font-bold block mb-1.5">
-                                        Kunci Cepat Wilayah (PL DK vs PL LK):
-                                    </span>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {[
-                                            { label: 'Bandung (PL DK)', loc: 'Bandung Raya' },
-                                            { label: 'Tasikmalaya (PL DK)', loc: 'Tasikmalaya' },
-                                            { label: 'Cimahi (PL DK)', loc: 'Cimahi' },
-                                            { label: 'Jabodetabek (PL LK)', loc: 'Jabodetabek' },
-                                            { label: 'Jakarta (PL LK)', loc: 'Jakarta' },
-                                            { label: 'Bekasi/Depok (PL LK)', loc: 'Bekasi/Depok' }
-                                        ].map((city, idx) => (
-                                            <button
-                                                key={idx}
-                                                type="button"
-                                                onClick={() => setClientMemory(prev => ({ ...prev, location: city.loc }))}
-                                                className={`text-[10px] px-2 py-0.5 rounded-lg border transition-all ${
-                                                    clientMemory.location?.includes(city.loc)
-                                                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 font-bold'
-                                                        : 'bg-[#1e1e26] text-zinc-400 border-[#2e2e3a] hover:text-white'
-                                                }`}
-                                            >
-                                                + {city.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                                    <div>
-                                        <label className="text-[10px] text-zinc-400 font-bold block mb-1">Nama Klien</label>
-                                        <input
-                                            type="text"
-                                            value={clientMemory.name}
-                                            onChange={(e) => setClientMemory({ ...clientMemory, name: e.target.value })}
-                                            placeholder="Contoh: Ibu Rina / Pak Budi"
-                                            className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-2.5 py-1.5 text-xs text-white focus:border-[#c5a059] focus:outline-none"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] text-zinc-400 font-bold block mb-1">Lokasi Terkonfirmasi</label>
-                                        <input
-                                            type="text"
-                                            value={clientMemory.location}
-                                            onChange={(e) => setClientMemory({ ...clientMemory, location: e.target.value })}
-                                            placeholder="Contoh: Podomoro Park Bandung"
-                                            className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-2.5 py-1.5 text-xs text-white focus:border-[#c5a059] focus:outline-none"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] text-zinc-400 font-bold block mb-1">Ukuran / Dimensi Ruangan</label>
-                                        <input
-                                            type="text"
-                                            value={clientMemory.dimensions}
-                                            onChange={(e) => setClientMemory({ ...clientMemory, dimensions: e.target.value })}
-                                            placeholder="Contoh: 3.5 meter lari (L-Shape)"
-                                            className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-2.5 py-1.5 text-xs text-white focus:border-[#c5a059] focus:outline-none"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] text-zinc-400 font-bold block mb-1">Estimasi Budget</label>
-                                        <input
-                                            type="text"
-                                            value={clientMemory.budget}
-                                            onChange={(e) => setClientMemory({ ...clientMemory, budget: e.target.value })}
-                                            placeholder="Contoh: Rp 25jt - 30jt"
-                                            className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-2.5 py-1.5 text-xs text-white focus:border-[#c5a059] focus:outline-none"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                     </div>
 
                     {aiError && (
-                        <div className="mb-4 p-3.5 bg-rose-950/80 border border-rose-800 text-rose-200 rounded-xl text-xs font-semibold flex items-center gap-2" role="alert">
-                            <span>⚠️</span> {aiError}
+                        <div className="flex items-start gap-3 rounded-sm border border-danger/25 bg-danger/10 px-3 py-2.5" role="alert">
+                            <CircleAlert size={16} className="mt-0.5 shrink-0 text-red-400" aria-hidden="true" />
+                            <div className="min-w-0 flex-1">
+                                <p className="text-body-sm font-medium text-red-300">Tidak dapat menghasilkan rekomendasi.</p>
+                                <p className="mt-0.5 text-caption text-red-300/80 break-words">{aiError}</p>
+                                <p className="mt-0.5 text-caption text-red-300/80">Periksa koneksi atau konfigurasi AI provider lalu coba kembali.</p>
+                            </div>
+                            <Button variant="ghost" size="sm" icon={RefreshCw} onClick={generateReply} disabled={isLoading} className="shrink-0 text-red-300 hover:text-red-200">
+                                Coba lagi
+                            </Button>
                         </div>
                     )}
 
-                    {/* Chat Text / Directive Input & Screenshot Container */}
-                    <div className="space-y-5">
-                        <div className="space-y-3">
-                        <FormField 
-                            label={selectedImage || imagePreview ? "💬 Perintah / Arahan Khusus Admin" : "Pesan Chat Calon Klien / Perintah Admin"} 
-                            helperText={selectedImage || imagePreview ? "Ketik instruksi untuk AI (misal: 'follow up klien ini', 'arahkan ke survei', 'tanyakan ukuran')" : "Ketik pesan calon klien atau instruksi kerja admin"}
-                        >
-                            <textarea 
-                                className="w-full bg-[#15151a] border border-[#26262d] rounded-2xl p-3.5 sm:p-4 text-base sm:text-sm focus:ring-2 focus:ring-[#c5a059]/30 focus:border-[#c5a059] transition-all resize-none shadow-inner text-zinc-100 placeholder:text-zinc-600"
-                                rows="3"
-                                placeholder={selectedImage || imagePreview 
-                                    ? "Contoh: 'follow up klien ini dengan sopan', 'arahkan untuk booking survei akhir pekan ini', 'tawarkan opsi penyesuaian budget'..." 
-                                    : `Contoh: 'Halo ${brandName}, mau tanya bikin kitchen set multipleks minimalis 3 meter di Bandung berapa ya?' atau ketik perintah: 'follow up klien ini'`}
+                    {/* Message */}
+                    <div>
+                        <label htmlFor="ai-message" className="mb-1.5 block text-label font-medium text-fg-2">
+                            {hasImage ? 'Instruksi untuk AI' : 'Chat calon klien'}
+                        </label>
+                        <div className="rounded-sm border border-border bg-surface-2 transition-colors focus-within:border-primary focus-within:ring-3 focus-within:ring-ring hover:border-border-strong">
+                            <textarea
+                                id="ai-message"
+                                className="block min-h-[180px] w-full resize-y bg-transparent px-3.5 py-3 text-base leading-relaxed text-fg placeholder:text-fg-muted focus:outline-none sm:min-h-[200px] sm:text-body"
+                                placeholder={hasImage ? 'Contoh: follow up klien ini dengan sopan, arahkan booking survei akhir pekan…' : 'Tempel chat calon klien atau tulis instruksi untuk AI…'}
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
-                            ></textarea>
-                        </FormField>
-
-                        {/* Quick Directive Shortcut Chips */}
-                        <div className="space-y-1.5 pt-0.5">
-                            <div className="flex items-center justify-between text-[11px]">
-                                <span className="text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                                    <span>⚡</span> Arahan Cepat Admin:
-                                </span>
-                                {inputText && (
-                                    <button 
-                                        type="button" 
-                                        onClick={() => setInputText('')} 
-                                        className="text-zinc-500 hover:text-zinc-300 text-[10px] underline underline-offset-2 p-1"
-                                    >
-                                        Bersihkan
-                                    </button>
-                                )}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-1.5">
-                                {ADMIN_DIRECTIVE_SHORTCUTS.map((chip, idx) => {
-                                    const isSelected = inputText === chip.text;
-                                    return (
-                                        <button
-                                            key={idx}
-                                            type="button"
-                                            onClick={() => handleApplyDirective(chip.text, chip.mode)}
-                                            className={`text-xs px-2.5 py-1.5 min-h-[36px] rounded-xl border transition-all flex items-center gap-1 font-medium active:scale-95 ${
-                                                isSelected
-                                                    ? 'bg-[#c5a059]/20 text-[#c5a059] border-[#c5a059]/50 font-bold shadow-sm'
-                                                    : 'bg-[#1a1a22] text-zinc-300 border-[#2e2e38] hover:border-[#c5a059]/40 hover:text-white hover:bg-[#202028]'
-                                            }`}
-                                        >
-                                            <span>{chip.icon}</span>
-                                            <span>{chip.label}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-
-                        {/* Screenshot Input */}
-                        <div>
-                            <div className="flex justify-between items-center mb-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">Screenshot Chat WhatsApp</label>
-                                <span className="text-[10px] sm:text-[11px] font-semibold text-[#c5a059] bg-[#202028] px-2 sm:px-2.5 py-0.5 rounded-md">💡 Klik atau Tekan Ctrl + V</span>
-                            </div>
-                            
-                            {!imagePreview ? (
-                                <div 
-                                    className="border-2 border-dashed border-[#33333d] rounded-2xl p-5 sm:p-8 text-center hover:bg-[#1a1a22]/60 hover:border-[#c5a059] transition-all cursor-pointer group bg-[#15151a]/50"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    onDragOver={(e) => e.preventDefault()}
-                                    onDrop={(e) => {
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                                         e.preventDefault();
-                                        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                                            processImageFile(e.dataTransfer.files[0]);
-                                        }
-                                    }}
-                                >
-                                    <div className="mx-auto w-12 h-12 sm:w-14 sm:h-14 bg-[#202028] rounded-2xl flex items-center justify-center text-[#c5a059] group-hover:scale-110 transition-transform mb-2 sm:mb-3 shadow-md">
-                                        <Icons.Image />
-                                    </div>
-                                    <p className="text-xs sm:text-sm font-semibold text-zinc-200">Klik untuk unggah atau <span className="text-[#c5a059] underline underline-offset-2">Paste (Ctrl+V)</span></p>
-                                    <p className="text-[11px] sm:text-xs text-zinc-500 mt-1">PNG, JPG, WEBP (Otomatis dikompresi cepat)</p>
-                                    <div className="mt-3 sm:hidden">
-                                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#202028] text-[#c5a059] text-xs font-bold border border-[#33333d]">
-                                            📷 Pilih File / Screenshot
-                                        </span>
-                                    </div>
-                                    <input 
-                                        type="file" 
-                                        ref={fileInputRef} 
-                                        onChange={handleImageUpload} 
-                                        accept="image/png, image/jpeg, image/webp" 
-                                        className="hidden" 
-                                    />
+                                        generateReply();
+                                    }
+                                }}
+                            />
+                            <div className="flex items-center justify-between gap-2 border-t border-border px-2 py-1.5">
+                                <div className="flex items-center gap-0.5">
+                                    <Button variant="ghost" size="sm" icon={ClipboardPaste} onClick={handlePasteText}>
+                                        Tempel
+                                    </Button>
+                                    <Button variant="ghost" size="sm" icon={Eraser} onClick={() => setInputText('')} disabled={!inputText}>
+                                        Bersihkan
+                                    </Button>
                                 </div>
-                            ) : (
-                                <div className="relative rounded-2xl border border-[#33333d] overflow-hidden bg-black group shadow-lg">
-                                    <img src={imagePreview} alt="Preview Screenshot" className="w-full h-52 object-cover object-top opacity-90 group-hover:opacity-100 transition-opacity" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-between p-4">
-                                        <span className="text-xs font-medium text-white bg-black/70 px-2.5 py-1 rounded-lg backdrop-blur-md">Screenshot WhatsApp Terlampir</span>
-                                        <button 
-                                            onClick={removeImage}
-                                            className="min-h-[44px] min-w-[44px] flex items-center justify-center bg-black/80 hover:bg-black text-rose-400 p-2 rounded-xl shadow-lg transition-transform hover:scale-105"
-                                            aria-label="Hapus screenshot yang terlampir"
-                                        >
-                                            <Icons.Trash />
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Generate Button */}
-                        <div className="pt-2">
-                            <button 
-                                onClick={generateReply}
-                                disabled={isLoading}
-                                className={`w-full min-h-[48px] flex items-center justify-center gap-2.5 py-3.5 sm:py-4 px-6 rounded-2xl font-bold text-xs sm:text-sm shadow-xl transition-all active:scale-[0.99] ${
-                                    isLoading ? 'bg-[#2a2a30] text-zinc-500 cursor-not-allowed' : 'gold-btn shadow-[#c5a059]/25 hover:scale-[1.01]'
-                                }`}
-                            >
-                                {isLoading ? (
-                                    <React.Fragment>
-                                        <svg className="animate-spin h-5 w-5 text-[#c5a059]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <span>Meracik Rekomendasi Balasan Terbaik...</span>
-                                    </React.Fragment>
-                                ) : (
-                                    <React.Fragment>
-                                        <Icons.Zap /> 
-                                        <span>⚡ Generate Rekomendasi Balasan ({brandName})</span>
-                                    </React.Fragment>
-                                )}
-                            </button>
+                                <span className="hidden text-caption text-fg-muted sm:inline lg:hidden xl:inline tabular">
+                                    {inputText.length > 0 ? `${inputText.length} karakter · ` : ''}Ctrl+Enter untuk generate
+                                </span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            {/* SISI KANAN: REKOMENDASI UTAMA BALASAN & SMART CONTEXT PANEL */}
-            <div ref={responsePanelRef} id="ai-response-panel" className="lg:col-span-6 space-y-6">
-                {isLoading ? (
-                    streamingReply ? (
-                        <div className="bg-[#15151a] rounded-3xl shadow-2xl border border-[#26262d] overflow-hidden flex flex-col animate-fade-in p-6 min-h-[360px]">
-                            <div className="flex items-center justify-between pb-4 border-b border-[#26262d]">
-                                <span className="px-2.5 py-1 rounded-xl bg-[#c5a059]/20 text-[#c5a059] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
-                                    <span className="w-2 h-2 rounded-full bg-[#c5a059]"></span>
-                                    ⚡ Sedang Mengetik Balasan WhatsApp...
+                    {/* Quick actions */}
+                    <div>
+                        <div className="mb-1.5 text-label font-medium text-fg-2" id="quick-actions-label">Arahan cepat</div>
+                        <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 scrollbar-none sm:flex-wrap sm:overflow-visible" role="group" aria-labelledby="quick-actions-label">
+                            {ADMIN_DIRECTIVE_SHORTCUTS.map((chip, idx) => (
+                                <Chip
+                                    key={idx}
+                                    icon={chip.icon}
+                                    active={inputText === chip.text}
+                                    onClick={() => handleApplyDirective(chip.text, chip.mode)}
+                                >
+                                    {chip.label}
+                                </Chip>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Screenshot */}
+                    <div>
+                        <div className="mb-1.5 text-label font-medium text-fg-2">Screenshot WhatsApp</div>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleImageUpload}
+                            accept="image/png, image/jpeg, image/webp"
+                            className="hidden"
+                            aria-label="Pilih screenshot WhatsApp"
+                        />
+                        {!imagePreview ? (
+                            <button
+                                type="button"
+                                className="flex w-full items-center gap-3 rounded-sm border border-dashed border-border-strong bg-surface-2/50 px-3.5 py-3 text-left transition-colors hover:border-primary/60 hover:bg-primary-subtle/40"
+                                onClick={() => fileInputRef.current?.click()}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={(e) => {
+                                    e.preventDefault();
+                                    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                                        processImageFile(e.dataTransfer.files[0]);
+                                    }
+                                }}
+                            >
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-surface-3 text-fg-3">
+                                    <ImagePlus size={18} aria-hidden="true" />
                                 </span>
-                                <span className="text-[11px] text-zinc-400 font-mono">Live Stream</span>
+                                <span className="min-w-0">
+                                    <span className="block text-body-sm font-medium text-fg">Unggah screenshot WhatsApp</span>
+                                    <span className="block text-caption text-fg-muted">PNG / JPG / WEBP · atau tempel dengan Ctrl+V</span>
+                                </span>
+                            </button>
+                        ) : (
+                            <div className="flex items-center gap-3 rounded-sm border border-border bg-surface-2 p-2">
+                                <img src={imagePreview} alt="Pratinjau screenshot WhatsApp" className="h-16 w-16 shrink-0 rounded-xs object-cover object-top" />
+                                <div className="min-w-0 flex-1">
+                                    <div className="truncate text-body-sm font-medium text-fg">{selectedImage?.name || 'Screenshot terlampir'}</div>
+                                    <div className="text-caption text-fg-muted">Dioptimasi untuk AI</div>
+                                </div>
+                                <IconButton icon={RefreshCw} label="Ganti screenshot" onClick={() => fileInputRef.current?.click()} />
+                                <IconButton icon={Trash2} label="Hapus screenshot" onClick={removeImage} className="hover:text-red-400" />
                             </div>
-                            <div className="bg-[#1b1b22] border border-[#26262d] rounded-2xl p-5 mt-4 relative">
-                                <p className="text-zinc-100 text-sm md:text-base leading-relaxed whitespace-pre-wrap font-medium">
-                                    {streamingReply}
-                                    <span className="inline-block w-2 h-4 ml-1 bg-[#c5a059] animate-pulse align-middle"></span>
-                                </p>
+                        )}
+                    </div>
+
+                    {/* Generate */}
+                    <div>
+                        <Button
+                            variant="primary"
+                            size="lg"
+                            className="w-full"
+                            loading={isLoading}
+                            onClick={generateReply}
+                        >
+                            {isLoading ? 'Menganalisis percakapan…' : 'Generate Rekomendasi'}
+                        </Button>
+                        {isLoading && (
+                            <div className="mt-2 h-0.5 overflow-hidden rounded-full bg-surface-3" aria-hidden="true">
+                                <div className="h-full w-2/5 rounded-full bg-primary animate-progress" />
                             </div>
+                        )}
+                    </div>
+                </Panel>
+
+                {/* Client memory */}
+                <Panel padded={false}>
+                    <div className="flex items-center justify-between gap-2 px-4 py-3 sm:px-5">
+                        <button
+                            type="button"
+                            onClick={() => setShowMemoryDrawer(!showMemoryDrawer)}
+                            aria-expanded={showMemoryDrawer}
+                            aria-controls="client-memory-panel"
+                            className="flex min-h-[44px] sm:min-h-0 min-w-0 flex-1 items-center gap-2.5 text-left"
+                        >
+                            <Brain size={16} className="shrink-0 text-ai" aria-hidden="true" />
+                            <span className="min-w-0">
+                                <span className="block text-body-sm font-semibold text-fg">Memori klien</span>
+                                <span className="block truncate text-caption text-fg-muted">
+                                    {hasMemory ? 'Data terkunci tidak akan ditanyakan ulang oleh AI' : 'Belum ada memori klien'}
+                                </span>
+                            </span>
+                            <ChevronDown size={16} className={cn('ml-auto shrink-0 text-fg-muted transition-transform', showMemoryDrawer && 'rotate-180')} aria-hidden="true" />
+                        </button>
+                        {hasMemory && (
+                            <Button variant="ghost" size="sm" onClick={resetMemory} className="text-fg-3">
+                                Reset
+                            </Button>
+                        )}
+                    </div>
+
+                    {!showMemoryDrawer && memorySummary.length > 0 && (
+                        <dl className="flex flex-wrap gap-x-4 gap-y-1.5 border-t border-border px-4 py-3 sm:px-5">
+                            {memorySummary.map(({ key, icon: Icon, value }) => (
+                                <div key={key} className="flex min-w-0 items-center gap-1.5 text-body-sm">
+                                    <dt className="sr-only">{key}</dt>
+                                    <Icon size={14} className="shrink-0 text-fg-muted" aria-hidden="true" />
+                                    <dd className="truncate text-fg-2">{value}</dd>
+                                </div>
+                            ))}
+                        </dl>
+                    )}
+
+                    {!showMemoryDrawer && !hasMemory && (
+                        <div className="border-t border-border px-4 py-3 sm:px-5">
+                            <Button variant="outline" size="sm" icon={Plus} onClick={() => setShowMemoryDrawer(true)}>
+                                Tambah memori
+                            </Button>
                         </div>
-                    ) : (
-                        <div className="glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl h-full flex flex-col justify-center items-center text-zinc-500 border border-[#26262d] min-h-[220px] lg:min-h-[480px]">
-                            <div className="relative w-16 h-16 sm:w-20 sm:h-20 mb-4 sm:mb-6">
-                                <div className="absolute inset-0 bg-[#c5a059]/20 rounded-full animate-ping"></div>
-                                <div className="relative bg-[#18181e] rounded-2xl p-4 sm:p-5 shadow-2xl border border-[#c5a059]/30 text-[#c5a059] flex items-center justify-center">
-                                    <Icons.Brain />
-                                </div>
-                            </div>
-                            <h3 className="serif-font text-base sm:text-lg font-bold text-white text-center">{brandName} Sales Ary Sedang Bekerja...</h3>
-                            <p className="text-xs sm:text-sm mt-2 text-center max-w-sm text-zinc-400">
-                                Mencocokkan knowledge base 3-layer, mengaudit integritas harga 2026, dan merumuskan rekomendasi balasan WhatsApp terbaik.
-                            </p>
-                        </div>
-                    )
-                ) : aiResponse ? (
-                    <div className="space-y-6">
-                        {/* KARTU REKOMENDASI UTAMA BALASAN */}
-                        <div className="bg-[#15151a] rounded-3xl shadow-2xl border border-[#26262d] overflow-hidden flex flex-col animate-fade-in">
-                            {/* Header Rekomendasi Utama */}
-                            <div className="bg-[#1a1a22] border-b border-[#26262d] p-3.5 sm:p-4 flex items-center justify-between flex-wrap gap-2.5">
-                                <div className="flex items-center gap-2">
-                                    <span className="px-2.5 py-1 rounded-xl bg-[#c5a059]/20 text-[#c5a059] text-xs font-bold uppercase tracking-wider border border-[#c5a059]/30 flex items-center gap-1.5">
-                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                                        🌟 Rekomendasi Utama
-                                    </span>
-                                    {aiResponse.metrics?.formattedSummary && (
-                                        <span className="px-2 py-0.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 text-[10px] font-mono font-semibold hidden sm:inline">
-                                            {aiResponse.metrics.formattedSummary}
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    {/* Tombol Buka WhatsApp (Universal Mobile/Desktop App/Web) */}
-                                    <a 
-                                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(primaryReplyText)}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-all bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 touch-manipulation active:scale-95"
-                                        title="Buka WhatsApp dan kirimkan teks balasan ini"
-                                    >
-                                        <Icons.ExternalLink /> Buka WA
-                                    </a>
+                    )}
 
-                                    {/* Tombol Copy Balasan */}
-                                    <button 
-                                        onClick={() => handleCopy('primary', primaryReplyText)}
-                                        className={`flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-all shadow-sm touch-manipulation active:scale-95 ${
-                                            copiedKey === 'primary' 
-                                                ? 'bg-emerald-500 text-white' 
-                                                : 'bg-[#202028] hover:bg-[#c5a059] hover:text-[#0d0d0d] text-zinc-200 border border-[#2e2e38]'
-                                        }`}
-                                    >
-                                        {copiedKey === 'primary' ? (
-                                            <React.Fragment><Icons.CheckCircle /> Disalin!</React.Fragment>
-                                        ) : (
-                                            <React.Fragment><Icons.Copy /> Copy Balasan</React.Fragment>
-                                        )}
-                                    </button>
-
-                                    {/* Quick Feedback Rating 👍 / 👎 */}
-                                    <div className="flex items-center gap-1 bg-[#15151a] p-1 rounded-xl border border-[#2e2e38] ml-1">
-                                        <button 
-                                            onClick={() => handleGiveFeedback('POSITIVE')}
-                                            className={`px-2.5 py-1.5 min-h-[40px] rounded-lg text-xs font-bold transition-all touch-manipulation active:scale-95 ${
-                                                feedbackGiven === 'POSITIVE' 
-                                                    ? 'bg-emerald-500 text-white' 
-                                                    : 'text-zinc-400 hover:text-emerald-400 hover:bg-[#202028]'
-                                            }`}
-                                            title="Balasan Akurat & Tepat Sasaran"
-                                        >
-                                            👍 Akurat
-                                        </button>
-                                        <button 
-                                            onClick={() => handleGiveFeedback('NEGATIVE')}
-                                            className={`px-2.5 py-1.5 min-h-[40px] rounded-lg text-xs font-bold transition-all touch-manipulation active:scale-95 ${
-                                                feedbackGiven === 'NEGATIVE' 
-                                                    ? 'bg-rose-500 text-white' 
-                                                    : 'text-zinc-400 hover:text-rose-400 hover:bg-[#202028]'
-                                            }`}
-                                            title="Kurang Tepat / Perlu Koreksi"
-                                        >
-                                            👎 Koreksi
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Teks Pesan WhatsApp */}
-                            <div className="p-6 space-y-4">
-                                <div className="bg-[#1b1b22] border border-[#26262d] rounded-2xl p-5 relative group">
-                                    <p className="text-zinc-100 text-sm md:text-base leading-relaxed whitespace-pre-wrap font-medium">
-                                        {primaryReplyText}
-                                    </p>
-                                </div>
-
-                                {/* Prinsip & Anti Halusinasi Badge */}
-                                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 text-xs">
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {aiResponse.principlesUsed?.map((p, i) => (
-                                            <span key={i} className="px-2.5 py-1 rounded-lg bg-[#202028] text-[#c5a059] text-[11px] font-bold uppercase tracking-wider border border-[#33333d]">
-                                                {p}
-                                            </span>
+                    {showMemoryDrawer && (
+                        <div id="client-memory-panel" className="space-y-4 border-t border-border px-4 py-4 sm:px-5 animate-fade-in">
+                            {crmLeads && crmLeads.length > 0 && (
+                                <FormField label="Hubungkan dengan lead CRM" htmlFor="memory-lead">
+                                    <Select id="memory-lead" value={selectedLeadId} onChange={handleSelectLead}>
+                                        <option value="">Tidak dihubungkan</option>
+                                        {crmLeads.map((lead) => (
+                                            <option key={lead.id} value={lead.id}>
+                                                {lead.name} {lead.project ? `(${lead.project})` : ''} – {lead.status}
+                                            </option>
                                         ))}
-                                    </div>
-                                    <div className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
-                                        <Icons.Shield /> Anti-Halusinasi Terverifikasi
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* SMART CONTEXT PANEL (INTERNAL SALES INTELLIGENCE) */}
-                        <div className="glass-panel rounded-3xl p-6 md:p-8 shadow-2xl border border-[#26262d] space-y-5 animate-fade-in">
-                            <div className="flex items-center justify-between border-b border-[#26262d] pb-4">
-                                <h3 className="serif-font text-base font-bold text-white flex items-center gap-2">
-                                    <div className="p-2 bg-[#202028] text-[#c5a059] rounded-xl">
-                                        <Icons.Brain />
-                                    </div>
-                                    Smart Context Panel & Internal Intelligence
-                                </h3>
-                                {getTemperatureBadge(aiResponse.clientAnalysis?.temperature)}
-                            </div>
-
-                            {/* Grid Parameter Analisis */}
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                                <div className="bg-[#15151a] p-3 rounded-2xl border border-[#26262d]">
-                                    <span className="text-[10px] text-zinc-500 uppercase font-bold block">Intent Klien</span>
-                                    <span className="font-bold text-white mt-1 block">
-                                        {aiResponse.clientAnalysis?.intent || 'CONSULTATION'}
-                                    </span>
-                                </div>
-                                <div className="bg-[#15151a] p-3 rounded-2xl border border-[#26262d]">
-                                    <span className="text-[10px] text-zinc-500 uppercase font-bold block">Pipeline Stage</span>
-                                    <span className="font-bold text-[#c5a059] mt-1 block">
-                                        {aiResponse.clientAnalysis?.stage || 'NEW_LEAD'}
-                                    </span>
-                                </div>
-                                <div className="bg-[#15151a] p-3 rounded-2xl border border-[#26262d]">
-                                    <span className="text-[10px] text-zinc-500 uppercase font-bold block">Tipe Proyek</span>
-                                    <span className="font-bold text-white mt-1 block truncate">
-                                        {aiResponse.clientAnalysis?.projectType || 'Kitchen / Interior'}
-                                    </span>
-                                </div>
-                                <div className="bg-[#15151a] p-3 rounded-2xl border border-[#26262d]">
-                                    <span className="text-[10px] text-zinc-500 uppercase font-bold block">Wilayah Layanan</span>
-                                    <span className="font-bold text-white mt-1 block truncate">
-                                        {serviceArea}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Missing Information Chips */}
-                            {aiResponse.clientAnalysis?.missingInformation && aiResponse.clientAnalysis.missingInformation.length > 0 && (
-                                <div>
-                                    <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400 block mb-2">
-                                        ⚠️ Data Klien yang Masih Kurang (Perlu Digali):
-                                    </span>
-                                    <div className="flex flex-wrap gap-2">
-                                        {aiResponse.clientAnalysis.missingInformation.map((info, idx) => (
-                                            <span key={idx} className="px-3 py-1 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/30 text-xs font-semibold">
-                                                {info}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
+                                    </Select>
+                                </FormField>
                             )}
 
-                            {/* Next Best Action Callout */}
-                            {aiResponse.clientAnalysis?.nextBestAction && (
-                                <div className="bg-gradient-to-r from-[#202028] to-[#1a1a24] border border-[#c5a059]/40 rounded-2xl p-4">
-                                    <div className="flex items-start gap-3">
-                                        <div className="p-2 bg-[#c5a059]/20 text-[#c5a059] rounded-xl flex-shrink-0 mt-0.5">
-                                            <Icons.Zap />
-                                        </div>
-                                        <div>
-                                            <span className="text-[11px] font-bold uppercase tracking-wider text-[#c5a059] block">
-                                                Rekomendasi Tindakan Sales (Next Best Action):
-                                            </span>
-                                            <p className="text-zinc-200 text-xs md:text-sm mt-1 font-medium leading-relaxed">
-                                                {aiResponse.clientAnalysis.nextBestAction}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* 3-Layer Internal Sources / Citations */}
-                            <div className="pt-2 border-t border-[#26262d]">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-2">
-                                    Rujukan Knowledge Base 3-Layer:
-                                </span>
-                                <div className="flex flex-wrap gap-2">
-                                    {aiResponse.internalSources?.map((source, i) => (
-                                        <span key={i} className="px-2.5 py-1 rounded-xl bg-[#1b1b22] text-zinc-400 border border-[#2e2e38] text-[11px] font-medium flex items-center gap-1.5">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                                            {source}
-                                        </span>
+                            <div>
+                                <div className="mb-1.5 text-label font-medium text-fg-2">Kunci cepat wilayah</div>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {CITY_LOCKS.map((city) => (
+                                        <Chip
+                                            key={city.loc}
+                                            icon={MapPin}
+                                            active={Boolean(clientMemory.location?.includes(city.loc))}
+                                            onClick={() => setClientMemory((prev) => ({ ...prev, location: city.loc }))}
+                                            className="h-8 text-label"
+                                        >
+                                            {city.label}
+                                        </Chip>
                                     ))}
                                 </div>
                             </div>
+
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                                {memoryFields.map((f) => (
+                                    <FormField key={f.key} label={f.label} htmlFor={`memory-${f.key}`}>
+                                        <Input
+                                            id={`memory-${f.key}`}
+                                            value={clientMemory[f.key]}
+                                            onChange={(e) => setClientMemory({ ...clientMemory, [f.key]: e.target.value })}
+                                            placeholder={f.placeholder}
+                                        />
+                                    </FormField>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
+                </Panel>
+            </div>
+
+            {/* RIGHT: AI recommendation */}
+            <div ref={responsePanelRef} id="ai-response-panel" className="ai-response-panel min-w-0 scroll-mt-20 space-y-4">
+                {isLoading ? (
+                    <Panel className="min-h-[180px] lg:min-h-[480px]" aria-live="polite" aria-busy="true">
+                        <div className="mb-4 flex items-center gap-2">
+                            <LoaderCircle size={16} className="animate-spin text-primary-text" aria-hidden="true" />
+                            <span className="text-body-sm font-medium text-fg">{streamingReply ? 'AI sedang menulis balasan…' : 'Menganalisis percakapan…'}</span>
+                        </div>
+                        {streamingReply ? (
+                            <p className="whitespace-pre-wrap text-[15px] leading-[1.7] text-fg sm:text-base">
+                                {streamingReply}
+                                <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-primary align-middle" aria-hidden="true" />
+                            </p>
+                        ) : (
+                            <div className="space-y-2.5">
+                                <Skeleton className="h-4 w-11/12" />
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-4/5" />
+                                <Skeleton className="h-4 w-2/3" />
+                                <p className="pt-3 text-caption text-fg-muted">Mencocokkan knowledge base, memeriksa harga, dan menyusun balasan terbaik.</p>
+                            </div>
+                        )}
+                    </Panel>
+                ) : aiResponse ? (
+                    <>
+                        <Panel padded={false} className="animate-fade-in">
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3 sm:px-5">
+                                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                    <h2 className="text-h3 font-semibold text-fg">Rekomendasi AI</h2>
+                                    <Badge variant="primary" icon={(MODE_META[selectedMode] || {}).icon}>{(MODE_META[selectedMode] || {}).short || selectedMode}</Badge>
+                                    {temperatureBadge(analysis?.temperature)}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <IconButton
+                                        icon={copiedKey === 'primary' ? Check : Copy}
+                                        label={copiedKey === 'primary' ? 'Tersalin' : 'Salin balasan'}
+                                        onClick={() => handleCopy('primary', primaryReplyText)}
+                                        className={copiedKey === 'primary' ? 'text-emerald-400' : ''}
+                                    />
+                                    <IconButton icon={RefreshCw} label="Buat ulang" onClick={generateReply} />
+                                    <a
+                                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(primaryReplyText)}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        title="Buka WhatsApp dengan teks balasan ini"
+                                        className="ml-1 inline-flex min-h-[44px] sm:min-h-0 sm:h-9 items-center gap-1.5 rounded-sm bg-primary px-3 text-body-sm font-semibold text-primary-fg hover:bg-primary-hover"
+                                    >
+                                        <WhatsAppIcon />
+                                        <span>Buka WhatsApp</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div className="px-4 py-5 sm:px-6">
+                                <p className="whitespace-pre-wrap text-[15px] leading-[1.7] text-fg sm:text-base">{primaryReplyText}</p>
+                            </div>
+
+                            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 sm:px-5">
+                                <div className="flex items-center gap-1.5" role="group" aria-label="Umpan balik kualitas balasan">
+                                    <span className="mr-1 text-caption text-fg-muted">Kualitas balasan?</span>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        icon={ThumbsUp}
+                                        aria-pressed={feedbackGiven === 'POSITIVE'}
+                                        className={feedbackGiven === 'POSITIVE' ? 'bg-success/10 text-emerald-400' : ''}
+                                        onClick={() => handleGiveFeedback('POSITIVE')}
+                                    >
+                                        Akurat
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        icon={ThumbsDown}
+                                        aria-pressed={feedbackGiven === 'NEGATIVE'}
+                                        className={feedbackGiven === 'NEGATIVE' ? 'bg-danger/10 text-red-400' : ''}
+                                        onClick={() => handleGiveFeedback('NEGATIVE')}
+                                    >
+                                        Perlu koreksi
+                                    </Button>
+                                </div>
+                                {aiResponse.metrics?.formattedSummary && (
+                                    <span className="text-caption text-fg-muted tabular">{aiResponse.metrics.formattedSummary}</span>
+                                )}
+                            </div>
+                        </Panel>
+
+                        {/* Context analysis */}
+                        <Panel className="space-y-5 animate-fade-in">
+                            <SectionTitle icon={Brain} title="Analisis konteks" description="Ringkasan internal untuk tim sales — tidak dikirim ke klien." />
+
+                            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4 lg:grid-cols-2 2xl:grid-cols-4">
+                                {[
+                                    { label: 'Intent', value: analysis?.intent || 'CONSULTATION' },
+                                    { label: 'Tahap', value: analysis?.stage || 'NEW_LEAD' },
+                                    { label: 'Proyek', value: analysis?.projectType || 'Kitchen / Interior' },
+                                    { label: 'Lokasi', value: analysis?.extractedLocation || clientMemory.location || serviceArea }
+                                ].map((row) => (
+                                    <div key={row.label} className="min-w-0">
+                                        <dt className="text-caption text-fg-muted">{row.label}</dt>
+                                        <dd className="mt-0.5 truncate text-body-sm font-medium text-fg" title={row.value}>{row.value}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+
+                            {analysis?.nextBestAction && (
+                                <div className="rounded-sm border-l-2 border-primary-text bg-primary-subtle/60 px-3.5 py-3">
+                                    <div className="flex items-center gap-1.5 text-label font-medium text-primary-text">
+                                        <ArrowRight size={14} aria-hidden="true" />
+                                        Langkah berikutnya
+                                    </div>
+                                    <p className="mt-1 text-body text-fg">{analysis.nextBestAction}</p>
+                                </div>
+                            )}
+
+                            {analysis?.missingInformation?.length > 0 && (
+                                <div>
+                                    <div className="mb-1.5 text-label font-medium text-fg-2">Informasi yang masih dibutuhkan</div>
+                                    <ul className="space-y-1">
+                                        {analysis.missingInformation.map((info, idx) => (
+                                            <li key={idx} className="flex items-start gap-2 text-body-sm text-fg-2">
+                                                <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-warning" aria-hidden="true" />
+                                                {info}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {(aiResponse.principlesUsed?.length > 0 || aiResponse.internalSources?.length > 0) && (
+                                <details className="group border-t border-border pt-3">
+                                    <summary className="flex cursor-pointer list-none items-center gap-1.5 text-label font-medium text-fg-3 hover:text-fg">
+                                        <ChevronRight size={14} className="transition-transform group-open:rotate-90" aria-hidden="true" />
+                                        Prinsip & rujukan knowledge
+                                        <span className="ml-auto inline-flex items-center gap-1 text-caption font-normal text-emerald-400">
+                                            <ShieldCheck size={12} aria-hidden="true" /> Terverifikasi
+                                        </span>
+                                    </summary>
+                                    <div className="mt-3 space-y-2.5">
+                                        {aiResponse.principlesUsed?.length > 0 && (
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {aiResponse.principlesUsed.map((p, i) => (
+                                                    <Badge key={i} variant="neutral">{p}</Badge>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {aiResponse.internalSources?.length > 0 && (
+                                            <ul className="space-y-1">
+                                                {aiResponse.internalSources.map((source, i) => (
+                                                    <li key={i} className="flex items-start gap-2 text-caption text-fg-3">
+                                                        <BookOpen size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
+                                                        {source}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                </details>
+                            )}
+                        </Panel>
+                    </>
                 ) : (
-                    <div className="glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl h-full flex flex-col justify-center items-center text-zinc-500 border border-[#26262d] min-h-[180px] lg:min-h-[480px] border-dashed text-center">
-                        <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#1a1a20] rounded-2xl flex items-center justify-center text-zinc-400 mb-3 sm:mb-4 shadow-inner">
-                            <Icons.Send />
-                        </div>
-                        <h3 className="serif-font font-bold text-white text-base">Belum Ada Balasan Dibuat</h3>
-                        <p className="text-xs sm:text-sm mt-1 text-zinc-400 max-w-sm">
-                            Masukkan chat atau screenshot pelanggan {brandName} di sebelah kiri, lalu klik Generate untuk membuat rekomendasi balasan AI terbaik.
-                        </p>
-                    </div>
+                    <Panel className="flex min-h-[180px] lg:min-h-[480px] flex-col items-center justify-center">
+                        <EmptyState
+                            icon={MessageSquareText}
+                            title="Belum ada rekomendasi"
+                            description="Masukkan percakapan pelanggan untuk mulai menghasilkan balasan."
+                        >
+                            <ol className="mt-6 grid w-full max-w-md grid-cols-1 gap-2 text-left sm:grid-cols-3">
+                                {[
+                                    { icon: ClipboardPaste, text: 'Tempel chat atau screenshot' },
+                                    { icon: Bot, text: 'Generate rekomendasi' },
+                                    { icon: Send, text: 'Salin atau kirim via WhatsApp' }
+                                ].map((step, i) => (
+                                    <li key={i} className="flex items-center gap-2.5 rounded-sm bg-surface-2 px-3 py-2.5 sm:flex-col sm:items-start sm:gap-2">
+                                        <span className="flex items-center gap-2 text-caption text-fg-muted">
+                                            <span className="tabular">{i + 1}</span>
+                                            <step.icon size={14} className="text-fg-3" aria-hidden="true" />
+                                        </span>
+                                        <span className="text-body-sm text-fg-2">{step.text}</span>
+                                    </li>
+                                ))}
+                            </ol>
+                        </EmptyState>
+                    </Panel>
                 )}
             </div>
 
-            <ApiKeyModal 
+            <ApiKeyModal
                 isOpen={showApiKeyModal}
                 onClose={() => setShowApiKeyModal(false)}
                 onSave={handleSaveKeySettings}
                 currentProvider={aiProvider}
-                currentKey={customApiKey}
-                keyStorageMode={keyStorageMode}
                 selectedModel={selectedModel}
-                customProxyUrl={customProxyUrl}
-                currentOpenaiBaseUrl={openaiBaseUrl}
-                currentOpenaiApiKey={openaiApiKey}
                 currentOpenaiModel={openaiModel}
             />
         </div>

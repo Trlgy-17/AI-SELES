@@ -1,10 +1,14 @@
 // File: src/components/modals/EditLeadModal.jsx
 import React, { useState, useEffect } from 'react';
-import { Icons } from '../Icons.jsx';
+import { Pencil, CircleAlert, TriangleAlert } from 'lucide-react';
 import { FormField } from '../common/FormField.jsx';
+import { Modal } from '../ui/Modal.jsx';
+import { Button } from '../ui/Button.jsx';
+import { Input, Select, Textarea } from '../ui/Input.jsx';
 import { normalizePhone } from '../../js/utils/phone.js';
 import { getAsiaJakartaIso } from '../../js/utils/date.js';
 import { LEAD_STATUS_OPTIONS } from '../../js/constants.js';
+import { LOST_REASON_OPTIONS } from '../../js/services/api.js';
 
 export const EditLeadModal = ({ isOpen, lead, allLeads = [], onSave, onCancel }) => {
     const [name, setName] = useState('');
@@ -15,6 +19,7 @@ export const EditLeadModal = ({ isOpen, lead, allLeads = [], onSave, onCancel })
     const [location, setLocation] = useState('');
     const [dimensions, setDimensions] = useState('');
     const [notes, setNotes] = useState('');
+    const [lostReason, setLostReason] = useState('');
     const [err, setErr] = useState(null);
     const [dupWarning, setDupWarning] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -29,6 +34,7 @@ export const EditLeadModal = ({ isOpen, lead, allLeads = [], onSave, onCancel })
             setLocation(lead.location || '');
             setDimensions(lead.dimensions || '');
             setNotes(lead.notes || '');
+            setLostReason(lead.lostReason || '');
             setErr(null);
             setDupWarning(null);
             setIsSaving(false);
@@ -49,14 +55,6 @@ export const EditLeadModal = ({ isOpen, lead, allLeads = [], onSave, onCancel })
         }
     }, [phoneRaw, allLeads, lead]);
 
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.key === 'Escape' && isOpen && !isSaving) onCancel();
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, onCancel, isSaving]);
-
     if (!isOpen || !lead) return null;
 
     const handleSave = async () => {
@@ -72,13 +70,19 @@ export const EditLeadModal = ({ isOpen, lead, allLeads = [], onSave, onCancel })
                 setErr("Nilai proyek harus berupa angka positif atau 0.");
                 return;
             }
-            cleanVal = num;
+            cleanVal = Math.round(num);
+        }
+        if (status === 'Batal' && !lostReason) {
+            setErr("Pilih alasan lead batal.");
+            return;
         }
 
         setIsSaving(true);
         const phoneNormalized = normalizePhone(phoneRaw);
+        try {
         await onSave({
             ...lead,
+            lostReason: status === 'Batal' ? lostReason : null,
             name: name.trim().slice(0, 100),
             phoneRaw: phoneRaw.trim().slice(0, 30),
             phoneNormalized: phoneNormalized,
@@ -90,136 +94,103 @@ export const EditLeadModal = ({ isOpen, lead, allLeads = [], onSave, onCancel })
             notes: notes.trim(),
             updatedAt: getAsiaJakartaIso()
         });
-        setIsSaving(false);
+        } catch (e) {
+            setErr(e?.message || 'Gagal menyimpan perubahan.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
+    const locked = Boolean(lead.isSourceLocked);
+
     return (
-        <div 
-            role="dialog" 
-            aria-modal="true" 
-            aria-labelledby="edit-lead-title" 
-            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in overflow-y-auto safe-padding-bottom safe-padding-top"
+        <Modal
+            isOpen={isOpen && Boolean(lead)}
+            onClose={onCancel}
+            closeDisabled={isSaving}
+            variant="sheet"
+            size="md"
+            icon={Pencil}
+            title="Edit lead"
+            description={locked ? "Nama, telepon, dan lokasi dikelola di e-report (hanya baca)." : "Perubahan lokasi & ukuran juga tersimpan di memori AI."}
+            className="max-h-[90dvh]"
+            bodyClassName="overflow-y-auto"
+            footer={
+                <>
+                    <Button variant="ghost" onClick={onCancel} disabled={isSaving}>Batal</Button>
+                    <Button variant="primary" type="submit" form="edit-lead-form" loading={isSaving}>
+                        {isSaving ? 'Menyimpan…' : 'Simpan perubahan'}
+                    </Button>
+                </>
+            }
         >
-            <div className="bg-[#15151a] border border-[#26262d] rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl space-y-4 my-auto max-h-[90dvh] overflow-y-auto">
-                <div className="flex justify-between items-center border-b border-[#26262d] pb-3">
-                    <h3 id="edit-lead-title" className="serif-font font-bold text-base sm:text-lg text-white flex items-center gap-2">
-                        <Icons.Edit /> Edit Data Prospek & Memori Klien
-                    </h3>
-                    <button 
-                        onClick={onCancel} 
-                        disabled={isSaving} 
-                        className="text-zinc-400 hover:text-white font-bold p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg" 
-                        aria-label="Tutup modal edit"
-                    >
-                        ✕
-                    </button>
-                </div>
-
+            <form
+                id="edit-lead-form"
+                className="space-y-4"
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSave();
+                }}
+            >
                 {err && (
-                    <div className="p-3 bg-rose-950/80 border border-rose-800 text-rose-200 rounded-xl text-xs font-semibold" role="alert">
-                        ⚠️ {err}
+                    <div className="flex items-start gap-2 rounded-sm border border-danger/25 bg-danger/10 px-3 py-2.5 text-body-sm text-red-300" role="alert">
+                        <CircleAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+                        {err}
                     </div>
                 )}
-
+                <FormField label="Nama klien" htmlFor="edit-lead-name" required>
+                    <Input id="edit-lead-name" value={name} onChange={(e) => setName(e.target.value)} disabled={locked} />
+                </FormField>
+                <FormField
+                    label="Nomor WhatsApp"
+                    htmlFor="edit-lead-phone"
+                    helperText={phoneRaw ? (normalizePhone(phoneRaw) ? `Tersimpan: +${normalizePhone(phoneRaw)}` : 'Nomor tidak valid (akan disimpan kosong)') : 'Format bebas: 08…, +62…, atau dengan spasi'}
+                >
+                    <Input id="edit-lead-phone" type="tel" inputMode="tel" placeholder="0812 3456 7890" value={phoneRaw} onChange={(e) => setPhoneRaw(e.target.value)} invalid={Boolean(dupWarning)} disabled={locked} />
+                </FormField>
                 {dupWarning && (
-                    <div className="p-3 bg-amber-950/80 border border-amber-800 text-amber-200 rounded-xl text-xs font-semibold" role="alert">
-                        ⚠️ {dupWarning}
+                    <div className="flex items-start gap-2 rounded-sm border border-warning/25 bg-warning/10 px-3 py-2.5 text-body-sm text-amber-300" role="alert">
+                        <TriangleAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+                        {dupWarning}
                     </div>
                 )}
-
-                <div className="space-y-3">
-                    <FormField label="Nama Klien" required>
-                        <input 
-                            type="text" 
-                            value={name} 
-                            onChange={(e) => setName(e.target.value)} 
-                            className="w-full bg-[#1b1b22] border border-[#26262d] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
-                        />
+                <FormField label="Proyek" htmlFor="edit-lead-project">
+                    <Input id="edit-lead-project" value={project} onChange={(e) => setProject(e.target.value)} />
+                </FormField>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <FormField label="Lokasi" htmlFor="edit-lead-location">
+                        <Input id="edit-lead-location" placeholder="Podomoro Bandung" value={location} onChange={(e) => setLocation(e.target.value)} disabled={locked} />
                     </FormField>
-                    <FormField 
-                        label="Nomor WhatsApp (Raw)" 
-                        helperText={phoneRaw ? (normalizePhone(phoneRaw) ? `Tersimpan: +${normalizePhone(phoneRaw)}` : "Nomor tidak valid (akan disimpan kosong)") : "Format bebas: 08..., +62..., atau spasi"}
-                    >
-                        <input 
-                            type="text" 
-                            placeholder="e.g. 08123456789 atau +65..."
-                            value={phoneRaw} 
-                            onChange={(e) => setPhoneRaw(e.target.value)} 
-                            className="w-full bg-[#1b1b22] border border-[#26262d] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
-                        />
+                    <FormField label="Ukuran" htmlFor="edit-lead-dimensions">
+                        <Input id="edit-lead-dimensions" placeholder="3m x 2.4m" value={dimensions} onChange={(e) => setDimensions(e.target.value)} />
                     </FormField>
-                    <FormField label="Detail Proyek Interior">
-                        <input 
-                            type="text" 
-                            value={project} 
-                            onChange={(e) => setProject(e.target.value)} 
-                            className="w-full bg-[#1b1b22] border border-[#26262d] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
-                        />
-                    </FormField>
-
-                    {/* Client Memory: Lokasi & Dimensi */}
-                    <div className="grid grid-cols-2 gap-3 bg-[#111116] p-3 rounded-2xl border border-[#26262d]">
-                        <FormField label="Lokasi Terkonfirmasi" helperText="Tersimpan di Memori AI">
-                            <input 
-                                type="text" 
-                                placeholder="e.g. Podomoro Bandung"
-                                value={location} 
-                                onChange={(e) => setLocation(e.target.value)} 
-                                className="w-full bg-[#1b1b22] border border-[#26262d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
-                            />
-                        </FormField>
-                        <FormField label="Dimensi / Ukuran" helperText="Tersimpan di Memori AI">
-                            <input 
-                                type="text" 
-                                placeholder="e.g. 3m x 2.4m"
-                                value={dimensions} 
-                                onChange={(e) => setDimensions(e.target.value)} 
-                                className="w-full bg-[#1b1b22] border border-[#26262d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
-                            />
-                        </FormField>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                        <FormField label="Estimasi Nilai Proyek (Rp)" helperText="Kosongkan jika belum ada">
-                            <input 
-                                type="number" 
-                                placeholder="e.g. 25000000"
-                                value={valueInput} 
-                                onChange={(e) => setValueInput(e.target.value)} 
-                                className="w-full bg-[#1b1b22] border border-[#26262d] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
-                            />
-                        </FormField>
-                        <FormField label="Status Prospek">
-                            <select 
-                                value={status} 
-                                onChange={(e) => setStatus(e.target.value)}
-                                className="w-full bg-[#1b1b22] border border-[#26262d] rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/30"
-                            >
-                                {LEAD_STATUS_OPTIONS.map(opt => (
-                                    <option key={opt} value={opt}>{opt}</option>
-                                ))}
-                            </select>
-                        </FormField>
-                    </div>
                 </div>
-
-                <div className="flex justify-end gap-3 pt-3 border-t border-[#26262d]">
-                    <button 
-                        onClick={onCancel} 
-                        disabled={isSaving} 
-                        className="px-4 py-2.5 rounded-xl text-xs font-bold text-zinc-400 bg-[#202028] hover:text-white transition-colors min-h-[44px] touch-manipulation active:scale-95"
-                    >
-                        Batal
-                    </button>
-                    <button 
-                        onClick={handleSave} 
-                        disabled={isSaving} 
-                        className="gold-btn px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-[#c5a059]/25 transition-all min-h-[44px] touch-manipulation active:scale-95"
-                    >
-                        {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
-                    </button>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <FormField label="Estimasi nilai" htmlFor="edit-lead-value" helperText="Kosongkan jika belum ada">
+                        <Input id="edit-lead-value" type="number" inputMode="numeric" min="0" prefix="Rp" placeholder="25000000" value={valueInput} onChange={(e) => setValueInput(e.target.value)} />
+                    </FormField>
+                    <FormField label="Tahap" htmlFor="edit-lead-status">
+                        <Select id="edit-lead-status" value={status} onChange={(e) => setStatus(e.target.value)}>
+                            {LEAD_STATUS_OPTIONS.map(opt => (
+                                <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                        </Select>
+                    </FormField>
                 </div>
-            </div>
-        </div>
+                {status === 'Batal' && (
+                    <FormField label="Alasan batal" htmlFor="edit-lead-lost-reason" required>
+                        <Select id="edit-lead-lost-reason" value={lostReason} onChange={(e) => setLostReason(e.target.value)}>
+                            <option value="">Pilih alasan</option>
+                            {LOST_REASON_OPTIONS.map(r => (
+                                <option key={r.value} value={r.value}>{r.label}</option>
+                            ))}
+                        </Select>
+                    </FormField>
+                )}
+                <FormField label="Catatan" htmlFor="edit-lead-notes">
+                    <Textarea id="edit-lead-notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Preferensi material, jadwal survei, dsb." />
+                </FormField>
+            </form>
+        </Modal>
     );
 };

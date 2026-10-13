@@ -1,10 +1,20 @@
 // File: src/js/services/ai.js
-import { DEFAULT_GEMINI_API_KEY, DEFAULT_GEMINI_MODEL } from '../constants.js';
+import { DEFAULT_GEMINI_MODEL } from '../constants.js';
+import { AiApi } from './api.js';
 import { KnowledgeRetriever } from './ai/KnowledgeRetriever.js';
 import { CustomerMemoryEngine } from './ai/CustomerMemoryEngine.js';
 import { SalesStrategyEngine } from './ai/SalesStrategyEngine.js';
 import { ResponseParser } from './ai/ResponseParser.js';
 import { TelemetryService } from './telemetry.js';
+
+const TONE_GUIDE = {
+    consultative_luxury: 'Tenang, elegan, detail. Seperti desainer senior yang sabar menjelaskan; tidak terburu-buru jualan.',
+    warm_family: 'Hangat dan membumi, fokus ke kenyamanan keluarga dan fungsi sehari-hari.',
+    aesthetic_trendy: 'Ringan, luwes, paham tren desain (Japandi, Scandinavian, minimalis); boleh sedikit santai.',
+    direct_technical: 'Ringkas, lugas, langsung ke spesifikasi dan angka; tetap ramah.',
+    polite_trusted: 'Sopan, formal secukupnya, menenangkan; menonjolkan rasa aman, garansi, dan kepercayaan.',
+    warm_consultative: 'Hangat, konsultatif, dan solutif.'
+};
 
 export const AIService = {
     // Membangun prompt modular 7-layer berdasarkan Active Brand, Resolved Knowledge, dan Client Memory
@@ -79,6 +89,38 @@ Jangan memaksakan berbicara tentang hal yang tidak ditanyakan klien. Kenali maks
    - Paragraf pendek (1-3 baris) dipisahkan baris baru (\\n\\n).
    - Akhiri dengan 1 micro-commitment ringan yang relevan dengan pertanyaan klien.`;
 
+        // 2b. HUMAN VOICE — gaya chat konsultan interior manusia
+        const humanVoice = `# HUMAN VOICE — TULIS SEPERTI KONSULTAN INTERIOR MANUSIA
+Kamu adalah konsultan interior senior di ${brandName}: ramah, sabar, paham material, dan sedang membalas chat WhatsApp secara langsung. Balasan harus terasa ditulis orang sungguhan, bukan template atau bot.
+Karakter brand: ${TONE_GUIDE[salesTone] || TONE_GUIDE.warm_consultative}
+
+CARA MENULIS:
+1. Cerminkan klien: ikuti tingkat formalitas, panjang pesan, dan sapaan klien (Kak / Bu / Pak). Klien singkat -> balas singkat. Klien santai -> boleh sedikit santai.
+2. Buka langsung dengan jawaban atau tanggapan yang nyambung dengan pesan klien. Jangan membuka dengan salam panjang atau basa-basi generik, kecuali kontak pertama atau follow-up setelah lama tidak ada kabar.
+3. Panjang ideal 40-110 kata, 2-4 paragraf pendek. Tulis dengan kalimat sehari-hari; partikel ringan ("ya", "kok", "nih") boleh bila sesuai gaya klien.
+4. Maksimal 1 emoji dan hanya bila terasa alami. *Bold* hanya untuk harga atau angka penting. Tanpa HURUF KAPITAL berlebihan dan tanpa tanda seru bertumpuk.
+5. Signature penutup brand hanya dipakai pada balasan pertama atau penawaran resmi, tidak di setiap pesan.
+6. Tutup dengan tepat 1 pertanyaan atau langkah berikutnya yang mudah dijawab.
+7. Variasikan susunan kalimat. JANGAN pernah menyalin kalimat contoh dari instruksi ini secara utuh.
+8. Sapaan: pakai "Ibu"/"Bu" atau "Bapak"/"Pak" hanya jika nama/gender klien diketahui; jika belum, pakai "Kak". DILARANG menulis "Bapak/Ibu" atau "Ibu/Bapak" dengan garis miring, meskipun perintah admin menuliskannya begitu.
+
+FRASA KAKU YANG DILARANG (dan variasinya): "Mohon izin menindaklanjuti", "Semoga sehat selalu", "Terima kasih atas pertanyaannya", "Dengan senang hati kami informasikan", "Jangan ragu untuk menghubungi kami", "Kami siap membantu", "Berikut kami sampaikan", "Demikian informasi dari kami".`;
+
+        // 2c. ETHICAL PERSUASION PLAYBOOK — psikologi penjualan yang jujur
+        const persuasionPlaybook = `# ETHICAL PERSUASION PLAYBOOK (PSIKOLOGI PENJUALAN BERETIKA)
+Pilih 1-2 teknik yang paling cocok dengan kondisi klien saat ini; jangan dipakai semua sekaligus dan jangan terasa memaksa.
+- EMPATI & LABELING: akui perasaan/kekhawatiran klien dulu ("wajar kalau mau hitungannya pas dulu...").
+- RESIPROSITAS: beri nilai lebih dulu — tips material, kisaran harga, ide layout — sebelum meminta sesuatu. Survei & desain 3D gratis ditawarkan sebagai bantuan nyata.
+- OTORITAS: tunjukkan keahlian lewat fakta material yang spesifik dari KNOWLEDGE CONTEXT (mis. multipleks 18mm vs MDF di area basah).
+- BUKTI SOSIAL: tawarkan mengirim foto portofolio / hasil proyek serupa. DILARANG mengarang jumlah klien, testimoni, nama proyek, atau klaim frekuensi seperti "sudah sering handle di area X" / "rutin survei ke area X" jika tidak ada di KNOWLEDGE CONTEXT.
+- FUTURE PACING: ajak klien membayangkan hasil akhirnya ("nanti dapurnya lebih lega dan gampang dibersihkan").
+- LOSS FRAMING FAKTUAL: sebut risiko nyata jika salah pilih bahan, tanpa menakut-nakuti.
+- COMMITMENT LADDER: minta "ya" kecil dulu (kirim ukuran, share lokasi, pilih jadwal), bukan langsung DP.
+- PILIHAN DUA OPSI: tawarkan 2 pilihan konkret (mis. Sabtu pagi atau Minggu siang) alih-alih pertanyaan ya/tidak.
+- PERSONALISASI: sebut detail yang klien sampaikan (nama, lokasi, ukuran, kebutuhan) agar terasa diperhatikan.
+
+KELANGKAAN HANYA JIKA FAKTUAL: Jumlah slot tersisa, batas waktu, kuota, atau promo HANYA boleh disebut jika tertulis di KNOWLEDGE CONTEXT (layer campaign), ADMIN STRATEGIC DIRECTIVE, atau Catatan Tambahan Admin di memori klien. Jika tidak ada data tersebut, DILARANG mengarang kelangkaan ("tersisa 1-2 slot", "nanti diambil klien lain", "promo hari ini saja"); gunakan urgensi lembut yang jujur, misalnya "biar jadwalnya bisa saya atur lebih awal".`;
+
         // 3. BRAND CONTEXT (DYNAMIC FROM AUTHENTICATED SESSION)
         const brandContext = `# ACTIVE BRAND CONTEXT
 - Brand Resmi: ${brandName} (${displayName})
@@ -89,7 +131,7 @@ Jangan memaksakan berbicara tentang hal yang tidak ditanyakan klien. Kenali maks
 - Website: ${website}
 - Wilayah Layanan: ${serviceArea}
 - Minimum Project: ${brand?.minProjectValue || 'Fleksibel'}
-- Gaya Bahasa Brand: ${salesTone}
+- Gaya Bahasa Brand: ${TONE_GUIDE[salesTone] || salesTone}
 - Signature Penutup Default:
 ${signature}`;
 
@@ -110,7 +152,7 @@ ${modeGuidance}
 Buat analisis intelijen penjualan internal dan HASILKAN 1 REKOMENDASI UTAMA BALASAN WHATSAPP TERBAIK:
 - Balasan WAJIB menjawab pertanyaan atau topik terakhir klien secara tepat sasaran, akurat, dan relevan dengan konteks percakapan.
 - Balasan paling optimal, persuasif, santun, transparan terhadap harga (sesuai SOP & pricelist resmi), dan secara elegan mengarahkan calon klien ke langkah berikutnya (jadwal survei/konsultasi lanjutan).
-- Gaya bahasa manusiawi, profesional, hangat khas admin marketing interior, to the point, dan anti-kaku.
+- Gaya bahasa manusiawi, profesional, hangat khas konsultan interior, to the point, dan anti-kaku — ikuti aturan HUMAN VOICE dan pilih teknik dari ETHICAL PERSUASION PLAYBOOK yang paling pas.
 - JANGAN menghasilkan beberapa alternatif; fokuskan pada 1 balasan terbaik siap kirim agar respon ultra-cepat dan akurat.
 
 OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
@@ -125,7 +167,7 @@ OUTPUT WAJIB MURNI JSON VALID DENGAN SKEMA:
     "missingInformation": ["Daftar informasi penting yang belum diketahui, misal: ukuran panjang, lokasi"],
     "nextBestAction": "Rekomendasi taktis untuk admin sales"
   },
-  "reply": "Teks balasan WhatsApp rekomendasi utama siap kirim (bersih tanpa tanda kutip pembungkus)",
+  "reply": "Teks balasan WhatsApp siap kirim, ditulis natural seperti chat konsultan manusia, bukan template (bersih tanpa tanda kutip pembungkus)",
   "principlesUsed": ["Prinsip SOP yang digunakan"],
   "internalSources": ${JSON.stringify(citations.length > 0 ? citations : ['Master Price List 2026', 'SOP WhatsApp Sales'])},
   "confidence": 0.95
@@ -141,10 +183,11 @@ ATURAN MUTLAK MENJALANKAN PERINTAH ADMIN:
 1. PRIORITAS TERTINGGI: Balasan WhatsApp yang kamu racik WAJIB berfokus mencapai tujuan perintah admin di atas (misal: memfollow up klien dengan halus, mengarahkan booking jadwal survei lokasi gratis, mengedukasi harga & bahan, mengatasi keberatan budget, atau meminta data ukuran).
 2. Tautkan instruksi ini secara alami, mengalir, dan sopan dengan konteks percakapan terakhir calon klien.
 3. Rujuk data resmi KNOWLEDGE CONTEXT di atas (pricelist PL DK/PL LK, standar multipleks 18mm & PVC waterproof, garansi resmi, alur termin).
-4. DILARANG KERAS menyebut kata 'perintah admin' atau 'arahan internal' di dalam balasan WhatsApp; tuliskan seolah-olah admin marketing berbicara langsung kepada calon klien dengan hangat, personal, dan profesional.`;
+4. DILARANG KERAS menyebut kata 'perintah admin' atau 'arahan internal' di dalam balasan WhatsApp; tuliskan seolah-olah admin marketing berbicara langsung kepada calon klien dengan hangat, personal, dan profesional.
+5. Jika perintah admin menyebut fakta kelangkaan/urgensi (mis. sisa slot, tanggal promo), itu data faktual yang boleh dipakai apa adanya — jangan dilebih-lebihkan.`;
         }
 
-        const layers = [systemCore, salesPolicy, brandContext, knowledgeContext, clientContext];
+        const layers = [systemCore, salesPolicy, humanVoice, persuasionPlaybook, brandContext, knowledgeContext, clientContext];
         if (directiveContext) layers.push(directiveContext);
         layers.push(taskContext);
 
@@ -169,14 +212,7 @@ ATURAN MUTLAK MENJALANKAN PERINTAH ADMIN:
         activeBrand,
         clientMemory,
         responseMode = 'SMART_REPLY',
-        onStreamChunk, // Callback opsional: ({ partialReply, rawText, isDone })
-        // Gemini Config
-        customApiKey, 
-        selectedModel, 
-        customProxyUrl,
-        // OpenAI / Custom Provider Config
-        openaiBaseUrl,
-        openaiApiKey,
+        selectedModel,
         openaiModel
     }) => {
         const tracker = TelemetryService.createLatencyTracker();
@@ -209,31 +245,15 @@ ATURAN MUTLAK MENJALANKAN PERINTAH ADMIN:
         tracker.markLlmStart();
 
         try {
-            if (provider === 'openai') {
-                result = await AIService.generateOpenAIReply({
-                    inputText,
-                    imagePart,
-                    systemPrompt: systemPromptText,
-                    activeBrand,
-                    baseUrl: openaiBaseUrl,
-                    apiKey: openaiApiKey,
-                    model: openaiModel,
-                    tracker,
-                    onStreamChunk
-                });
-            } else {
-                result = await AIService.generateGeminiReply({
-                    inputText,
-                    imagePart,
-                    systemPrompt: systemPromptText,
-                    activeBrand,
-                    customApiKey,
-                    selectedModel,
-                    customProxyUrl,
-                    tracker,
-                    onStreamChunk
-                });
-            }
+            result = await AIService.generateViaServer({
+                provider,
+                model: provider === 'openai' ? (openaiModel || 'gpt-4o-mini') : (selectedModel || DEFAULT_GEMINI_MODEL),
+                systemPrompt: systemPromptText,
+                inputText,
+                imagePart,
+                activeBrand,
+                responseMode
+            });
         } finally {
             tracker.markLlmEnd();
         }
@@ -258,360 +278,54 @@ ATURAN MUTLAK MENJALANKAN PERINTAH ADMIN:
         return result;
     },
 
-    generateOpenAIReply: async ({ 
-        inputText, 
-        imagePart, 
-        systemPrompt, 
-        activeBrand, 
-        baseUrl, 
-        apiKey, 
-        model, 
-        tracker, 
-        onStreamChunk 
-    }) => {
-        let cleanBaseUrl = (baseUrl || 'https://api.openai.com/v1').trim().replace(/\/+$/, '');
-        const endpoint = cleanBaseUrl.endsWith('/chat/completions') 
-            ? cleanBaseUrl 
-            : `${cleanBaseUrl}/chat/completions`;
-
-        const effectiveModel = model?.trim() || 'gpt-4o-mini';
-        const effectiveKey = apiKey?.trim() || '';
-
-        const headers = { 'Content-Type': 'application/json' };
-        if (effectiveKey) headers['Authorization'] = `Bearer ${effectiveKey}`;
-        if (cleanBaseUrl.includes('openrouter.ai')) {
-            headers['HTTP-Referer'] = 'https://interiorcorp.com';
-            headers['X-Title'] = activeBrand?.brandName || 'Interior Sales AI';
-        }
-
-        let userPrompt = "";
+    // User turn text — identical wording to the previous in-browser provider calls.
+    buildUserText: ({ inputText, hasImage, activeBrand }) => {
+        const brand = activeBrand?.brandName || '';
+        const natural = 'Tulis natural seperti konsultan interior manusia yang sedang chat — hangat, tidak kaku, tidak seperti template.';
         const isExplicitDirective = inputText && /follow\s*up|arahkan|survei|survey|jadwal|harga|edukasi|diskon|tanyakan|ingatkan|kunci|dp|closing|buatkan|susun|sapa/i.test(inputText);
 
-        if (imagePart?.inlineData?.data && inputText && inputText.trim()) {
-            userPrompt = `PERINTAH STRATEGIS DARI ADMIN MARKETING:
+        if (hasImage && inputText && inputText.trim()) {
+            return `PERINTAH STRATEGIS DARI ADMIN MARKETING:
 "${inputText.trim()}"
 
 TUGAS UTAMA:
 1. Analisis screenshot percakapan WhatsApp calon klien berikut (balon hijau/kanan = admin kita, balon putih/kiri = calon klien).
 2. EKSEKUSI PERINTAH ADMIN: Susun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang secara presisi mewujudkan perintah admin di atas (misal: memfollow up klien, mengarahkan ke jadwal survei gratis, klarifikasi ukuran/budget, edukasi harga/bahan).
 3. Sambungkan secara alami dengan pesan atau pertanyaan TERAKHIR calon klien di screenshot.
-4. Rujuk data resmi ${activeBrand?.brandName || ''}. JANGAN tanyakan ulang data yang sudah disebutkan di screenshot.
+4. Rujuk data resmi ${brand}. JANGAN tanyakan ulang data yang sudah disebutkan di screenshot.
 5. Akhiri dengan 1 kalimat ajakan (call-to-action) yang relevan dan mudah dijawab oleh klien.`;
-        } else if (imagePart?.inlineData?.data) {
-            userPrompt = `Analisis screenshot percakapan WhatsApp calon klien berikut dengan teliti.
+        }
+        if (hasImage) {
+            return `Analisis screenshot percakapan WhatsApp calon klien berikut dengan teliti.
 - Perhatikan balon chat: kanan/hijau adalah pesan admin kita, kiri/putih adalah calon klien.
 - Temukan pertanyaan atau topik pesan TERAKHIR dari calon klien yang belum dibalas tuntas.
 - JANGAN tanyakan ulang hal yang sudah disebutkan klien di screenshot (nama, kota, ukuran, dll).
-- Susun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang menjawab pertanyaan terakhir tersebut secara tepat konteks, ramah, transparan, dan profesional sesuai SOP dan data resmi ${activeBrand?.brandName || ''}.`;
-        } else if (isExplicitDirective) {
-            userPrompt = `PERINTAH STRATEGIS DARI ADMIN MARKETING:
+- Susun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang menjawab pertanyaan terakhir tersebut secara tepat konteks, ramah, transparan, dan profesional sesuai SOP dan data resmi ${brand}. ${natural}`;
+        }
+        if (isExplicitDirective) {
+            return `PERINTAH STRATEGIS DARI ADMIN MARKETING:
 "${inputText.trim()}"
 
-TUGAS: Susun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang secara tepat sasaran, santun, dan solutif menjalankan perintah admin di atas sesuai SOP dan data resmi ${activeBrand?.brandName || ''}.`;
-        } else {
-            userPrompt = `<untrusted_customer_message>\n${inputText ? inputText.trim() : ''}\n</untrusted_customer_message>\n\nSusun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang menjawab pesan klien di atas secara tepat sasaran, ramah, dan sesuai SOP resmi ${activeBrand?.brandName || ''}.`;
+TUGAS: Susun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang secara tepat sasaran, santun, dan solutif menjalankan perintah admin di atas sesuai SOP dan data resmi ${brand}. ${natural}`;
         }
-
-        let userContent;
-        if (imagePart?.inlineData?.data) {
-            userContent = [
-                { type: 'text', text: userPrompt },
-                { 
-                    type: 'image_url', 
-                    image_url: { 
-                        url: `data:${imagePart.inlineData.mimeType || 'image/jpeg'};base64,${imagePart.inlineData.data}`,
-                        detail: 'auto'
-                    } 
-                }
-            ];
-        } else {
-            userContent = userPrompt;
-        }
-
-        const supportsStreaming = typeof onStreamChunk === 'function';
-
-        const bodyPayload = {
-            model: effectiveModel,
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userContent }
-            ],
-            temperature: 0.25,
-            max_tokens: 500,
-            stream: supportsStreaming
-        };
-
-        if (!supportsStreaming) {
-            bodyPayload.response_format = { type: 'json_object' };
-        }
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 25000);
-
-        let response;
-        try {
-            response = await fetch(endpoint, {
-                method: 'POST',
-                headers,
-                signal: controller.signal,
-                body: JSON.stringify(bodyPayload)
-            });
-
-            if (!response.ok && (response.status === 400 || response.status === 422) && bodyPayload.response_format) {
-                delete bodyPayload.response_format;
-                response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers,
-                    signal: controller.signal,
-                    body: JSON.stringify(bodyPayload)
-                });
-            }
-        } catch (netErr) {
-            if (netErr.name === 'AbortError') {
-                throw new Error(`Koneksi ke custom provider (${endpoint}) melampaui batas waktu (timeout).`);
-            }
-            throw new Error(`Gagal menghubungi API (${endpoint}): ${netErr.message}`);
-        } finally {
-            clearTimeout(timeoutId);
-        }
-
-        if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            const errMsg = errData.error?.message || `HTTP ${response.status}: ${response.statusText}`;
-            throw new Error(`[OpenAI API Error] ${errMsg}`);
-        }
-
-        if (supportsStreaming && response.body) {
-            let accumulated = '';
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder('utf-8');
-
-            try {
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    if (tracker) tracker.markFirstToken();
-
-                    const chunkStr = decoder.decode(value, { stream: true });
-                    const lines = chunkStr.split('\n');
-
-                    for (const line of lines) {
-                        const trimmed = line.trim();
-                        if (trimmed.startsWith('data: ') && trimmed !== 'data: [DONE]') {
-                            try {
-                                const parsedChunk = JSON.parse(trimmed.slice(6));
-                                const delta = parsedChunk.choices?.[0]?.delta?.content || '';
-                                if (delta) {
-                                    accumulated += delta;
-                                    const preview = ResponseParser.extractStreamingPreview(accumulated);
-                                    onStreamChunk({ partialReply: preview, rawText: accumulated, isDone: false });
-                                }
-                            } catch (_) {}
-                        }
-                    }
-                }
-            } finally {
-                reader.releaseLock();
-            }
-
-            if (onStreamChunk) {
-                onStreamChunk({ partialReply: ResponseParser.extractStreamingPreview(accumulated), rawText: accumulated, isDone: true });
-            }
-
-            return ResponseParser.parse(accumulated, activeBrand);
-        }
-
-        const data = await response.json();
-        const rawContent = data.choices?.[0]?.message?.content;
-        return ResponseParser.parse(rawContent, activeBrand);
+        return `<untrusted_customer_message>\n${inputText ? inputText.trim() : ''}\n</untrusted_customer_message>\n\nSusun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang menjawab pesan klien di atas secara tepat sasaran, ramah, dan sesuai SOP resmi ${brand}. ${natural}`;
     },
 
-    generateGeminiReply: async ({ 
-        inputText, 
-        imagePart, 
-        systemPrompt, 
-        activeBrand, 
-        customApiKey, 
-        selectedModel, 
-        customProxyUrl,
-        tracker,
-        onStreamChunk 
-    }) => {
-        const apiKey = customApiKey || DEFAULT_GEMINI_API_KEY;
-        const requestedModel = selectedModel || DEFAULT_GEMINI_MODEL;
-
-        if (!apiKey && !customProxyUrl) {
-            throw new Error("Kunci API Gemini belum dikonfigurasi. Masukkan API Key Anda di Pengaturan AI.");
-        }
-
-        const isExplicitDirective = inputText && /follow\s*up|arahkan|survei|survey|jadwal|harga|edukasi|diskon|tanyakan|ingatkan|kunci|dp|closing|buatkan|susun|sapa/i.test(inputText);
-
-        const parts = [];
-        if (imagePart && inputText && inputText.trim()) {
-            parts.push({
-                text: `PERINTAH STRATEGIS DARI ADMIN MARKETING:
-"${inputText.trim()}"
-
-TUGAS UTAMA:
-1. Analisis screenshot percakapan WhatsApp calon klien berikut (balon hijau/kanan = admin kita, balon putih/kiri = calon klien).
-2. EKSEKUSI PERINTAH ADMIN: Susun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang secara presisi mewujudkan perintah admin di atas (misal: memfollow up klien, mengarahkan ke jadwal survei gratis, klarifikasi ukuran/budget, edukasi harga/bahan).
-3. Sambungkan secara alami dengan pesan atau pertanyaan TERAKHIR calon klien di screenshot.
-4. Rujuk data resmi ${activeBrand?.brandName || ''}. JANGAN tanyakan ulang data yang sudah disebutkan di screenshot.
-5. Akhiri dengan 1 kalimat ajakan (call-to-action) yang relevan dan mudah dijawab oleh klien.`
-            });
-            parts.push(imagePart);
-        } else if (imagePart) {
-            parts.push({
-                text: `Analisis screenshot percakapan WhatsApp calon klien berikut dengan teliti.
-- Perhatikan balon chat: kanan/hijau adalah pesan admin kita, kiri/putih adalah calon klien.
-- Temukan pertanyaan atau topik pesan TERAKHIR dari calon klien yang belum dibalas tuntas.
-- JANGAN tanyakan ulang hal yang sudah disebutkan klien di screenshot (nama, kota, ukuran, dll).
-- Susun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang menjawab pertanyaan terakhir tersebut secara tepat konteks, ramah, transparan, dan profesional sesuai SOP dan data resmi ${activeBrand?.brandName || ''}.`
-            });
-            parts.push(imagePart);
-        } else if (isExplicitDirective) {
-            parts.push({
-                text: `PERINTAH STRATEGIS DARI ADMIN MARKETING:
-"${inputText.trim()}"
-
-TUGAS: Susun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang secara tepat sasaran, santun, dan solutif menjalankan perintah admin di atas sesuai SOP dan data resmi ${activeBrand?.brandName || ''}.`
-            });
-        } else {
-            parts.push({
-                text: `<untrusted_customer_message>\n${inputText ? inputText.trim() : ''}\n</untrusted_customer_message>\n\nSusun 1 rekomendasi balasan WhatsApp terbaik siap kirim yang menjawab pesan klien di atas secara tepat sasaran, ramah, dan sesuai SOP resmi ${activeBrand?.brandName || ''}.`
-            });
-        }
-
-        const buildPayload = (useThinking) => {
-            const genConfig = {
-                temperature: 0.2,
-                maxOutputTokens: 500,
-                responseMimeType: "application/json"
-            };
-            if (useThinking) {
-                genConfig.thinkingConfig = { thinkingBudget: 0 };
-            }
-            return {
-                contents: [{ role: 'user', parts }],
-                systemInstruction: { parts: [{ text: systemPrompt }] },
-                generationConfig: genConfig
-            };
-        };
-
-        const candidateModels = [
-            requestedModel,
-            'gemini-flash-lite-latest',
-            'gemini-flash-latest'
-        ].filter((m, idx, arr) => arr.indexOf(m) === idx);
-
-        let lastError = null;
-        const supportsStreaming = typeof onStreamChunk === 'function';
-
-        for (const model of candidateModels) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 28000);
-
-            try {
-                let endpoint = "";
-                let headers = { "Content-Type": "application/json" };
-
-                if (customProxyUrl && customProxyUrl.trim()) {
-                    endpoint = customProxyUrl.trim();
-                    if (apiKey) {
-                        headers["Authorization"] = `Bearer ${apiKey}`;
-                        headers["x-goog-api-key"] = apiKey;
-                    }
-                } else {
-                    const method = supportsStreaming ? 'streamGenerateContent?alt=sse' : 'generateContent';
-                    endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:${method}`;
-                    headers["x-goog-api-key"] = apiKey;
-                }
-
-                const isThinkingModel = model.includes('3.6') || model.includes('3.7') || model.includes('pro');
-                let payload = buildPayload(isThinkingModel);
-
-                let response = await fetch(endpoint, {
-                    method: "POST",
-                    headers,
-                    signal: controller.signal,
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok && response.status === 400 && isThinkingModel) {
-                    payload = buildPayload(false);
-                    response = await fetch(endpoint, {
-                        method: "POST",
-                        headers,
-                        signal: controller.signal,
-                        body: JSON.stringify(payload)
-                    });
-                }
-
-                if (!response.ok && (response.status === 429 || response.status === 503 || response.status === 404)) {
-                    continue;
-                }
-
-                if (!response.ok) {
-                    const errData = await response.json().catch(() => ({}));
-                    const errMsg = errData.error?.message || `HTTP ${response.status}: ${response.statusText}`;
-                    lastError = new Error(errMsg);
-                    continue;
-                }
-
-                // Jika streaming didukung dan response body tersedia
-                if (supportsStreaming && response.body) {
-                    let accumulated = '';
-                    const reader = response.body.getReader();
-                    const decoder = new TextDecoder('utf-8');
-
-                    try {
-                        while (true) {
-                            const { done, value } = await reader.read();
-                            if (done) break;
-                            if (tracker) tracker.markFirstToken();
-
-                            const chunkStr = decoder.decode(value, { stream: true });
-                            const lines = chunkStr.split('\n');
-
-                            for (const line of lines) {
-                                const trimmed = line.trim();
-                                if (trimmed.startsWith('data: ')) {
-                                    try {
-                                        const parsedSse = JSON.parse(trimmed.slice(6));
-                                        const textDelta = parsedSse.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                                        if (textDelta) {
-                                            accumulated += textDelta;
-                                            const preview = ResponseParser.extractStreamingPreview(accumulated);
-                                            onStreamChunk({ partialReply: preview, rawText: accumulated, isDone: false });
-                                        }
-                                    } catch (_) {}
-                                }
-                            }
-                        }
-                    } finally {
-                        reader.releaseLock();
-                    }
-
-                    if (accumulated) {
-                        if (onStreamChunk) {
-                            onStreamChunk({ partialReply: ResponseParser.extractStreamingPreview(accumulated), rawText: accumulated, isDone: true });
-                        }
-                        return ResponseParser.parse(accumulated, activeBrand);
-                    }
-                }
-
-                const result = await response.json();
-                const textContent = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!textContent) continue;
-
-                return ResponseParser.parse(textContent, activeBrand);
-            } catch (err) {
-                lastError = err;
-            } finally {
-                clearTimeout(timeoutId);
-            }
-        }
-
-        throw lastError || new Error("Semua model AI sedang sibuk atau mengalami batas kuota. Silakan coba sesaat lagi.");
+    // Provider calls go through the backend: API keys, model allowlist, output validation and logging live server-side.
+    generateViaServer: async ({ provider, model, systemPrompt, inputText, imagePart, activeBrand, responseMode }) => {
+        const image = imagePart?.inlineData?.data
+            ? { mimeType: imagePart.inlineData.mimeType || 'image/jpeg', data: imagePart.inlineData.data }
+            : null;
+        const res = await AiApi.generate({
+            provider,
+            model,
+            systemPrompt,
+            userText: AIService.buildUserText({ inputText, hasImage: Boolean(image), activeBrand }),
+            image,
+            responseMode
+        });
+        const normalized = ResponseParser.normalizeOutput(res.data.output, activeBrand);
+        return { ...normalized, generationId: res.data.generationId, model: res.data.model };
     }
 };
+

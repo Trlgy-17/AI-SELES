@@ -1,22 +1,22 @@
 // File: src/components/common/FormField.jsx
 import React from 'react';
 
-export const FormField = ({ label, children, error, helperText, required = false }) => {
+export const FormField = ({ label, htmlFor, children, error, helperText, required = false, className = '' }) => {
     return (
-        <div className="space-y-1.5 text-left">
+        <div className={`space-y-1.5 text-left ${className}`}>
             {label && (
-                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400">
-                    {label} {required && <span className="text-rose-400">*</span>}
+                <label htmlFor={htmlFor} className="block text-label font-medium text-fg-2">
+                    {label} {required && <span className="text-danger" aria-hidden="true">*</span>}
                 </label>
             )}
             {children}
             {error && (
-                <p className="text-xs text-rose-400 font-medium" role="alert">
+                <p className="text-label text-danger" role="alert">
                     {error}
                 </p>
             )}
             {helperText && !error && (
-                <p className="text-[11px] text-zinc-500">
+                <p className="text-caption text-fg-muted">
                     {helperText}
                 </p>
             )}

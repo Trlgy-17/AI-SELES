@@ -1,6 +1,15 @@
 // File: src/components/modules/EstimatorCalculator.jsx
 import React, { useState, useMemo } from 'react';
-import { Icons } from '../Icons.jsx';
+import { createPortal } from 'react-dom';
+import {
+    CookingPot, BedDouble, Sofa, Hammer, Calculator, Home, Building2, Info, Truck, Copy, Check, FileDown, Send, ChevronUp
+} from 'lucide-react';
+import { FormField } from '../common/FormField.jsx';
+import { Button } from '../ui/Button.jsx';
+import { Input, Select } from '../ui/Input.jsx';
+import { Panel, Badge, Chip, SelectableCard } from '../ui/Surface.jsx';
+import { Modal } from '../ui/Modal.jsx';
+import { cn } from '../../js/utils/cn.js';
 import { 
     ESTIMATOR_CATEGORIES,
     KAMAR_SET_ITEMS,
@@ -210,140 +219,185 @@ export const EstimatorCalculator = ({
                 projectType: `${category.replace(/_/g, ' ')} (${material} ${style})`,
                 notes: `Estimasi RAB: Rp ${estimate.grandTotal.toLocaleString('id-ID')} (${estimate.regionLabel})`
             });
-            showToast?.("Hasil estimasi berhasil dimasukkan ke Sales Ary Workspace!");
+            showToast?.("Hasil estimasi berhasil dimasukkan ke Sales AI.");
         }
     };
 
-    return (
-        <div className="space-y-6 animate-fade-in">
-            {/* Header & Region Switcher */}
-            <div className="bg-[#15151a] p-5 md:p-6 rounded-3xl border border-[#26262d] shadow-xl space-y-4">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xl md:text-2xl">🧮</span>
-                            <h2 className="serif-font text-lg md:text-xl font-bold text-white">
-                                Kalkulator Estimasi Biaya Interior (Master RAB 2026)
-                            </h2>
-                        </div>
-                        <p className="text-xs text-zinc-400 mt-1">
-                            Standar Perhitungan Resmi: <span className="text-[#c5a059] font-semibold">PL DK</span> (Dalam Kota) • <span className="text-[#c5a059] font-semibold">PL LK</span> (Luar Kota) • <span className="text-[#c5a059] font-semibold">PL INT SVY</span> (Rumus Hitungan Putra Corporation).
-                        </p>
-                    </div>
 
-                    {/* Region Selector Pill: PL DK vs PL LK */}
-                    <div className="flex flex-col sm:flex-row w-full sm:w-auto p-1 bg-[#101014] rounded-2xl border border-[#2e2e38] gap-1">
-                        <button
-                            type="button"
-                            onClick={() => setRegion('dalam_kota')}
-                            className={`px-4 py-2.5 sm:py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 min-h-[44px] sm:min-h-0 touch-manipulation active:scale-95 ${
-                                region === 'dalam_kota'
-                                    ? 'bg-[#c5a059] text-black shadow-md font-black'
-                                    : 'text-zinc-400 hover:text-white'
-                            }`}
-                        >
-                            <span>🏠</span>
-                            <span>PL DK (Dalam Kota: Bandung & Tasik)</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setRegion('luar_kota')}
-                            className={`px-4 py-2.5 sm:py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 min-h-[44px] sm:min-h-0 touch-manipulation active:scale-95 ${
-                                region === 'luar_kota'
-                                    ? 'bg-[#c5a059] text-black shadow-md font-black'
-                                    : 'text-zinc-400 hover:text-white'
-                            }`}
-                        >
-                            <span>🏙️</span>
-                            <span>PL LK (Luar Kota: Jabodetabek, Jateng, Jatim)</span>
-                        </button>
-                    </div>
-                </div>
+    const [showSummarySheet, setShowSummarySheet] = useState(false);
+    const formatRp = (n) => `Rp ${Number(n || 0).toLocaleString('id-ID')}`;
+    const subItems = category === 'KAMAR_SET' ? KAMAR_SET_ITEMS : (category === 'LIVING_ROOM' ? LIVING_ROOM_ITEMS : SIPIL_BENGKEL_ITEMS);
+    const showMaterial = category !== 'SIPIL_BENGKEL' && subItem !== 'RANGKA_DIPAN_TINGKAT' && subItem !== 'SOFA';
+    const showStyle = category !== 'SIPIL_BENGKEL' && subItem !== 'RANGKA_DIPAN_TINGKAT' && subItem !== 'WALLPANEL_KACA';
+    let step = 0;
+    const nextStep = () => ++step;
 
-                {/* Sub-banner: Rule Info */}
-                <div className="p-3 bg-[#111116] rounded-xl border border-[#26262d] flex flex-wrap items-center justify-between text-[11px] text-zinc-400 gap-2">
-                    <div className="flex items-center gap-2">
-                        <span className="text-[#c5a059]">📌</span>
-                        <span>
-                            {region === 'dalam_kota' 
-                                ? 'Wilayah PL DK: Minimal order Rp 10.000.000,- GRATIS Ongkir Bandung & Tasikmalaya (Order < 10jt: Ongkir Rp 500rb).'
-                                : 'Wilayah PL LK: Minimal order Rp 15.000.000,- GRATIS Ongkir Jabodetabek & sekitarnya (Order < 15jt: Ongkir Rp 500rb).'
-                            }
-                        </span>
-                    </div>
-                    <span className="text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                        100% Bebas Biaya Survei & Desain 3D
-                    </span>
-                </div>
-            </div>
-
-            {/* 4 Master Category Selector Tabs (Area Kitchen Set, Area Kamar Set, Area Living Room, Sipil & Bengkel Las) */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-                {ESTIMATOR_CATEGORIES.map((cat) => (
-                    <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => handleCategoryChange(cat.id)}
-                        className={`p-3.5 rounded-2xl border text-left transition-all min-h-[58px] touch-manipulation active:scale-95 ${
-                            category === cat.id
-                                ? 'bg-[#c5a059]/20 border-[#c5a059] text-white shadow-lg shadow-[#c5a059]/10 ring-1 ring-[#c5a059]'
-                                : 'bg-[#15151a] text-zinc-400 border-[#26262d] hover:border-zinc-600 hover:text-zinc-200'
-                        }`}
-                    >
-                        <div className="flex items-center gap-2">
-                            <span className="text-lg">{cat.icon}</span>
-                            <span className="text-xs sm:text-sm font-bold text-zinc-100">{cat.name}</span>
-                        </div>
-                        <div className="text-[10px] text-zinc-400 mt-1 line-clamp-1">{cat.description}</div>
-                    </button>
-                ))}
-            </div>
-
-            {/* Sub-item Switcher for KAMAR_SET, LIVING_ROOM, and SIPIL_BENGKEL */}
-            {category !== 'KITCHEN_SET' && (
-                <div className="bg-[#15151a] p-3 rounded-2xl border border-[#26262d] flex items-center gap-2 overflow-x-auto scrollbar-thin">
-                    <span className="text-[11px] font-bold text-[#c5a059] uppercase tracking-wider px-2 whitespace-nowrap">
-                        Pilih Item:
-                    </span>
-                    {(category === 'KAMAR_SET' ? KAMAR_SET_ITEMS : (category === 'LIVING_ROOM' ? LIVING_ROOM_ITEMS : SIPIL_BENGKEL_ITEMS)).map((item) => (
-                        <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => {
-                                setSubItem(item.id);
-                                if (item.id === 'LEMARI_WARDROBE') setT(2.8);
-                                else if (item.id === 'BACKDROP_TV') setT(2.4);
-                            }}
-                            className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 min-h-[40px] touch-manipulation active:scale-95 ${
-                                subItem === item.id
-                                    ? 'bg-[#c5a059] text-black border-[#c5a059] shadow-md font-bold'
-                                    : 'bg-[#1c1c24] text-zinc-400 border-[#2e2e38] hover:text-zinc-200 hover:border-zinc-500'
-                            }`}
-                        >
-                            <span>{item.icon}</span>
-                            <span>{item.name}</span>
-                            <span className="text-[10px] opacity-75 font-mono">({item.unit})</span>
-                        </button>
-                    ))}
+    const renderSummary = (inSheet = false) => (
+        <div className="flex flex-col">
+            {!inSheet && (
+                <div className="flex items-center justify-between gap-2 border-b border-border px-5 py-3.5">
+                    <h2 className="text-h3 font-semibold text-fg">Ringkasan estimasi</h2>
+                    <Badge variant="neutral">{region === 'dalam_kota' ? 'PL DK' : 'PL LK'}</Badge>
                 </div>
             )}
+            <div className={cn('space-y-2.5', inSheet ? 'pb-2' : 'px-5 py-4')}>
+                {estimate.itemBreakdown.map((item, idx) => (
+                    <div key={idx} className="flex items-start justify-between gap-3 text-body-sm">
+                        <div className="min-w-0">
+                            <div className="text-fg-2">{item.label}</div>
+                            {item.detail && <div className="text-caption text-fg-muted">{item.detail}</div>}
+                        </div>
+                        <div className="shrink-0 font-medium text-fg tabular">{formatRp(item.amount)}</div>
+                    </div>
+                ))}
+                <div className="my-1 h-px bg-border" />
+                <div className="flex items-center justify-between text-body-sm">
+                    <span className="text-fg-3">Subtotal produksi</span>
+                    <span className="text-fg-2 tabular">{formatRp(estimate.subtotal)}</span>
+                </div>
+                <div className="flex items-center justify-between text-body-sm">
+                    <span className="flex items-center gap-1.5 text-fg-3">
+                        <Truck size={14} aria-hidden="true" /> Ongkos kirim
+                    </span>
+                    {estimate.isFreeOngkir ? (
+                        <span className="font-medium text-emerald-400">Gratis</span>
+                    ) : (
+                        <span className="text-amber-400 tabular">{formatRp(estimate.ongkirCost)}</span>
+                    )}
+                </div>
+                {!estimate.isFreeOngkir && (
+                    <p className="text-right text-caption text-fg-muted">
+                        Gratis ongkir untuk order di atas Rp {(estimate.minFreeOngkir / 1000000).toFixed(0)} juta
+                    </p>
+                )}
+            </div>
+            <div className={cn('border-t border-border', inSheet ? 'pt-4' : 'px-5 py-4')}>
+                <div className="flex items-end justify-between gap-3">
+                    <div>
+                        <div className="text-label font-medium text-fg-3">Estimasi total</div>
+                        <div className="mt-0.5 text-h1 font-semibold tracking-tight text-fg tabular" aria-live="polite">{formatRp(estimate.grandTotal)}</div>
+                    </div>
+                    <span className="pb-1 text-caption text-emerald-400">Survei & 3D gratis</span>
+                </div>
+                <div className="mt-4 space-y-2">
+                    <Button variant="primary" className="w-full" icon={copied ? Check : Copy} onClick={handleCopy}>
+                        {copied ? 'Penawaran disalin' : 'Salin penawaran WhatsApp'}
+                    </Button>
+                    <div className={cn('grid gap-2', onApplyToAI ? 'grid-cols-2' : 'grid-cols-1')}>
+                        <Button variant="secondary" icon={FileDown} onClick={handleExportPDF} loading={isExportingPDF}>
+                            {isExportingPDF ? 'Membuat…' : 'Ekspor PDF'}
+                        </Button>
+                        {onApplyToAI && (
+                            <Button variant="secondary" icon={Send} onClick={handleSendToAI}>
+                                Pakai di Sales AI
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 
-            {/* Main Form & Calculation Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* SISI KIRI: INPUT PARAMETER */}
-                <div className="lg:col-span-7 space-y-5 bg-[#15151a] p-6 md:p-8 rounded-3xl border border-[#26262d] shadow-xl">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-[#c5a059] pb-3 border-b border-[#26262d] flex items-center justify-between">
-                        <span>
-                            {category === 'KITCHEN_SET' ? '1. Spesifikasi All-in-One Kitchen Set' : `1. Spesifikasi Material & Dimensi (${subItem?.replace(/_/g, ' ')})`}
+    return (
+        <div className="space-y-5 animate-fade-in">
+            {/* Category + region */}
+            <Panel className="space-y-4">
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                    <div role="tablist" aria-label="Kategori estimasi" className="-mx-1 flex gap-1 overflow-x-auto px-1 scrollbar-none">
+                        {ESTIMATOR_CATEGORIES.map((cat) => {
+                            const Icon = CATEGORY_ICONS[cat.id] || Calculator;
+                            const selected = category === cat.id;
+                            return (
+                                <button
+                                    key={cat.id}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={selected}
+                                    onClick={() => handleCategoryChange(cat.id)}
+                                    title={cat.description}
+                                    className={cn(
+                                        'inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-sm px-3.5 text-body-sm font-medium transition-colors duration-150 sm:min-h-0 sm:h-9',
+                                        selected ? 'bg-primary-subtle text-primary-text' : 'text-fg-3 hover:bg-surface-hover hover:text-fg'
+                                    )}
+                                >
+                                    <Icon size={16} aria-hidden="true" />
+                                    {cat.name.replace(/^Area\s+/i, '')}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Region: PL DK vs PL LK */}
+                    <div role="radiogroup" aria-label="Wilayah harga" className="flex flex-col sm:flex-row gap-1 rounded-md border border-border bg-surface-2 p-1">
+                        {[
+                            { id: 'dalam_kota', label: 'PL DK', hint: 'Bandung & Tasik', icon: Home },
+                            { id: 'luar_kota', label: 'PL LK', hint: 'Jabodetabek, Jateng, Jatim', icon: Building2 }
+                        ].map((r) => (
+                            <button
+                                key={r.id}
+                                type="button"
+                                role="radio"
+                                aria-checked={region === r.id}
+                                onClick={() => setRegion(r.id)}
+                                className={cn(
+                                    'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xs px-3 text-body-sm font-medium transition-colors duration-150 sm:min-h-0 sm:h-8',
+                                    region === r.id ? 'bg-surface-3 text-fg shadow-sm ring-1 ring-border-strong' : 'text-fg-3 hover:text-fg'
+                                )}
+                            >
+                                <r.icon size={14} className={region === r.id ? 'text-primary-text' : ''} aria-hidden="true" />
+                                <span>{r.label}</span>
+                                <span className="text-caption text-fg-muted">{r.hint}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-caption text-fg-3">
+                    <span className="flex items-start gap-1.5">
+                        <Info size={14} className="mt-px shrink-0 text-fg-muted" aria-hidden="true" />
+                        {region === 'dalam_kota'
+                            ? 'Wilayah PL DK: Minimal order Rp 10.000.000,- GRATIS Ongkir Bandung & Tasikmalaya (Order < 10jt: Ongkir Rp 500rb).'
+                            : 'Wilayah PL LK: Minimal order Rp 15.000.000,- GRATIS Ongkir Jabodetabek & sekitarnya (Order < 15jt: Ongkir Rp 500rb).'}
+                    </span>
+                    <Badge variant="success">Survei & desain 3D gratis</Badge>
+                </div>
+
+                {category !== 'KITCHEN_SET' && (
+                    <div className="border-t border-border pt-3">
+                        <div className="mb-2 text-label font-medium text-fg-2" id="sub-item-label">Item</div>
+                        <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 scrollbar-none" role="group" aria-labelledby="sub-item-label">
+                            {subItems.map((item) => (
+                                <Chip
+                                    key={item.id}
+                                    active={subItem === item.id}
+                                    onClick={() => {
+                                        setSubItem(item.id);
+                                        if (item.id === 'LEMARI_WARDROBE') setT(2.8);
+                                        else if (item.id === 'BACKDROP_TV') setT(2.4);
+                                    }}
+                                >
+                                    {item.name}
+                                    <span className="text-caption text-fg-muted">{item.unit}</span>
+                                </Chip>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </Panel>
+
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
+                {/* Configuration */}
+                <Panel padded={false} className="divide-y divide-border">
+                    <div className="flex items-center justify-between gap-2 px-4 py-3 sm:px-5">
+                        <span className="text-body-sm font-medium text-fg">
+                            {category === 'KITCHEN_SET' ? 'Kitchen set all-in-one' : (subItems.find((i) => i.id === subItem)?.name || subItem?.replace(/_/g, ' '))}
                         </span>
-                        <span className="text-[11px] text-zinc-400 font-normal lowercase">{estimate.regionLabel}</span>
-                    </h3>
+                        <span className="text-caption text-fg-muted">{estimate.regionLabel}</span>
+                    </div>
 
-                    {/* Material Selector (Tidak ditampilkan untuk Rangka Dipan & Sofa & Sipil/Bengkel) */}
-                    {category !== 'SIPIL_BENGKEL' && subItem !== 'RANGKA_DIPAN_TINGKAT' && subItem !== 'SOFA' && (
-                        <div>
-                            <label className="text-xs font-bold text-zinc-300 block mb-2">Bahan Dasar Utama</label>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {showMaterial && (
+                        <Section step={nextStep()} title="Material">
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                                 {[
                                     { id: 'MULTIPLEKS', label: 'Multipleks 18mm', desc: 'Plywood Meranti Padat (Grade B)' },
                                     { id: 'BLOCKBOARD', label: 'Blockboard 18mm', desc: 'Kayu Lapis Standar (Grade C)' },
@@ -351,9 +405,11 @@ export const EstimatorCalculator = ({
                                     { id: 'PVC', label: 'PVC Board Waterproof', desc: '100% Anti Air & Anti Rayap' },
                                     { id: 'ALUMUNIUM', label: 'Alumunium ACP', desc: 'Kokoh, Higienis & Tahan Karat' }
                                 ].map((mat) => (
-                                    <button
+                                    <SelectableCard
                                         key={mat.id}
-                                        type="button"
+                                        selected={material === mat.id}
+                                        title={mat.label}
+                                        description={mat.desc}
                                         onClick={() => {
                                             setMaterial(mat.id);
                                             if (mat.id === 'ALUMUNIUM' && style !== 'SINGLE_LAYER' && style !== 'DOUBLE_LAYER') {
@@ -362,215 +418,113 @@ export const EstimatorCalculator = ({
                                                 setStyle('MINIMALIS');
                                             }
                                         }}
-                                        className={`p-3 rounded-2xl border text-left transition-all ${
-                                            material === mat.id
-                                                ? 'bg-[#c5a059]/15 border-[#c5a059] text-white shadow-sm ring-1 ring-[#c5a059]/50'
-                                                : 'bg-[#1b1b22] border-[#2e2e38] text-zinc-400 hover:text-zinc-200'
-                                        }`}
-                                    >
-                                        <div className="text-xs font-bold text-zinc-100">{mat.label}</div>
-                                        <div className="text-[10px] text-zinc-400 mt-0.5">{mat.desc}</div>
-                                    </button>
+                                    />
                                 ))}
                             </div>
-                        </div>
+                        </Section>
                     )}
 
-                    {/* Model / Gaya Selector */}
-                    {category !== 'SIPIL_BENGKEL' && subItem !== 'RANGKA_DIPAN_TINGKAT' && subItem !== 'WALLPANEL_KACA' && (
-                        <div>
-                            <label className="text-xs font-bold text-zinc-300 block mb-2">Model Desain & Finishing</label>
+                    {showStyle && (
+                        <Section step={nextStep()} title="Model & finishing">
                             {material === 'ALUMUNIUM' ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                     {[
                                         { id: 'SINGLE_LAYER', label: 'Alumunium Single Layer', price: 'Rp 4.000.000 / m\'', desc: 'Visible frame kokoh & minimalis clean' },
                                         { id: 'DOUBLE_LAYER', label: 'Alumunium Double Layer', price: 'Rp 5.500.000 / m\'', desc: 'Double skin frameless mewah & solid' }
                                     ].map((st) => {
                                         const isSelected = style === st.id || (st.id === 'SINGLE_LAYER' && (style === 'MINIMALIS' || !style)) || (st.id === 'DOUBLE_LAYER' && (style === 'SEMI_KLASIK' || style === 'KLASIK' || style === 'INDUSTRIAL'));
                                         return (
-                                            <button
-                                                key={st.id}
-                                                type="button"
-                                                onClick={() => setStyle(st.id)}
-                                                className={`p-3 rounded-2xl border text-left transition-all ${
-                                                    isSelected
-                                                        ? 'bg-[#c5a059] text-black border-[#c5a059] shadow-sm font-black ring-1 ring-[#c5a059]'
-                                                        : 'bg-[#1b1b22] border-[#2e2e38] text-zinc-300 hover:text-white'
-                                                }`}
-                                            >
-                                                <div className="text-xs font-bold">{st.label}</div>
-                                                <div className={`text-[11px] font-mono mt-0.5 ${isSelected ? 'text-black/80 font-bold' : 'text-[#c5a059]'}`}>{st.price}</div>
-                                                <div className={`text-[10px] mt-0.5 ${isSelected ? 'text-black/70' : 'text-zinc-500'}`}>{st.desc}</div>
-                                            </button>
+                                            <SelectableCard key={st.id} selected={isSelected} onClick={() => setStyle(st.id)} title={st.label} description={st.desc} meta={st.price} />
                                         );
                                     })}
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                                     {[
                                         { id: 'MINIMALIS', label: 'Minimalis Modern' },
                                         { id: 'SEMI_KLASIK', label: 'Semi Klasik' },
                                         { id: 'KLASIK', label: 'Klasik Profil Mewah' },
                                         { id: 'INDUSTRIAL', label: 'Industrial (Besi)' }
                                     ].map((st) => (
-                                        <button
-                                            key={st.id}
-                                            type="button"
-                                            onClick={() => setStyle(st.id)}
-                                            className={`p-2.5 rounded-xl border text-center text-xs font-bold transition-all ${
-                                                style === st.id
-                                                    ? 'bg-[#c5a059] text-black border-[#c5a059] shadow-sm font-black'
-                                                    : 'bg-[#1b1b22] border-[#2e2e38] text-zinc-300 hover:text-white'
-                                            }`}
-                                        >
-                                            {st.label}
-                                        </button>
+                                        <SelectableCard key={st.id} selected={style === st.id} onClick={() => setStyle(st.id)} title={st.label} />
                                     ))}
                                 </div>
                             )}
-                        </div>
+                        </Section>
                     )}
 
-                    {/* ========================================================= */}
-                    {/* BAGIAN 1: KITCHEN SET UNIFIED (SEMUA ITEM DISATUKAN) */}
-                    {/* ========================================================= */}
                     {category === 'KITCHEN_SET' ? (
-                        <div className="space-y-4 pt-2">
-                            {/* 1A. Kabinet Dapur (Cabinet Bawah & Cabinet Atas) */}
-                            <div className="p-4 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-3">
-                                <div className="text-xs font-bold text-[#c5a059] flex items-center justify-between">
-                                    <span className="flex items-center gap-1.5">
-                                        <span>🍳</span>
-                                        <span>Kabinet Kitchen Set (Cabinet Bawah & Cabinet Atas)</span>
-                                    </span>
-                                    <span className="text-[10px] text-zinc-400 font-mono">Rumus: m' x Harga</span>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {/* Cabinet Bawah */}
-                                    <div className="p-3 bg-[#121216] rounded-xl border border-[#26262d] space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-[11px] font-bold text-zinc-200">Cabinet Bawah</label>
-                                            <span className="text-[10px] text-zinc-500 font-mono">Meter Lari (m')</span>
-                                        </div>
-                                        <div className="flex items-center">
-                                            <input
-                                                type="number"
-                                                step="0.1"
-                                                min="0"
-                                                value={cabinetBawah}
-                                                onChange={(e) => setCabinetBawah(parseFloat(e.target.value) >= 0 ? parseFloat(e.target.value) : 0)}
-                                                className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-base sm:text-sm text-white font-mono focus:border-[#c5a059] focus:outline-none min-h-[44px]"
-                                                placeholder="Contoh: 2.0"
-                                            />
-                                            <span className="text-xs text-zinc-500 ml-2 font-mono">m'</span>
-                                        </div>
-                                        <label className="flex items-center gap-2 pt-1 cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={isKusenBawahOnly}
-                                                onChange={(e) => setIsKusenBawahOnly(e.target.checked)}
-                                                className="w-4 h-4 accent-[#c5a059] rounded"
-                                            />
-                                            <span className="text-[11px] text-zinc-300">
-                                                Hanya Pintu Kusen (Meja Cor Semen)
-                                            </span>
-                                        </label>
+                        <>
+                            <Section step={nextStep()} title="Dimensi kabinet" hint="Rumus: m' × harga">
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div className="space-y-2.5">
+                                        <NumberField
+                                            id="cabinet-bawah"
+                                            label="Cabinet bawah"
+                                            unit="m'"
+                                            step="0.1"
+                                            min="0"
+                                            value={cabinetBawah}
+                                            onChange={(e) => setCabinetBawah(parseFloat(e.target.value) >= 0 ? parseFloat(e.target.value) : 0)}
+                                            placeholder="2.0"
+                                        />
+                                        <CheckboxRow
+                                            checked={isKusenBawahOnly}
+                                            onChange={(e) => setIsKusenBawahOnly(e.target.checked)}
+                                            label="Hanya pintu kusen (meja cor semen)"
+                                        />
                                     </div>
-
-                                    {/* Cabinet Atas */}
-                                    <div className="p-3 bg-[#121216] rounded-xl border border-[#26262d] space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-[11px] font-bold text-zinc-200">Cabinet Atas</label>
-                                            <span className="text-[10px] text-zinc-500 font-mono">Meter Lari (m')</span>
-                                        </div>
-                                        <div className="flex items-center">
-                                            <input
-                                                type="number"
-                                                step="0.1"
-                                                min="0"
-                                                value={cabinetAtas}
-                                                onChange={(e) => setCabinetAtas(parseFloat(e.target.value) >= 0 ? parseFloat(e.target.value) : 0)}
-                                                className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-base sm:text-sm text-white font-mono focus:border-[#c5a059] focus:outline-none min-h-[44px]"
-                                                placeholder="Contoh: 2.0"
-                                            />
-                                            <span className="text-xs text-zinc-500 ml-2 font-mono">m'</span>
-                                        </div>
-                                        <div className="pt-1">
-                                            <label className="text-[10px] text-zinc-400 block mb-1">Kabinet Plafon Tingkat 2:</label>
-                                            <select
-                                                value={plafonOption}
-                                                onChange={(e) => setPlafonOption(e.target.value)}
-                                                className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-lg px-2 py-1 text-xs text-white focus:border-[#c5a059] focus:outline-none"
-                                            >
-                                                <option value="none">Tanpa Plafon Tingkat 2</option>
+                                    <div className="space-y-2.5">
+                                        <NumberField
+                                            id="cabinet-atas"
+                                            label="Cabinet atas"
+                                            unit="m'"
+                                            step="0.1"
+                                            min="0"
+                                            value={cabinetAtas}
+                                            onChange={(e) => setCabinetAtas(parseFloat(e.target.value) >= 0 ? parseFloat(e.target.value) : 0)}
+                                            placeholder="2.0"
+                                        />
+                                        <FormField label="Kabinet plafon tingkat 2" htmlFor="plafon-option">
+                                            <Select id="plafon-option" value={plafonOption} onChange={(e) => setPlafonOption(e.target.value)}>
+                                                <option value="none">Tanpa plafon tingkat 2</option>
                                                 <option value="lt_50">Tinggi &lt; 50cm</option>
                                                 <option value="50_to_70">Tinggi 50 - 70cm</option>
-                                            </select>
-                                        </div>
+                                            </Select>
+                                        </FormField>
                                     </div>
                                 </div>
-                            </div>
+                            </Section>
 
-                            {/* 1B. Top Table (Countertop) */}
-                            <div className="p-4 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-2.5">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-xs font-bold text-[#c5a059] flex items-center gap-1.5">
-                                        <span>🍳</span>
-                                        <span>Top Table (Countertop Meja Dapur)</span>
-                                    </label>
-                                    <span className="text-[10px] text-zinc-400">Harga Resmi Permeter</span>
-                                </div>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <Section step={nextStep()} title="Countertop" hint="Harga resmi per meter">
+                                <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
                                     {[
                                         { id: 'none', label: 'Tanpa Top Table', price: 'Rp 0' },
                                         { id: 'AICA', label: 'Aica', price: 'Rp 1.400.000/m\'' },
                                         { id: 'QUADRA', label: 'Quadra Sintered', price: 'Rp 2.300.000/m\'' },
                                         { id: 'GRANIT', label: 'Granit Alam / Nero', price: 'Rp 2.800.000/m\'' }
                                     ].map((tt) => (
-                                        <button
-                                            key={tt.id}
-                                            type="button"
-                                            onClick={() => setTopTableOption(tt.id)}
-                                            className={`p-2 rounded-xl border text-left transition-all ${
-                                                topTableOption === tt.id
-                                                    ? 'bg-[#c5a059]/20 border-[#c5a059] text-white shadow-sm ring-1 ring-[#c5a059]'
-                                                    : 'bg-[#121216] border-[#2e2e38] text-zinc-400 hover:text-zinc-200'
-                                            }`}
-                                        >
-                                            <div className="text-xs font-bold text-zinc-200">{tt.label}</div>
-                                            <div className="text-[10px] text-[#c5a059] font-mono mt-0.5">{tt.price}</div>
-                                        </button>
+                                        <SelectableCard key={tt.id} selected={topTableOption === tt.id} onClick={() => setTopTableOption(tt.id)} title={tt.label} description={tt.price} />
                                     ))}
                                 </div>
                                 {topTableOption !== 'none' && (
-                                    <div className="pt-1 flex items-center gap-2">
-                                        <span className="text-[11px] text-zinc-400 whitespace-nowrap">Panjang Top Table:</span>
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            min="0"
-                                            value={topTableLength}
-                                            onChange={(e) => setTopTableLength(e.target.value)}
-                                            placeholder={`Auto (${cabinetBawah || p} m')`}
-                                            className="w-32 bg-[#111115] border border-[#2e2e38] rounded-xl px-2.5 py-1 text-xs text-white font-mono focus:border-[#c5a059] focus:outline-none"
-                                        />
-                                        <span className="text-xs text-zinc-500 font-mono">m'</span>
-                                        <span className="text-[10px] text-zinc-500 ml-1">Kosongkan jika sama dengan cabinet bawah</span>
-                                    </div>
+                                    <NumberField
+                                        id="top-table-length"
+                                        className="mt-3 sm:max-w-xs"
+                                        label="Panjang top table"
+                                        unit="m'"
+                                        step="0.1"
+                                        min="0"
+                                        value={topTableLength}
+                                        onChange={(e) => setTopTableLength(e.target.value)}
+                                        placeholder={`Auto (${cabinetBawah || p} m')`}
+                                        helper="Kosongkan jika sama dengan cabinet bawah"
+                                    />
                                 )}
-                            </div>
+                            </Section>
 
-                            {/* 1C. Backsplash (Dinding Dapur) */}
-                            <div className="p-4 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-2.5">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-xs font-bold text-[#c5a059] flex items-center gap-1.5">
-                                        <span>🧱</span>
-                                        <span>Backsplash (Dinding Dapur)</span>
-                                    </label>
-                                    <span className="text-[10px] text-zinc-400">Harga Resmi Permeter</span>
-                                </div>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <Section step={nextStep()} title="Backsplash" hint="Harga resmi per meter">
+                                <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
                                     {[
                                         { id: 'none', label: 'Tanpa Backsplash', price: 'Rp 0' },
                                         { id: 'AICA', label: 'Aica Splash Panel', price: 'Rp 1.400.000/m\'' },
@@ -580,676 +534,391 @@ export const EstimatorCalculator = ({
                                         { id: 'MOZAIC', label: 'Mozaik Tile', price: region === 'dalam_kota' ? 'Rp 1.100.000/m\'' : 'Rp 1.500.000/m\'' },
                                         { id: 'CERMIN_GREY', label: 'Cermin Bronze/Grey', price: 'Rp 1.850.000/m\'' }
                                     ].map((bs) => (
-                                        <button
-                                            key={bs.id}
-                                            type="button"
-                                            onClick={() => setBacksplashOption(bs.id)}
-                                            className={`p-2 rounded-xl border text-left transition-all ${
-                                                backsplashOption === bs.id
-                                                    ? 'bg-[#c5a059]/20 border-[#c5a059] text-white shadow-sm ring-1 ring-[#c5a059]'
-                                                    : 'bg-[#121216] border-[#2e2e38] text-zinc-400 hover:text-zinc-200'
-                                            }`}
-                                        >
-                                            <div className="text-xs font-bold text-zinc-200">{bs.label}</div>
-                                            <div className="text-[10px] text-[#c5a059] font-mono mt-0.5">{bs.price}</div>
-                                        </button>
+                                        <SelectableCard key={bs.id} selected={backsplashOption === bs.id} onClick={() => setBacksplashOption(bs.id)} title={bs.label} description={bs.price} />
                                     ))}
                                 </div>
                                 {backsplashOption !== 'none' && (
-                                    <div className="pt-1 flex items-center gap-2">
-                                        <span className="text-[11px] text-zinc-400 whitespace-nowrap">Panjang Backsplash:</span>
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            min="0"
-                                            value={backsplashLength}
-                                            onChange={(e) => setBacksplashLength(e.target.value)}
-                                            placeholder={`Auto (${cabinetBawah || p} m')`}
-                                            className="w-32 bg-[#111115] border border-[#2e2e38] rounded-xl px-2.5 py-1 text-xs text-white font-mono focus:border-[#c5a059] focus:outline-none"
-                                        />
-                                        <span className="text-xs text-zinc-500 font-mono">m'</span>
-                                        <span className="text-[10px] text-zinc-500 ml-1">Kosongkan jika sama dengan cabinet bawah</span>
-                                    </div>
+                                    <NumberField
+                                        id="backsplash-length"
+                                        className="mt-3 sm:max-w-xs"
+                                        label="Panjang backsplash"
+                                        unit="m'"
+                                        step="0.1"
+                                        min="0"
+                                        value={backsplashLength}
+                                        onChange={(e) => setBacksplashLength(e.target.value)}
+                                        placeholder={`Auto (${cabinetBawah || p} m')`}
+                                        helper="Kosongkan jika sama dengan cabinet bawah"
+                                    />
                                 )}
-                            </div>
+                            </Section>
 
-                            {/* 1D. Mini Bar / Meja Island (Disatukan ke Kitchen Set - Rumus PL INT SVY: P : 0.6 x Harga) */}
-                            <div className="p-4 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-xs font-bold text-[#c5a059] flex items-center gap-1.5">
-                                        <span>🍸</span>
-                                        <span>Mini Bar / Meja Island (Kitchen Set)</span>
-                                    </label>
-                                    <span className="text-[10px] text-zinc-400 font-mono">Rumus PL INT SVY: P : 0.6 x Harga</span>
-                                </div>
-                                <div className="flex items-center">
-                                    <input
-                                        type="number"
+                            <Section step={nextStep()} title="Aksesoris dapur">
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <NumberField
+                                        id="mini-bar"
+                                        label="Mini bar / meja island"
+                                        unit="m'"
                                         step="0.1"
                                         min="0"
                                         value={miniBarLength}
                                         onChange={(e) => setMiniBarLength(parseFloat(e.target.value) >= 0 ? parseFloat(e.target.value) : 0)}
-                                        className="w-full bg-[#111115] border border-[#2e2e38] rounded-xl px-3 py-2 text-base sm:text-sm text-white font-mono focus:border-[#c5a059] focus:outline-none min-h-[44px]"
-                                        placeholder="0 (Isi jika memesan mini bar / meja island)"
+                                        placeholder="0"
+                                        helper="Rumus PL INT SVY: P : 0.6 × harga. Isi 0 jika tidak ada."
                                     />
-                                    <span className="text-xs text-zinc-500 ml-2 font-mono">m'</span>
-                                </div>
-                                <p className="text-[10px] text-zinc-500">
-                                    Isi 0 jika tidak ada penambahan mini bar / meja island di dapur.
-                                </p>
-                            </div>
-
-                            {/* 1E. Topi Bar, Box Elektronik & Hambalan (Disatukan ke Kitchen Set) */}
-                            <div className="p-4 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-3">
-                                <div className="text-xs font-bold text-[#c5a059] flex items-center gap-1.5">
-                                    <span>📦</span>
-                                    <span>Topi Bar, Box Elektronik & Hambalan Kitchen Set</span>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                                    {/* Topi Bar (P x Harga) */}
-                                    <div className="p-2.5 bg-[#121216] rounded-xl border border-[#26262d] space-y-1.5">
-                                        <label className="text-[11px] font-bold text-zinc-300 block">Topi Bar (m')</label>
-                                        <div className="flex items-center">
-                                            <input
-                                                type="number"
-                                                step="0.1"
-                                                min="0"
-                                                value={topiBarLength}
-                                                onChange={(e) => setTopiBarLength(parseFloat(e.target.value) || 0)}
-                                                className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-[#c5a059] focus:outline-none"
-                                                placeholder="0"
-                                            />
-                                            <span className="text-xs text-zinc-500 ml-1.5 font-mono">m'</span>
-                                        </div>
-                                        <div className="text-[9px] text-zinc-500">DK Rp 1.45jt/m' (Multipleks)</div>
-                                    </div>
-
-                                    {/* Box Elektronik */}
-                                    <div className="p-2.5 bg-[#121216] rounded-xl border border-[#26262d] space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-[11px] font-bold text-zinc-300 block">Box Elektronik (Kulkas/Oven)</label>
-                                            <span className="text-[10px] text-[#c5a059] font-mono">Rp {(boxUnitPrice / 1000000).toFixed(1)}jt/m</span>
-                                        </div>
-                                        <select
-                                            value={boxElektronikType}
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                setBoxElektronikType(val);
-                                                if (val !== 'none') {
-                                                    if (!boxP) setBoxP(0.8);
-                                                    if (!boxT) setBoxT(2.0);
-                                                }
-                                            }}
-                                            className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-lg px-2 py-1 text-xs text-white focus:border-[#c5a059] focus:outline-none"
-                                        >
-                                            <option value="none">Tanpa Box</option>
-                                            <option value="box_kulkas">Ada Box Kulkas / Oven</option>
-                                        </select>
+                                    <NumberField
+                                        id="topi-bar"
+                                        label="Topi bar"
+                                        unit="m'"
+                                        step="0.1"
+                                        min="0"
+                                        value={topiBarLength}
+                                        onChange={(e) => setTopiBarLength(parseFloat(e.target.value) || 0)}
+                                        placeholder="0"
+                                        helper="DK Rp 1.45jt/m' (Multipleks)"
+                                    />
+                                    <div className="space-y-3">
+                                        <FormField label="Box elektronik (kulkas/oven)" htmlFor="box-elektronik">
+                                            <Select
+                                                id="box-elektronik"
+                                                value={boxElektronikType}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    setBoxElektronikType(value);
+                                                    if (value !== 'none') {
+                                                        if (!boxP) setBoxP(0.8);
+                                                        if (!boxT) setBoxT(2.0);
+                                                    }
+                                                }}
+                                            >
+                                                <option value="none">Tanpa box</option>
+                                                <option value="box_kulkas">Ada box kulkas / oven</option>
+                                            </Select>
+                                        </FormField>
                                         {boxElektronikType !== 'none' && (
-                                            <div className="space-y-1.5 pt-1 border-t border-[#26262d]">
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <div>
-                                                        <label className="text-[10px] text-zinc-400 block">Panjang (m)</label>
-                                                        <div className="flex items-center">
-                                                            <input
-                                                                type="number"
-                                                                step="0.1"
-                                                                min="0"
-                                                                value={boxP}
-                                                                onChange={(e) => setBoxP(e.target.value === '' ? '' : parseFloat(e.target.value))}
-                                                                placeholder="0.8"
-                                                                className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded px-2 py-1 text-xs text-white font-mono focus:border-[#c5a059] focus:outline-none"
-                                                            />
-                                                            <span className="text-[10px] text-zinc-500 ml-1 font-mono">m</span>
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-[10px] text-zinc-400 block">Tinggi (m)</label>
-                                                        <div className="flex items-center">
-                                                            <input
-                                                                type="number"
-                                                                step="0.1"
-                                                                min="0"
-                                                                value={boxT}
-                                                                onChange={(e) => setBoxT(e.target.value === '' ? '' : parseFloat(e.target.value))}
-                                                                placeholder="2.0"
-                                                                className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded px-2 py-1 text-xs text-white font-mono focus:border-[#c5a059] focus:outline-none"
-                                                            />
-                                                            <span className="text-[10px] text-zinc-500 ml-1 font-mono">m</span>
-                                                        </div>
-                                                    </div>
+                                            <div className="space-y-3 rounded-sm border border-border bg-surface-2 p-3">
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <NumberField
+                                                        id="box-p"
+                                                        label="Panjang box"
+                                                        unit="m"
+                                                        step="0.1"
+                                                        min="0"
+                                                        value={boxP}
+                                                        onChange={(e) => setBoxP(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                                                    />
+                                                    <NumberField
+                                                        id="box-t"
+                                                        label="Tinggi box"
+                                                        unit="m"
+                                                        step="0.1"
+                                                        min="0"
+                                                        value={boxT}
+                                                        onChange={(e) => setBoxT(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                                                    />
                                                 </div>
-
-                                                <div className="flex items-center justify-between text-[10px] text-zinc-400 pt-0.5">
-                                                    <span>Qty Box:</span>
-                                                    <div className="flex items-center gap-1">
-                                                        <input
-                                                            type="number"
-                                                            min="1"
-                                                            value={boxQty}
-                                                            onChange={(e) => setBoxQty(parseInt(e.target.value, 10) || 1)}
-                                                            className="w-12 bg-[#1b1b22] border border-[#2e2e38] rounded px-1.5 py-0.5 text-xs text-white font-mono text-center"
-                                                        />
-                                                        <span className="text-zinc-500 text-[10px]">unit</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="text-[9px] leading-tight text-zinc-400 bg-[#17171e] p-1.5 rounded border border-[#26262d]">
-                                                    {(() => {
-                                                        const pVal = parseFloat(boxP) || 0;
-                                                        const tVal = parseFloat(boxT) || 0;
-                                                        if (pVal > 1 && tVal > 1) {
-                                                            return (
-                                                                <span className="text-emerald-400">
-                                                                    P &amp; T &gt; 1m → Dihitung P x T: <strong className="text-white font-mono">{(pVal * tVal).toFixed(2)}m²</strong>
-                                                                </span>
-                                                            );
-                                                        } else if (pVal < 1 && tVal < 1) {
-                                                            const maxVal = Math.max(pVal, tVal);
-                                                            return (
-                                                                <span className="text-amber-400">
-                                                                    P &amp; T &lt; 1m → Ambil tertinggi: <strong className="text-white font-mono">{maxVal.toFixed(2)}m'</strong>
-                                                                </span>
-                                                            );
-                                                        } else {
-                                                            const maxVal = Math.max(pVal, tVal);
-                                                            return (
-                                                                <span className="text-amber-400">
-                                                                    Salah satu &lt; 1m → Ambil terbesar: <strong className="text-white font-mono">{maxVal.toFixed(2)}m'</strong>
-                                                                </span>
-                                                            );
-                                                        }
-                                                    })()}
-                                                    <div className="text-zinc-500 mt-0.5">
-                                                        Tarif: Rp {boxUnitPrice.toLocaleString('id-ID')} (+100rb dr material)
-                                                    </div>
-                                                </div>
+                                                <NumberField
+                                                    id="box-qty"
+                                                    label="Jumlah box"
+                                                    unit="unit"
+                                                    min="1"
+                                                    value={boxQty}
+                                                    onChange={(e) => setBoxQty(parseInt(e.target.value, 10) || 1)}
+                                                    helper={`Tarif Rp ${boxUnitPrice.toLocaleString('id-ID')}: P & T > 1m dihitung P × T; selain itu memakai dimensi terbesar.`}
+                                                />
                                             </div>
                                         )}
                                     </div>
-
-                                    {/* Hambalan Floating */}
-                                    <div className="p-2.5 bg-[#121216] rounded-xl border border-[#26262d] space-y-1.5">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-[11px] font-bold text-zinc-300 block">Hambalan Floating (m')</label>
-                                            <span className="text-[10px] text-[#c5a059] font-mono">Rp 650rb/m'</span>
-                                        </div>
-                                        <div className="flex items-center">
-                                            <input
-                                                type="number"
-                                                step="0.1"
-                                                min="0"
-                                                value={hambalanLength}
-                                                onChange={(e) => setHambalanLength(parseFloat(e.target.value) >= 0 ? parseFloat(e.target.value) : 0)}
-                                                className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-[#c5a059] focus:outline-none"
-                                                placeholder="0"
-                                            />
-                                            <span className="text-xs text-zinc-500 ml-1.5 font-mono">m'</span>
-                                        </div>
-                                        <div className="text-[9px] text-zinc-500">Hitungan resmi permeter: Rp 650.000/m'</div>
+                                    <div className="space-y-2">
+                                        <NumberField
+                                            id="hambalan"
+                                            label="Hambalan floating"
+                                            unit="m'"
+                                            step="0.1"
+                                            min="0"
+                                            value={hambalanLength}
+                                            onChange={(e) => setHambalanLength(parseFloat(e.target.value) >= 0 ? parseFloat(e.target.value) : 0)}
+                                            placeholder="0"
+                                            helper="Harga resmi Rp 650.000 per meter lari"
+                                        />
                                         {parseFloat(hambalanLength) > 0 && (
-                                            <div className="text-[9.5px] text-[#c5a059] font-mono bg-[#17171e] px-1.5 py-0.5 rounded border border-[#26262d]">
-                                                {hambalanLength}m' x Rp 650.000 = Rp {Math.round(parseFloat(hambalanLength) * 650000).toLocaleString('id-ID')}
-                                            </div>
+                                            <p className="text-caption text-fg-muted tabular">
+                                                {hambalanLength}m' × Rp 650.000 = Rp {Math.round(parseFloat(hambalanLength) * 650000).toLocaleString('id-ID')}
+                                            </p>
                                         )}
                                     </div>
                                 </div>
-                            </div>
-                        </div>
+                            </Section>
+                        </>
                     ) : (
-                        /* ========================================================= */
-                        /* BAGIAN 2, 3, 4: KAMAR SET, LIVING ROOM, SIPIL/BENGKEL */
-                        /* ========================================================= */
-                        <div className="space-y-4 pt-2">
-                            {/* Ukuran Dimensi */}
-                            <div className="p-4 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-3">
-                                <div className="text-xs font-bold text-[#c5a059] flex items-center justify-between">
-                                    <span>2. Ukuran Dimensi & Parameter Hitungan</span>
-                                    <span className="text-[10px] text-zinc-400 font-mono">Standar PL INT SVY</span>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                    <div>
-                                        <label className="text-[11px] text-zinc-400 block mb-1 font-semibold">Panjang (P) / Meter</label>
-                                        <div className="flex items-center">
-                                            <input
-                                                type="number"
-                                                step="0.1"
-                                                min="0.5"
-                                                value={p}
-                                                onChange={(e) => setP(parseFloat(e.target.value) || 0)}
-                                                className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-base sm:text-sm text-white focus:border-[#c5a059] focus:outline-none min-h-[44px]"
-                                            />
-                                            <span className="text-xs text-zinc-500 ml-2">m</span>
-                                        </div>
-                                    </div>
-
+                        <>
+                            <Section step={nextStep()} title="Dimensi" hint="Standar PL INT SVY">
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                    <NumberField
+                                        id="dim-p"
+                                        label="Panjang (P)"
+                                        unit="m"
+                                        step="0.1"
+                                        min="0.5"
+                                        value={p}
+                                        onChange={(e) => setP(parseFloat(e.target.value) || 0)}
+                                    />
                                     {(subItem === 'LEMARI_WARDROBE' || subItem === 'BACKDROP_TV' || subItem === 'LEMARI_BAWAH_TANGGA' || subItem === 'PARTISI_BENCH' || subItem === 'WALLPANEL_KACA' || subItem === 'PAGAR') && (
-                                        <div>
-                                            <label className="text-[11px] text-zinc-400 block mb-1 font-semibold">Tinggi (T) / Meter</label>
-                                            <div className="flex items-center">
-                                                <input
-                                                    type="number"
-                                                    step="0.1"
-                                                    min="0.5"
-                                                    value={t}
-                                                    onChange={(e) => setT(parseFloat(e.target.value) || 0)}
-                                                    className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-base sm:text-sm text-white focus:border-[#c5a059] focus:outline-none min-h-[44px]"
-                                                />
-                                                <span className="text-xs text-zinc-500 ml-2">m</span>
-                                            </div>
-                                        </div>
+                                        <NumberField
+                                            id="dim-t"
+                                            label="Tinggi (T)"
+                                            unit="m"
+                                            step="0.1"
+                                            min="0.5"
+                                            value={t}
+                                            onChange={(e) => setT(parseFloat(e.target.value) || 0)}
+                                        />
                                     )}
-
                                     {(subItem === 'DIPAN_HEADBOARD' || subItem === 'CANOPI') && (
-                                        <div>
-                                            <label className="text-[11px] text-zinc-400 block mb-1 font-semibold">
-                                                {subItem === 'CANOPI' ? 'Lebar Kanopi (L) / Meter' : 'Lebar Ranjang (L) / Meter'}
-                                            </label>
-                                            <div className="flex items-center">
-                                                <input
-                                                    type="number"
-                                                    step="0.1"
-                                                    min="0.5"
-                                                    value={l}
-                                                    onChange={(e) => setL(parseFloat(e.target.value) || 0)}
-                                                    className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-base sm:text-sm text-white focus:border-[#c5a059] focus:outline-none min-h-[44px]"
-                                                />
-                                                <span className="text-xs text-zinc-500 ml-2">m</span>
-                                            </div>
-                                        </div>
+                                        <NumberField
+                                            id="dim-l"
+                                            label={subItem === 'CANOPI' ? 'Lebar kanopi (L)' : 'Lebar ranjang (L)'}
+                                            unit="m"
+                                            step="0.1"
+                                            min="0.5"
+                                            value={l}
+                                            onChange={(e) => setL(parseFloat(e.target.value) || 0)}
+                                        />
                                     )}
                                 </div>
-                            </div>
+                            </Section>
 
-                            {/* Opsi Khusus Sub-Item */}
                             {subItem === 'LEMARI_WARDROBE' && (
-                                <div className="p-4 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-2">
-                                    <label className="text-xs font-bold text-[#c5a059] block">Add-on Pintu Kaca / Cermin Wardrobe</label>
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <Section step={nextStep()} title="Pintu kaca / cermin">
+                                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                                         {[
                                             { id: 'none', label: 'Pintu HPL Kayu' },
                                             { id: 'KACA_POLOS', label: 'Kaca Polos' },
                                             { id: 'KACA_RIBEN', label: 'Kaca Riben' },
                                             { id: 'CERMIN_BRONZE_GREY', label: 'Cermin Bronze/Grey' }
                                         ].map((kaca) => (
-                                            <button
-                                                key={kaca.id}
-                                                type="button"
-                                                onClick={() => setPintuKaca(kaca.id)}
-                                                className={`p-2 rounded-xl border text-xs font-semibold text-center transition-all ${
-                                                    pintuKaca === kaca.id
-                                                        ? 'bg-[#c5a059]/20 border-[#c5a059] text-[#c5a059]'
-                                                        : 'bg-[#1b1b22] border-[#2e2e38] text-zinc-400'
-                                                }`}
-                                            >
-                                                {kaca.label}
-                                            </button>
+                                            <SelectableCard key={kaca.id} selected={pintuKaca === kaca.id} onClick={() => setPintuKaca(kaca.id)} title={kaca.label} />
                                         ))}
                                     </div>
-                                </div>
+                                </Section>
                             )}
 
                             {subItem === 'DIPAN_HEADBOARD' && (
-                                <div className="p-4 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-3">
-                                    <label className="text-xs font-bold text-[#c5a059] block">Headboard & Nakas Kamar Tidur</label>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                <Section step={nextStep()} title="Headboard & nakas">
+                                    <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
                                         {[
                                             { id: 'none', label: 'Tanpa Headboard' },
                                             { id: 'MULTIPLEKS', label: 'Headboard Polos' },
                                             { id: 'MULTIPLEKS_BUSA', label: 'Headboard + Busa Jok' },
                                             { id: 'SEMI_KLASIK_MULTIPLEKS', label: 'Headboard Semi Klasik' }
                                         ].map((hb) => (
-                                            <button
-                                                key={hb.id}
-                                                type="button"
-                                                onClick={() => setHeadboardOption(hb.id)}
-                                                className={`p-2 rounded-xl border text-xs font-semibold text-center transition-all ${
-                                                    headboardOption === hb.id
-                                                        ? 'bg-[#c5a059]/20 border-[#c5a059] text-[#c5a059]'
-                                                        : 'bg-[#1b1b22] border-[#2e2e38] text-zinc-400'
-                                                }`}
-                                            >
-                                                {hb.label}
-                                            </button>
+                                            <SelectableCard key={hb.id} selected={headboardOption === hb.id} onClick={() => setHeadboardOption(hb.id)} title={hb.label} />
                                         ))}
                                     </div>
-
-                                    {/* Nakas Input */}
-                                    <div className="pt-2 flex items-center gap-3">
-                                        <span className="text-xs text-zinc-300 font-semibold">Nakas Bedside Table:</span>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            value={nakasQty}
-                                            onChange={(e) => setNakasQty(parseInt(e.target.value, 10) || 0)}
-                                            className="w-20 bg-[#111115] border border-[#2e2e38] rounded-xl px-2.5 py-1 text-xs text-white font-mono"
-                                            placeholder="0 unit"
-                                        />
-                                        <span className="text-xs text-zinc-500">unit</span>
-                                    </div>
-                                </div>
+                                    <NumberField
+                                        id="nakas-qty"
+                                        className="mt-3 sm:max-w-xs"
+                                        label="Nakas (bedside table)"
+                                        unit="unit"
+                                        min="0"
+                                        value={nakasQty}
+                                        onChange={(e) => setNakasQty(parseInt(e.target.value, 10) || 0)}
+                                        placeholder="0"
+                                    />
+                                </Section>
                             )}
 
                             {subItem === 'RANGKA_DIPAN_TINGKAT' && (
-                                <div className="p-4 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-2">
-                                    <label className="text-xs font-bold text-[#c5a059] block">Ukuran Rangka Dipan Tingkat (Besi Hollow Lapis HPL)</label>
-                                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                                <Section step={nextStep()} title="Ukuran rangka dipan tingkat" hint="Besi hollow lapis HPL">
+                                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
                                         {['90x200', '100x200', '120x200', '160x200', '180x200', '200x200'].map((sz) => (
-                                            <button
-                                                key={sz}
-                                                type="button"
-                                                onClick={() => setRangkaDipanTingkat(sz)}
-                                                className={`p-2 rounded-xl border text-xs font-bold text-center transition-all ${
-                                                    rangkaDipanTingkat === sz
-                                                        ? 'bg-[#c5a059] text-black border-[#c5a059] font-black'
-                                                        : 'bg-[#1b1b22] border-[#2e2e38] text-zinc-300'
-                                                }`}
-                                            >
-                                                {sz}
-                                            </button>
+                                            <SelectableCard key={sz} selected={rangkaDipanTingkat === sz} onClick={() => setRangkaDipanTingkat(sz)} title={sz} className="justify-center text-center" />
                                         ))}
                                     </div>
-                                </div>
+                                </Section>
                             )}
 
                             {subItem === 'LEMARI_BAWAH_TANGGA' && (
-                                <label className="flex items-center gap-2 p-3 rounded-2xl bg-[#1b1b22] border border-[#2e2e38] cursor-pointer">
-                                    <input
-                                        type="checkbox"
+                                <Section step={nextStep()} title="Kedalaman">
+                                    <CheckboxRow
                                         checked={bawahTanggaKedalamanGt60}
                                         onChange={(e) => setBawahTanggaKedalamanGt60(e.target.checked)}
-                                        className="w-4 h-4 accent-[#c5a059] rounded"
+                                        label="Kedalaman lemari lebih dari 60cm"
+                                        description="Dihitung P × T × harga penuh tanpa faktor 0.8"
                                     />
-                                    <span className="text-xs text-zinc-300">
-                                        Kedalaman lemari lebih dari 60cm (Dihitung P x T x Harga penuh tanpa faktor 0.8)
-                                    </span>
-                                </label>
+                                </Section>
                             )}
 
                             {subItem === 'WALLPANEL_KACA' && (
-                                <div className="p-4 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-2">
-                                    <label className="text-xs font-bold text-[#c5a059] block">Jenis Wallpanel & Cermin</label>
-                                    <div className="grid grid-cols-3 gap-2">
+                                <Section step={nextStep()} title="Jenis wallpanel & cermin">
+                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                                         {[
                                             { id: 'MULTIPLEK', label: 'Wallpanel Multipleks HPL' },
                                             { id: 'CERMIN_BEVEL', label: 'Kaca Cermin Bevel Polos' },
                                             { id: 'WPC', label: 'Wallpanel WPC Panel' }
                                         ].map((wp) => (
-                                            <button
-                                                key={wp.id}
-                                                type="button"
-                                                onClick={() => setWallpanelType(wp.id)}
-                                                className={`p-2 rounded-xl border text-xs font-semibold text-center transition-all ${
-                                                    wallpanelType === wp.id
-                                                        ? 'bg-[#c5a059]/20 border-[#c5a059] text-[#c5a059]'
-                                                        : 'bg-[#1b1b22] border-[#2e2e38] text-zinc-400'
-                                                }`}
-                                            >
-                                                {wp.label}
-                                            </button>
+                                            <SelectableCard key={wp.id} selected={wallpanelType === wp.id} onClick={() => setWallpanelType(wp.id)} title={wp.label} />
                                         ))}
                                     </div>
-                                </div>
+                                </Section>
                             )}
 
                             {subItem === 'SOFA' && (
-                                <div className="p-4 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-2">
-                                    <label className="text-xs font-bold text-[#c5a059] block">Pilihan Bahan Kain & Cover Sofa Custom</label>
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <Section step={nextStep()} title="Bahan cover sofa">
+                                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                                         {[
                                             { id: 'standard', label: 'Kain Standard' },
                                             { id: 'KULIT_OSCAR', label: 'Kulit Sintetis Oscar' },
                                             { id: 'KULIT_MBTECH', label: 'Kulit MBTech Mewah' },
                                             { id: 'CORDUROY_PREMIUM', label: 'Corduroy Premium' }
                                         ].map((cv) => (
-                                            <button
-                                                key={cv.id}
-                                                type="button"
-                                                onClick={() => setSofaCover(cv.id)}
-                                                className={`p-2 rounded-xl border text-xs font-semibold text-center transition-all ${
-                                                    sofaCover === cv.id
-                                                        ? 'bg-[#c5a059]/20 border-[#c5a059] text-[#c5a059]'
-                                                        : 'bg-[#1b1b22] border-[#2e2e38] text-zinc-400'
-                                                }`}
-                                            >
-                                                {cv.label}
-                                            </button>
+                                            <SelectableCard key={cv.id} selected={sofaCover === cv.id} onClick={() => setSofaCover(cv.id)} title={cv.label} />
                                         ))}
                                     </div>
-                                </div>
+                                </Section>
                             )}
 
-                            {/* Opsi Sipil & Bengkel Las */}
                             {subItem === 'CANOPI' && (
-                                <div className="p-4 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-2">
-                                    <label className="text-xs font-bold text-[#c5a059] block">Tipe Material Canopi</label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <Section step={nextStep()} title="Material kanopi">
+                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                         {Object.entries(PRICELIST_CATALOG.SIPIL_BENGKEL.CANOPI).map(([key, data]) => (
-                                            <button
-                                                key={key}
-                                                type="button"
-                                                onClick={() => setCanopiType(key)}
-                                                className={`p-2.5 rounded-xl border text-left transition-all ${
-                                                    canopiType === key
-                                                        ? 'bg-[#c5a059]/20 border-[#c5a059] text-white ring-1 ring-[#c5a059]'
-                                                        : 'bg-[#121216] border-[#2e2e38] text-zinc-400'
-                                                }`}
-                                            >
-                                                <div className="text-xs font-bold text-zinc-200">{data.label}</div>
-                                                <div className="text-[10px] text-[#c5a059] font-mono mt-0.5">
-                                                    Rp {data.price.toLocaleString('id-ID')} / m2
-                                                </div>
-                                            </button>
+                                            <SelectableCard key={key} selected={canopiType === key} onClick={() => setCanopiType(key)} title={data.label} description={`Rp ${data.price.toLocaleString('id-ID')} / m2`} />
                                         ))}
                                     </div>
-                                </div>
+                                </Section>
                             )}
 
                             {subItem === 'PAGAR' && (
-                                <div className="p-4 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-2">
-                                    <label className="text-xs font-bold text-[#c5a059] block">Model Pagar & Railing</label>
-                                    <div className="grid grid-cols-2 gap-2">
+                                <Section step={nextStep()} title="Model pagar & railing">
+                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                         {Object.entries(PRICELIST_CATALOG.SIPIL_BENGKEL.PAGAR).map(([key, data]) => (
-                                            <button
-                                                key={key}
-                                                type="button"
-                                                onClick={() => setPagarType(key)}
-                                                className={`p-2.5 rounded-xl border text-left transition-all ${
-                                                    pagarType === key
-                                                        ? 'bg-[#c5a059]/20 border-[#c5a059] text-white ring-1 ring-[#c5a059]'
-                                                        : 'bg-[#121216] border-[#2e2e38] text-zinc-400'
-                                                }`}
-                                            >
-                                                <div className="text-xs font-bold text-zinc-200">{data.label}</div>
-                                                <div className="text-[10px] text-[#c5a059] font-mono mt-0.5">
-                                                    Rp {data.price.toLocaleString('id-ID')} / m2
-                                                </div>
-                                            </button>
+                                            <SelectableCard key={key} selected={pagarType === key} onClick={() => setPagarType(key)} title={data.label} description={`Rp ${data.price.toLocaleString('id-ID')} / m2`} />
                                         ))}
                                     </div>
-                                </div>
+                                </Section>
                             )}
 
                             {subItem === 'JASA_SIPIL' && (
-                                <div className="p-4 bg-[#17171e] rounded-2xl border border-[#2e2e38] space-y-3">
-                                    <label className="text-xs font-bold text-[#c5a059] block">Pilihan Pekerjaan Sipil & Bongkaran</label>
-                                    <select
-                                        value={jasaSipilType}
-                                        onChange={(e) => setJasaSipilType(e.target.value)}
-                                        className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-xs text-white focus:border-[#c5a059] focus:outline-none"
-                                    >
-                                        {Object.entries(PRICELIST_CATALOG.SIPIL_BENGKEL.JASA_SIPIL[region] || {}).map(([key, item]) => (
-                                            <option key={key} value={key}>
-                                                {item.label} — Rp {item.price.toLocaleString('id-ID')} / {item.unit}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs text-zinc-400">Volume / Jumlah Qty:</span>
-                                        <input
-                                            type="number"
+                                <Section step={nextStep()} title="Pekerjaan sipil & bongkaran">
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_160px]">
+                                        <FormField label="Jenis pekerjaan" htmlFor="jasa-sipil">
+                                            <Select id="jasa-sipil" value={jasaSipilType} onChange={(e) => setJasaSipilType(e.target.value)}>
+                                                {Object.entries(PRICELIST_CATALOG.SIPIL_BENGKEL.JASA_SIPIL[region] || {}).map(([key, item]) => (
+                                                    <option key={key} value={key}>
+                                                        {item.label} — Rp {item.price.toLocaleString('id-ID')} / {item.unit}
+                                                    </option>
+                                                ))}
+                                            </Select>
+                                        </FormField>
+                                        <NumberField
+                                            id="jasa-sipil-qty"
+                                            label="Volume / qty"
                                             step="0.5"
                                             min="1"
                                             value={jasaSipilQty}
                                             onChange={(e) => setJasaSipilQty(parseFloat(e.target.value) || 1)}
-                                            className="w-24 bg-[#111115] border border-[#2e2e38] rounded-xl px-2.5 py-1 text-xs text-white font-mono"
                                         />
                                     </div>
-                                </div>
+                                </Section>
                             )}
-                        </div>
+                        </>
                     )}
 
-                    {/* Shared Upgrades: Finishing HPL Luar Dalam & Custom Addons */}
-                    <div className="pt-2 space-y-3">
-                        <label className="flex items-center gap-2 p-3 rounded-2xl bg-[#1b1b22] border border-[#2e2e38] cursor-pointer">
-                            <input
-                                type="checkbox"
+                    <Section step={nextStep()} title="Pekerjaan tambahan">
+                        <div className="space-y-3">
+                            <CheckboxRow
                                 checked={isHplLuarDalam}
                                 onChange={(e) => setIsHplLuarDalam(e.target.checked)}
-                                className="w-4 h-4 accent-[#c5a059] rounded"
+                                label="Upgrade finishing HPL luar & dalam"
+                                meta="+Rp 700.000 / meter"
                             />
-                            <span className="text-xs text-zinc-300">
-                                Upgrade Finishing HPL Luar & Dalam (+Rp 700.000 / meter)
-                            </span>
-                        </label>
-
-                        <div className="flex items-center gap-2 pt-1">
-                            <span className="text-xs text-zinc-400 whitespace-nowrap">Aksesoris Tambahan (Manual):</span>
-                            <div className="flex items-center w-full">
-                                <span className="text-xs text-zinc-500 mr-2 font-mono">Rp</span>
-                                <input
-                                    type="number"
-                                    step="50000"
-                                    min="0"
-                                    value={customAddons}
-                                    onChange={(e) => setCustomAddons(parseFloat(e.target.value) || 0)}
-                                    placeholder="0"
-                                    className="w-full bg-[#1b1b22] border border-[#2e2e38] rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-[#c5a059] focus:outline-none"
-                                />
-                            </div>
+                            <NumberField
+                                id="custom-addons"
+                                className="sm:max-w-xs"
+                                label="Aksesoris tambahan (manual)"
+                                prefix="Rp"
+                                step="50000"
+                                min="0"
+                                value={customAddons}
+                                onChange={(e) => setCustomAddons(parseFloat(e.target.value) || 0)}
+                                placeholder="0"
+                            />
                         </div>
-                    </div>
-                </div>
+                    </Section>
+                </Panel>
 
-                {/* SISI KANAN: RINCIAN ESTIMASI BIAYA & AKSI */}
-                <div className="lg:col-span-5 space-y-5">
-                    <div className="bg-[#15151a] p-6 md:p-8 rounded-3xl border border-[#26262d] shadow-2xl flex flex-col justify-between h-full space-y-6">
-                        <div>
-                            <div className="flex items-center justify-between pb-3 border-b border-[#26262d]">
-                                <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">RAB Hasil Hitungan</span>
-                                <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
-                                    Live Calculator 2026
-                                </span>
-                            </div>
-
-                            {/* Itemized List */}
-                            <div className="space-y-3 mt-4">
-                                {estimate.itemBreakdown.map((item, idx) => (
-                                    <div key={idx} className="flex justify-between items-start text-xs border-b border-[#202028] pb-2">
-                                        <div>
-                                            <div className="font-semibold text-zinc-200">{item.label}</div>
-                                            {item.detail && (
-                                                <div className="text-[10px] text-zinc-400 mt-0.5">{item.detail}</div>
-                                            )}
-                                        </div>
-                                        <div className="font-mono font-bold text-zinc-200 whitespace-nowrap ml-2">
-                                            Rp {item.amount.toLocaleString('id-ID')}
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {/* Subtotal */}
-                                <div className="flex justify-between items-center text-xs pt-1 text-zinc-400">
-                                    <span>Subtotal Produksi:</span>
-                                    <span className="font-mono font-semibold text-zinc-300">
-                                        Rp {estimate.subtotal.toLocaleString('id-ID')}
-                                    </span>
-                                </div>
-
-                                {/* Ongkir Status */}
-                                <div className="flex justify-between items-center text-xs pt-1">
-                                    <span className="flex items-center gap-1 text-zinc-400">
-                                        <span>🚚</span> Ongkos Kirim:
-                                    </span>
-                                    {estimate.isFreeOngkir ? (
-                                        <span className="font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/30">
-                                            GRATIS
-                                        </span>
-                                    ) : (
-                                        <span className="font-mono font-semibold text-amber-400">
-                                            Rp {estimate.ongkirCost.toLocaleString('id-ID')}
-                                        </span>
-                                    )}
-                                </div>
-                                {!estimate.isFreeOngkir && (
-                                    <p className="text-[10px] text-zinc-500 text-right">
-                                        (Gratis ongkir untuk order di atas Rp {(estimate.minFreeOngkir / 1000000).toFixed(0)} Juta)
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Grand Total Box */}
-                        <div className="space-y-4 pt-4 border-t border-[#26262d]">
-                            <div className="bg-[#1c1c24] p-4 rounded-2xl border border-[#c5a059]/30 flex justify-between items-center shadow-inner">
-                                <div>
-                                    <div className="text-[10px] font-bold uppercase tracking-wider text-[#c5a059]">Total Estimasi RAB</div>
-                                    <div className="text-xl md:text-2xl font-black font-mono text-white mt-0.5">
-                                        Rp {estimate.grandTotal.toLocaleString('id-ID')}
-                                    </div>
-                                </div>
-                                <div className="text-right text-[10px] text-zinc-400">
-                                    <div>Survei & 3D</div>
-                                    <div className="text-emerald-400 font-bold">100% GRATIS</div>
-                                </div>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="space-y-2">
-                                <button
-                                    type="button"
-                                    onClick={handleCopy}
-                                    className={`w-full py-3 px-4 min-h-[46px] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg touch-manipulation active:scale-95 ${
-                                        copied
-                                            ? 'bg-emerald-500 text-white'
-                                            : 'gold-btn shadow-[#c5a059]/20'
-                                    }`}
-                                >
-                                    {copied ? (
-                                        <React.Fragment><Icons.CheckCircle /> Rincian Disalin ke Clipboard!</React.Fragment>
-                                    ) : (
-                                        <React.Fragment><Icons.Copy /> Salin Format Chat WhatsApp</React.Fragment>
-                                    )}
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={handleExportPDF}
-                                    disabled={isExportingPDF}
-                                    className="w-full py-2.5 px-4 min-h-[46px] rounded-xl text-xs font-bold transition-all bg-[#1a1a24] hover:bg-[#252533] text-[#c5a059] border border-[#c5a059]/40 flex items-center justify-center gap-2 shadow-md hover:border-[#c5a059] touch-manipulation active:scale-95 disabled:opacity-50"
-                                >
-                                    <span>📄</span>
-                                    <span>{isExportingPDF ? 'Membuat Dokumen PDF...' : `Ekspor PDF Penawaran RAB (${brandName})`}</span>
-                                </button>
-
-                                {onApplyToAI && (
-                                    <button
-                                        type="button"
-                                        onClick={handleSendToAI}
-                                        className="w-full py-2.5 px-4 min-h-[46px] rounded-xl text-xs font-bold transition-all bg-[#202028] hover:bg-[#2e2e38] text-zinc-200 border border-[#2e2e38] flex items-center justify-center gap-2 touch-manipulation active:scale-95"
-                                    >
-                                        <Icons.Brain />
-                                        <span>Gunakan untuk Balasan Sales Ary</span>
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                {/* Summary (desktop sticky) */}
+                <Panel padded={false} as="aside" aria-label="Ringkasan estimasi" className="hidden lg:block lg:sticky lg:top-20">
+                    {renderSummary()}
+                </Panel>
             </div>
+
+            {/* Mobile / tablet sticky total (portaled so no animated ancestor can capture position:fixed) */}
+            {createPortal(
+            <div className="fixed inset-x-0 bottom-16 z-20 border-t border-border bg-sidebar/95 px-4 py-2.5 backdrop-blur-md md:bottom-0 lg:hidden" style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>
+                <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
+                    <div className="min-w-0">
+                        <div className="text-caption text-fg-muted">Estimasi total</div>
+                        <div className="truncate text-h3 font-semibold text-fg tabular">{formatRp(estimate.grandTotal)}</div>
+                    </div>
+                    <Button variant="primary" onClick={() => setShowSummarySheet(true)} iconRight={ChevronUp}>
+                        Lihat rincian
+                    </Button>
+                </div>
+            </div>,
+                document.body
+            )}
+            <div className="h-20 lg:hidden" aria-hidden="true" />
+
+            <Modal
+                isOpen={showSummarySheet}
+                onClose={() => setShowSummarySheet(false)}
+                variant="bottom"
+                size="md"
+                title="Ringkasan estimasi"
+                description={estimate.regionLabel}
+            >
+                {renderSummary(true)}
+            </Modal>
         </div>
     );
 };
+
+const CATEGORY_ICONS = {
+    KITCHEN_SET: CookingPot,
+    KAMAR_SET: BedDouble,
+    LIVING_ROOM: Sofa,
+    SIPIL_BENGKEL: Hammer
+};
+
+const Section = ({ step, title, hint, children }) => (
+    <section className="px-4 py-5 sm:px-5">
+        <div className="mb-3 flex items-baseline justify-between gap-3">
+            <h3 className="flex items-center gap-2 text-body font-semibold text-fg">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-xs bg-surface-3 text-caption font-semibold text-fg-3 tabular" aria-hidden="true">
+                    {step}
+                </span>
+                {title}
+            </h3>
+            {hint && <span className="text-caption text-fg-muted">{hint}</span>}
+        </div>
+        {children}
+    </section>
+);
+
+const NumberField = ({ id, label, unit, prefix, helper, className, ...inputProps }) => (
+    <FormField label={label} htmlFor={id} helperText={helper} className={className}>
+        <Input id={id} type="number" inputMode="decimal" suffix={unit} prefix={prefix} className="tabular" {...inputProps} />
+    </FormField>
+);
+
+const CheckboxRow = ({ checked, onChange, label, description, meta }) => (
+    <label className="flex min-h-[44px] cursor-pointer items-start gap-3 rounded-sm border border-border bg-surface-2 px-3 py-2.5 transition-colors hover:border-border-strong">
+        <input type="checkbox" checked={checked} onChange={onChange} className="mt-0.5 h-4 w-4 shrink-0 accent-sky-500" />
+        <span className="min-w-0 flex-1">
+            <span className="block text-body-sm text-fg">{label}</span>
+            {description && <span className="block text-caption text-fg-muted">{description}</span>}
+        </span>
+        {meta && <span className="shrink-0 text-caption text-fg-3 tabular">{meta}</span>}
+    </label>
+);

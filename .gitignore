@@ -25,3 +25,10 @@ pnpm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Compiled API
+dist-server/
+
+# Local seed credentials (never commit)
+.seed-credentials.local.txt
+.claude/

@@ -1,107 +1,94 @@
 // File: src/components/layout/Header.jsx
 import React from 'react';
-import { Icons } from '../Icons.jsx';
+import { Menu as MenuIcon, Search, UserRound, Settings2, LogIn, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { BrandSwitcher } from './BrandSwitcher.jsx';
+import { PAGE_META } from './navigation.js';
+import { Menu } from '../ui/Menu.jsx';
 
-export const Header = ({ 
-    setIsSidebarOpen, 
-    activeTab, 
-    toggleButtonRef, 
-    activeBrand, 
-    currentUser, 
-    brands = [], 
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || '');
+
+export const Header = ({
+    setIsSidebarOpen,
+    isCollapsed = false,
+    onToggleCollapsed,
+    activeTab,
+    toggleButtonRef,
+    activeBrand,
+    currentUser,
+    brands = [],
     onSwitchBrand,
     onOpenAuthModal,
+    onOpenCloudModal,
     onOpenCommandPalette
 }) => {
-    const brandName = activeBrand?.brandName || 'NACIRA STUDIO';
-    const shortDesc = activeBrand?.shortDescription || 'Architectural Interior Design & Build — Master Price List 2026';
     const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+    const page = PAGE_META[activeTab] || { title: 'Sales AI' };
+    const initial = currentUser?.fullName ? currentUser.fullName.charAt(0).toUpperCase() : 'U';
 
     return (
-        <header className="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4 animate-fade-in">
-            <div className="flex items-start gap-3 sm:gap-4 min-w-0">
-                <button 
-                    ref={toggleButtonRef}
-                    onClick={() => setIsSidebarOpen(true)} 
-                    className="lg:hidden mt-0.5 p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center bg-[#16161c] border border-[#26262d] rounded-2xl text-zinc-300 shadow-sm hover:bg-[#1f1f28] active:scale-95 transition-all shrink-0"
-                    aria-label="Buka menu navigasi"
-                >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                </button>
-                
-                <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl overflow-hidden shadow-lg shadow-[#c5a059]/20 border border-[#c5a059]/40 bg-[#16161c] shrink-0 hidden sm:flex items-center justify-center p-1">
-                        <img 
-                            src={activeBrand?.id === 'brand_nacira' ? '/logo-badge.png' : '/logo-nacira.png'} 
-                            alt={`${brandName} Logo`} 
-                            className="w-full h-full object-contain rounded-xl"
-                            onError={(e) => {
-                                e.target.style.display = 'none';
-                            }}
-                        />
-                    </div>
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                            <h1 className="serif-font text-lg sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight truncate">
-                                {brandName} <span className="gold-gradient-text text-base sm:text-xl md:text-2xl font-sans font-bold">Sales Ary</span>
-                            </h1>
-                            <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider bg-[#c5a059]/15 text-[#c5a059] border border-[#c5a059]/30 shrink-0">
-                                {activeBrand?.id === 'brand_nacira' ? 'Flagship' : 'Multi-Brand'}
-                            </span>
-                        </div>
-                        <p className="text-zinc-400 mt-0.5 text-xs md:text-sm font-medium line-clamp-1 max-w-xl">
-                            {shortDesc}
-                        </p>
-                    </div>
-                </div>
+        <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-b border-border bg-bg/85 px-3.5 backdrop-blur-md sm:gap-3 sm:px-6 lg:px-8">
+            <button
+                ref={toggleButtonRef}
+                onClick={() => setIsSidebarOpen(true)}
+                className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-sm text-fg-2 hover:bg-surface-hover hover:text-fg md:flex lg:hidden"
+                aria-label="Buka menu navigasi"
+            >
+                <MenuIcon size={20} aria-hidden="true" />
+            </button>
+
+            <button
+                onClick={onToggleCollapsed}
+                className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-sm text-fg-3 hover:bg-surface-hover hover:text-fg lg:flex"
+                aria-label={isCollapsed ? 'Buka sidebar' : 'Tutup sidebar'}
+                aria-expanded={!isCollapsed}
+                title={isCollapsed ? 'Buka sidebar' : 'Tutup sidebar'}
+            >
+                {isCollapsed ? <PanelLeftOpen size={18} aria-hidden="true" /> : <PanelLeftClose size={18} aria-hidden="true" />}
+            </button>
+
+            <div className="min-w-0 flex-1">
+                <nav aria-label="Breadcrumb" className="hidden text-caption text-fg-muted sm:block">
+                    <span className="truncate">{(activeBrand?.brandName || 'NACIRA STUDIO').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}</span>
+                    <span className="mx-1.5" aria-hidden="true">/</span>
+                    <span className="text-fg-3">{page.title}</span>
+                </nav>
+                <div className="truncate text-h3 font-semibold text-fg sm:text-body">{page.title}</div>
             </div>
 
-            {/* Quick Actions & Workspace Switcher */}
-            <div className="flex items-center gap-2 self-stretch sm:self-auto flex-wrap justify-end">
-                {/* Command Palette Trigger */}
-                <button
-                    onClick={onOpenCommandPalette}
-                    className="min-h-[44px] bg-[#16161c] hover:bg-[#202028] text-zinc-400 hover:text-white px-3 py-2 rounded-xl text-xs font-semibold border border-[#2e2e38] transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
-                    title="Buka Command Palette (Ctrl+K)"
-                    aria-label="Cari menu atau tekan Ctrl K"
-                >
-                    <Icons.Search />
-                    <span className="hidden sm:inline">Cari / Menu</span>
-                    <kbd className="bg-[#242430] text-[10px] px-1.5 py-0.5 rounded text-zinc-300 border border-[#363644] font-mono">⌘K</kbd>
-                </button>
+            <button
+                onClick={onOpenCommandPalette}
+                className="flex h-11 w-11 sm:h-9 sm:w-auto shrink-0 items-center justify-center gap-2 rounded-sm border border-border bg-surface text-fg-3 transition-colors hover:border-border-strong hover:text-fg sm:min-w-[200px] sm:justify-start sm:px-2.5"
+                aria-label="Cari atau buka menu perintah (Ctrl K)"
+                title="Cari (Ctrl+K)"
+            >
+                <Search size={16} aria-hidden="true" />
+                <span className="hidden flex-1 text-left text-body-sm sm:block">Cari…</span>
+                <kbd className="hidden rounded-xs border border-border bg-surface-3 px-1.5 py-px font-sans text-caption text-fg-3 sm:inline">
+                    {isMac ? '⌘K' : 'Ctrl K'}
+                </kbd>
+            </button>
 
-                {/* Super Admin Brand Switcher */}
-                {isSuperAdmin && brands.length > 0 && (
-                    <div className="relative flex-1 sm:flex-none">
-                        <select
-                            value={activeBrand?.id}
-                            onChange={(e) => onSwitchBrand(e.target.value)}
-                            className="min-h-[44px] w-full bg-[#16161c] text-[#c5a059] font-bold text-xs py-2 px-3 pr-8 rounded-xl border border-[#c5a059]/40 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/40 shadow-sm cursor-pointer appearance-none truncate"
-                            aria-label="Pilih Brand Workspace"
-                        >
-                            {brands.map(b => (
-                                <option key={b.id} value={b.id}>
-                                    🏢 {b.brandName}
-                                </option>
-                            ))}
-                        </select>
-                        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#c5a059] text-[10px]">
-                            ▼
-                        </div>
-                    </div>
+            <BrandSwitcher activeBrand={activeBrand} brands={brands} canSwitch={isSuperAdmin} onSwitchBrand={onSwitchBrand} />
+
+            <Menu
+                items={[
+                    { type: 'label', label: currentUser?.fullName || 'Pengguna' },
+                    { id: 'account', label: 'Akun & sesi', icon: LogIn, onSelect: onOpenAuthModal },
+                    { id: 'cloud', label: 'Pengaturan', icon: Settings2, onSelect: onOpenCloudModal }
+                ]}
+                trigger={({ props }) => (
+                    <button
+                        type="button"
+                        {...props}
+                        aria-label="Menu akun"
+                        className="flex h-11 w-11 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full"
+                    >
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-3 text-label font-semibold text-fg ring-1 ring-border-strong hover:ring-primary/50">
+                            {initial || <UserRound size={14} aria-hidden="true" />}
+                        </span>
+                    </button>
                 )}
-
-                {/* Profile / Account Badge */}
-                <button
-                    onClick={onOpenAuthModal}
-                    className="min-h-[44px] bg-[#16161c] hover:bg-[#202028] text-zinc-300 hover:text-white px-3.5 py-2 rounded-xl text-xs font-semibold border border-[#2e2e38] flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
-                    title="Ganti Akun / Info Sesi"
-                >
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-                    <span className="font-bold text-white max-w-[100px] sm:max-w-[140px] truncate">{currentUser?.fullName?.split(' ')[0] || 'User'}</span>
-                    <span className="text-[10px] text-zinc-400 uppercase tracking-widest hidden lg:inline">({currentUser?.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Marketing'})</span>
-                </button>
-            </div>
+            />
         </header>
     );
 };

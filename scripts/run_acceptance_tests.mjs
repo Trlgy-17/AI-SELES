@@ -1,4 +1,3 @@
-import { AuthService } from '../src/js/services/auth.js';
 import { KnowledgeService } from '../src/js/services/knowledge.js';
 import { AIService } from '../src/js/services/ai.js';
 import { TelemetryService } from '../src/js/services/telemetry.js';
@@ -96,13 +95,9 @@ assert(putraResolved.citations.length > 0, 'Citations generated for resolved kno
 // ----------------------------------------------------
 // TEST 4: RBAC & Workspace Switching
 // ----------------------------------------------------
-console.log('\n🧪 TEST 4: RBAC & Workspace Switching');
-const superAdminSession = AuthService.login('admin', 'password123');
-assert(superAdminSession.user.role === 'SUPER_ADMIN', 'Super Admin role verified');
-
-const switchedSession = AuthService.switchWorkspace('brand_heya');
-assert(switchedSession.activeBrandId === 'brand_heya', 'Super Admin successfully switched to Heya workspace');
-assert(switchedSession.activeBrand.brandName === 'HEYA INTERIOR', 'Active brand is Heya Interior');
+console.log('\n🧪 TEST 4: RBAC seed data (login & brand switching are enforced server-side — see npm run test:api)');
+assert(INITIAL_USERS.every(u => !('password' in u)), 'No plaintext passwords remain in frontend user seed');
+assert(INITIAL_USERS.find(u => u.username === 'admin').role === 'SUPER_ADMIN', 'Super Admin seed role verified');
 
 const marketingAdmin = INITIAL_USERS.find(u => u.username === 'heya');
 assert(marketingAdmin.role === 'MARKETING_ADMIN', 'Marketing admin has role MARKETING_ADMIN');
@@ -299,7 +294,10 @@ const femaleMemoryPrompt = AIService.buildModularPrompt({
 });
 assert(femaleMemoryPrompt.includes('GENDER WANITA'), 'Gender guidance embedded in client memory prompt');
 assert(femaleMemoryPrompt.includes('FOLLOW-UP HALUS (SURVEI & AMANKAN RUTE AKHIR PEKAN)'), 'Weekend survey follow-up playbook active');
-assert(femaleMemoryPrompt.includes('Mengingat jadwal weekend ini kebetulan peminatnya cukup tinggi'), 'Exact consultative template present in playbook');
+assert(!femaleMemoryPrompt.includes('hanya tersisa 1-2 slot'), 'Follow-up playbook no longer fabricates slot scarcity');
+assert(femaleMemoryPrompt.includes('KELANGKAAN HANYA JIKA FAKTUAL'), 'Ethical scarcity rule present in prompt');
+assert(femaleMemoryPrompt.includes('HUMAN VOICE'), 'Human voice writing layer present in prompt');
+assert(femaleMemoryPrompt.includes('ETHICAL PERSUASION PLAYBOOK'), 'Ethical persuasion playbook present in prompt');
 
 // ----------------------------------------------------
 // TEST 18: Estimator Calculator & Master Pricelist 2026
@@ -686,15 +684,15 @@ assert(appSrc.includes("activeTab === 'estimator'"), 'app.jsx routes activeTab =
 assert(commandPaletteSrc.includes("'estimator'"), 'CommandPalette includes estimator action');
 
 // ----------------------------------------------------
-// TEST 14: Sales Ary Branding & AI Workspace Calculator Cleanup
+// TEST 14: Sales AI Branding & AI Workspace Calculator Cleanup
 // ----------------------------------------------------
-console.log('\n🧪 TEST 14: Sales Ary Branding & AI Workspace Calculator Cleanup');
+console.log('\n🧪 TEST 14: Sales AI Branding & AI Workspace Calculator Cleanup');
 const headerSrc = fs.readFileSync('src/components/layout/Header.jsx', 'utf-8');
 const workspaceSrc = fs.readFileSync('src/components/modules/AIWorkspace.jsx', 'utf-8');
 
-assert(sidebarSrc.includes('<span>Sales Ary</span>'), 'Sidebar displays Sales Ary navigation label');
-assert(headerSrc.includes('Sales Ary'), 'Header displays Sales Ary branding');
-assert(commandPaletteSrc.includes("title: 'Sales Ary'"), 'CommandPalette displays Sales Ary action');
+assert(sidebarSrc.includes("label: 'Sales AI'"), 'Sidebar displays Sales AI navigation label');
+assert(headerSrc.includes('Sales AI'), 'Header displays Sales AI branding');
+assert(commandPaletteSrc.includes("title: 'Sales AI'"), 'CommandPalette displays Sales AI action');
 assert(!workspaceSrc.includes('<span>Kalkulator RAB</span>'), 'Calculator button removed from AIWorkspace toolbar');
 assert(!workspaceSrc.includes('showCalculatorModal'), 'Calculator modal removed from AIWorkspace');
 

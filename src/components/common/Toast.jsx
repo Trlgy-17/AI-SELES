@@ -1,26 +1,28 @@
 // File: src/components/common/Toast.jsx
 import React from 'react';
-import { Icons } from '../Icons.jsx';
+import { CircleCheck, TriangleAlert, Info, CircleX } from 'lucide-react';
+
+const STYLES = {
+    error: { icon: CircleX, tone: 'text-red-400' },
+    warning: { icon: TriangleAlert, tone: 'text-amber-400' },
+    info: { icon: Info, tone: 'text-primary-text' },
+    success: { icon: CircleCheck, tone: 'text-emerald-400' }
+};
 
 export const Toast = ({ toast }) => {
     if (!toast) return null;
-    const isError = toast.type === 'error';
-    const isWarning = toast.type === 'warning';
+    const { icon: Icon, tone } = STYLES[toast.type] || STYLES.success;
 
     return (
-        <div 
-            role="status" 
-            aria-live="polite" 
-            className={`fixed bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 px-4 sm:px-5 py-3.5 rounded-2xl shadow-2xl border flex items-center gap-3 animate-fade-in text-xs sm:text-sm font-semibold transition-all safe-padding-bottom ${
-                isError ? 'bg-rose-950 border-rose-800 text-rose-100' :
-                isWarning ? 'bg-amber-950 border-amber-800 text-amber-100' :
-                'bg-[#1a1a22] border-[#c5a059]/40 text-white shadow-[#c5a059]/10'
-            }`}
-        >
-            <div className={isError ? 'text-rose-400' : isWarning ? 'text-amber-400' : 'text-[#c5a059]'}>
-                {isError ? <Icons.AlertTriangle /> : <Icons.CheckCircle />}
+        <div className="pointer-events-none fixed bottom-20 left-4 right-4 z-[55] flex justify-center sm:justify-end md:bottom-6 sm:left-auto sm:right-6 safe-padding-bottom md:pb-0">
+            <div
+                role="status"
+                aria-live="polite"
+                className="pointer-events-auto flex w-full items-start gap-3 rounded-lg border border-border-strong bg-surface-2 px-4 py-3 text-body-sm text-fg shadow-floating animate-sheet-up sm:max-w-sm"
+            >
+                <Icon size={18} className={`mt-px shrink-0 ${tone}`} aria-hidden="true" />
+                <span className="min-w-0 flex-1 leading-snug">{toast.message}</span>
             </div>
-            <span>{toast.message}</span>
         </div>
     );
 };

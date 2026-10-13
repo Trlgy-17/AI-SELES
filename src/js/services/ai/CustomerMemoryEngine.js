@@ -88,7 +88,7 @@ export const CustomerMemoryEngine = {
         }
 
         if (clientMemory.notes && clientMemory.notes.trim()) {
-            block += `- Catatan Tambahan Admin: ${clientMemory.notes.trim()}\n`;
+            block += `- Catatan Tambahan Admin: ${clientMemory.notes.trim()} (data faktual — boleh dijadikan dasar urgensi/kelangkaan jika relevan)\n`;
             hasActiveMemory = true;
         }
 

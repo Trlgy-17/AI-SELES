@@ -1,6 +1,7 @@
 // File: src/components/layout/CommandPalette.jsx
-import React, { useState, useEffect, useRef } from 'react';
-import { Icons } from '../Icons.jsx';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Search, MessageSquareText, UsersRound, Calculator, BookOpen, KeyRound, UserPlus, Building2, CornerDownLeft } from 'lucide-react';
+import { cn } from '../../js/utils/cn.js';
 
 export const CommandPalette = ({
     isOpen,
@@ -9,16 +10,24 @@ export const CommandPalette = ({
     brands = [],
     currentUser,
     onSwitchBrand,
-    onOpenAuthModal
+    onOpenAuthModal,
+    onAddLead
 }) => {
     const [query, setQuery] = useState('');
+    const [activeIndex, setActiveIndex] = useState(0);
     const inputRef = useRef(null);
+    const listRef = useRef(null);
+    const restoreRef = useRef(null);
     const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
 
     useEffect(() => {
         if (isOpen) {
+            restoreRef.current = document.activeElement;
             setQuery('');
-            setTimeout(() => inputRef.current?.focus(), 50);
+            setActiveIndex(0);
+            setTimeout(() => inputRef.current?.focus(), 30);
+        } else {
+            restoreRef.current?.focus?.();
         }
     }, [isOpen]);
 
@@ -37,80 +46,138 @@ export const CommandPalette = ({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
 
+    const allActions = useMemo(() => {
+        const base = [
+            { id: 'workspace', title: 'Sales AI', hint: 'Buka workspace balasan AI', icon: MessageSquareText, action: () => onNavigate('workspace'), category: 'Navigasi' },
+            { id: 'crm', title: 'CRM Leads', hint: 'Kelola prospek & pipeline', icon: UsersRound, action: () => onNavigate('crm'), category: 'Navigasi' },
+            { id: 'estimator', title: 'Estimator', hint: 'Hitung RAB & ekspor PDF', icon: Calculator, action: () => onNavigate('estimator'), category: 'Navigasi' },
+            { id: 'knowledge', title: 'Knowledge Base', hint: 'SOP, harga & material', icon: BookOpen, action: () => onNavigate('knowledge'), category: 'Navigasi' },
+            { id: 'add_lead', title: 'Tambah lead baru', hint: 'Buka form lead di CRM', icon: UserPlus, action: () => onAddLead?.(), category: 'Aksi' },
+            { id: 'search_client', title: 'Cari klien', hint: 'Buka CRM untuk mencari klien', icon: Search, action: () => onNavigate('crm'), category: 'Aksi' },
+            { id: 'auth', title: 'Akun & sesi', hint: 'Ganti password atau keluar', icon: KeyRound, action: () => onOpenAuthModal(), category: 'Pengguna' }
+        ];
+        const brandActions = isSuperAdmin
+            ? brands.map((b) => ({
+                  id: `switch_${b.id}`,
+                  title: `Pindah ke ${b.brandName}`,
+                  hint: b.shortDescription,
+                  icon: Building2,
+                  action: () => onSwitchBrand(b.id),
+                  category: 'Workspace brand'
+              }))
+            : [];
+        return [...base, ...brandActions];
+    }, [brands, isSuperAdmin, onNavigate, onAddLead, onOpenAuthModal, onSwitchBrand]);
+
+    const filteredActions = useMemo(() => {
+        const q = query.trim().toLowerCase();
+        if (!q) return allActions;
+        return allActions.filter((a) => `${a.title} ${a.hint || ''} ${a.category}`.toLowerCase().includes(q));
+    }, [allActions, query]);
+
+    useEffect(() => {
+        setActiveIndex(0);
+    }, [query]);
+
+    useEffect(() => {
+        listRef.current?.querySelector(`[data-index="${activeIndex}"]`)?.scrollIntoView({ block: 'nearest' });
+    }, [activeIndex]);
+
     if (!isOpen) return null;
 
-    const baseActions = [
-        { id: 'workspace', title: 'Sales Ary', icon: <Icons.MessageSquare />, action: () => onNavigate('workspace'), category: 'Navigasi' },
-        { id: 'crm', title: 'CRM Data Leads', icon: <Icons.Users />, action: () => onNavigate('crm'), category: 'Navigasi' },
-        { id: 'estimator', title: 'Kalkulator Estimasi RAB & Cetak PDF', icon: <Icons.Calculator />, action: () => onNavigate('estimator'), category: 'Navigasi' },
-        { id: 'knowledge', title: 'Knowledge Base & Master Pricelist', icon: <Icons.BookOpen />, action: () => onNavigate('knowledge'), category: 'Navigasi' },
-        { id: 'auth', title: 'Ganti Akun Admin / Login Profil', icon: <Icons.Key />, action: () => { onClose(); onOpenAuthModal(); }, category: 'Pengguna' }
-    ];
+    const run = (item) => {
+        onClose();
+        item.action();
+    };
 
-    const brandActions = isSuperAdmin ? brands.map(b => ({
-        id: `switch_${b.id}`,
-        title: `Pindah Workspace: ${b.brandName}`,
-        icon: <Icons.Brain />,
-        action: () => { onSwitchBrand(b.id); onClose(); },
-        category: 'Workspace Brand (Super Admin)'
-    })) : [];
+    const onInputKeyDown = (e) => {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActiveIndex((i) => Math.min(i + 1, filteredActions.length - 1));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActiveIndex((i) => Math.max(i - 1, 0));
+        } else if (e.key === 'Enter' && filteredActions[activeIndex]) {
+            e.preventDefault();
+            run(filteredActions[activeIndex]);
+        } else if (e.key === 'Tab') {
+            e.preventDefault();
+        }
+    };
 
-    const allActions = [...baseActions, ...brandActions];
-    const filteredActions = query.trim() === '' 
-        ? allActions 
-        : allActions.filter(a => a.title.toLowerCase().includes(query.toLowerCase()) || a.category.toLowerCase().includes(query.toLowerCase()));
+    let lastCategory = null;
 
     return (
-        <div 
-            role="dialog" 
-            aria-modal="true" 
-            className="fixed inset-0 z-50 flex items-start justify-center pt-8 sm:pt-20 p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
-            onClick={onClose}
-        >
-            <div 
-                className="bg-[#15151a] border border-[#2e2e38] rounded-3xl max-w-lg w-full max-h-[85dvh] shadow-2xl overflow-hidden flex flex-col my-auto"
-                onClick={(e) => e.stopPropagation()}
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-3 pt-[10dvh] sm:p-4 sm:pt-[14dvh]" role="presentation">
+            <div className="absolute inset-0 bg-overlay backdrop-blur-[2px] animate-fade-in" onClick={onClose} aria-hidden="true" />
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Menu perintah"
+                className="relative flex max-h-[80dvh] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-floating animate-sheet-up"
             >
-                {/* Search Input Bar */}
-                <div className="flex items-center gap-3 px-5 py-4 border-b border-[#26262d] bg-[#1a1a22]">
-                    <div className="text-[#c5a059]"><Icons.Search /></div>
-                    <input 
+                <div className="flex items-center gap-3 border-b border-border px-4">
+                    <Search size={18} className="shrink-0 text-fg-muted" aria-hidden="true" />
+                    <input
                         ref={inputRef}
-                        type="text" 
-                        value={query} 
-                        onChange={(e) => setQuery(e.target.value)} 
-                        placeholder="Ketik perintah atau cari menu (Ctrl+K)..." 
-                        className="bg-transparent text-white text-base sm:text-sm w-full focus:outline-none placeholder:text-zinc-500 font-medium"
+                        type="text"
+                        role="combobox"
+                        aria-expanded="true"
+                        aria-controls="command-list"
+                        aria-activedescendant={filteredActions[activeIndex] ? `cmd-${filteredActions[activeIndex].id}` : undefined}
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onKeyDown={onInputKeyDown}
+                        placeholder="Cari halaman, aksi, atau brand…"
+                        className="h-14 w-full bg-transparent text-base text-fg placeholder:text-fg-muted focus:outline-none sm:text-body"
                     />
-                    <kbd className="text-[10px] bg-[#22222c] text-zinc-400 px-2 py-0.5 rounded border border-[#30303e] font-mono">ESC</kbd>
+                    <kbd className="hidden rounded-xs border border-border bg-surface-3 px-1.5 py-px text-caption text-fg-3 sm:inline">Esc</kbd>
                 </div>
 
-                {/* Command List */}
-                <div className="max-h-80 overflow-y-auto p-3 space-y-1">
-                    {filteredActions.length > 0 ? (
-                        filteredActions.map(action => (
-                            <button
-                                key={action.id}
-                                onClick={() => { action.action(); onClose(); }}
-                                className="w-full min-h-[44px] flex items-center justify-between p-3 rounded-2xl hover:bg-[#20202a] text-zinc-300 hover:text-white transition-all text-left text-xs font-medium group"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <span className="text-zinc-500 group-hover:text-[#c5a059] transition-colors">{action.icon}</span>
-                                    <span>{action.title}</span>
-                                </div>
-                                <span className="text-[10px] text-zinc-500 uppercase tracking-widest">{action.category}</span>
-                            </button>
-                        ))
-                    ) : (
-                        <div className="p-8 text-center text-xs text-zinc-500">
-                            Tidak ditemukan perintah yang cocok dengan "{query}".
-                        </div>
+                <ul id="command-list" ref={listRef} role="listbox" className="flex-1 overflow-y-auto p-2">
+                    {filteredActions.length === 0 && (
+                        <li className="px-4 py-10 text-center text-body-sm text-fg-3">Tidak ada hasil untuk “{query}”.</li>
                     )}
-                </div>
+                    {filteredActions.map((item, index) => {
+                        const Icon = item.icon;
+                        const showHeader = item.category !== lastCategory;
+                        lastCategory = item.category;
+                        const selected = index === activeIndex;
+                        return (
+                            <React.Fragment key={item.id}>
+                                {showHeader && (
+                                    <li role="presentation" className="px-2.5 pb-1 pt-2.5 text-caption font-medium uppercase tracking-wider text-fg-muted">
+                                        {item.category}
+                                    </li>
+                                )}
+                                <li
+                                    id={`cmd-${item.id}`}
+                                    role="option"
+                                    aria-selected={selected}
+                                    data-index={index}
+                                    onMouseMove={() => setActiveIndex(index)}
+                                    onClick={() => run(item)}
+                                    className={cn(
+                                        'flex min-h-[44px] cursor-pointer items-center gap-3 rounded-sm px-2.5 py-2',
+                                        selected ? 'bg-primary-subtle text-fg' : 'text-fg-2'
+                                    )}
+                                >
+                                    <Icon size={16} className={cn('shrink-0', selected ? 'text-primary-text' : 'text-fg-muted')} aria-hidden="true" />
+                                    <span className="min-w-0 flex-1">
+                                        <span className="block truncate text-body-sm font-medium">{item.title}</span>
+                                        {item.hint && <span className="block truncate text-caption text-fg-muted">{item.hint}</span>}
+                                    </span>
+                                    {selected && <CornerDownLeft size={14} className="shrink-0 text-fg-muted" aria-hidden="true" />}
+                                </li>
+                            </React.Fragment>
+                        );
+                    })}
+                </ul>
 
-                <div className="p-3 bg-[#111115] border-t border-[#26262d] text-[10px] text-zinc-500 flex justify-between items-center px-5">
-                    <span>Gunakan navigasi keyboard atau klik</span>
-                    <span>Pusat Kendali Multi-Brand</span>
+                <div className="hidden items-center gap-4 border-t border-border px-4 py-2 text-caption text-fg-muted sm:flex">
+                    <span><kbd className="font-sans">↑↓</kbd> pilih</span>
+                    <span><kbd className="font-sans">Enter</kbd> buka</span>
+                    <span><kbd className="font-sans">Esc</kbd> tutup</span>
                 </div>
             </div>
         </div>

@@ -102,7 +102,6 @@ export const INITIAL_USERS = [
     {
         id: 'usr_super_ary',
         username: 'admin',
-        password: 'password123',
         fullName: 'Ary (Super Administrator)',
         email: 'ary@interiorcorp.com',
         role: 'SUPER_ADMIN',
@@ -112,7 +111,6 @@ export const INITIAL_USERS = [
     {
         id: 'usr_homeputra',
         username: 'homeputra',
-        password: 'password123',
         fullName: 'Admin Marketing Homeputra',
         email: 'sales@homeputrainterior.com',
         role: 'MARKETING_ADMIN',
@@ -122,7 +120,6 @@ export const INITIAL_USERS = [
     {
         id: 'usr_heya',
         username: 'heya',
-        password: 'password123',
         fullName: 'Admin Marketing Heya',
         email: 'sales@heyainterior.id',
         role: 'MARKETING_ADMIN',
@@ -132,7 +129,6 @@ export const INITIAL_USERS = [
     {
         id: 'usr_putra',
         username: 'putra',
-        password: 'password123',
         fullName: 'Admin Marketing Putra Interior',
         email: 'sales@putrainterior.com',
         role: 'MARKETING_ADMIN',
@@ -142,7 +138,6 @@ export const INITIAL_USERS = [
     {
         id: 'usr_kurnia',
         username: 'kurnia',
-        password: 'password123',
         fullName: 'Admin Marketing Kurnia',
         email: 'sales@kurniainterior.com',
         role: 'MARKETING_ADMIN',
@@ -757,7 +752,6 @@ export const DEFAULT_BRAND_OVERRIDES = [
     }
 ];
 
-export const DEFAULT_GEMINI_API_KEY = 'REMOVED_SECRET';
 export const DEFAULT_GEMINI_MODEL = 'gemini-flash-lite-latest';
 
 // Status Pipeline CRM

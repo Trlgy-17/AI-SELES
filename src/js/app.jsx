@@ -1,9 +1,10 @@
 // File: src/js/app.jsx
 import React, { useState, useEffect, useRef, useCallback, useMemo, Component } from 'react';
 import ReactDOM from 'react-dom/client';
+import '@fontsource-variable/geist';
+import { TriangleAlert, RotateCw } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell.jsx';
 import { Toast } from '../components/common/Toast.jsx';
-import { Icons } from '../components/Icons.jsx';
 import { AIWorkspace } from '../components/modules/AIWorkspace.jsx';
 import { CRMModule } from '../components/modules/CRMModule.jsx';
 import { EstimatorCalculator } from '../components/modules/EstimatorCalculator.jsx';
@@ -11,19 +12,10 @@ import { KnowledgeBase } from '../components/modules/KnowledgeBase.jsx';
 import { CloudSettingsModal } from '../components/modals/CloudSettingsModal.jsx';
 import { AuthModal } from '../components/modals/AuthModal.jsx';
 import { CommandPalette } from '../components/layout/CommandPalette.jsx';
-import { AuthService } from './services/auth.js';
-import { StorageService } from './services/storage.js';
-import { 
-    BASE_KEYS, 
-    loadUserData, 
-    reconcileCloudData, 
-    getTombstones 
-} from './services/migration.js';
+import { PageHeader, Button } from '../components/ui/index.js';
+import { LoginScreen } from '../components/auth/LoginScreen.jsx';
+import { AuthApi, LeadsApi, TasksApi } from './services/api.js';
 import { getAsiaJakartaDate } from './utils/date.js';
-import { setupFirebaseBridge } from './services/firebase.js';
-
-// Pasang bridge Firebase
-setupFirebaseBridge();
 
 // =========================================================================
 // ERROR BOUNDARY
@@ -42,23 +34,26 @@ class ErrorBoundary extends Component {
     render() {
         if (this.state.hasError) {
             return (
-                <div className="min-h-[100dvh] bg-[#0d0d0d] text-white p-8 flex flex-col items-center justify-center">
-                    <div className="glass-panel p-8 rounded-3xl max-w-md w-full text-center border border-rose-800 space-y-4">
-                        <div className="w-12 h-12 bg-rose-950 text-rose-400 rounded-2xl flex items-center justify-center mx-auto">
-                            <Icons.AlertTriangle />
+                <div className="flex min-h-[100dvh] items-center justify-center bg-bg p-6 text-fg">
+                    <div className="w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-floating">
+                        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-danger/10 text-red-400">
+                            <TriangleAlert size={20} aria-hidden="true" />
                         </div>
-                        <h2 className="serif-font text-xl font-bold text-white">Terjadi Kesalahan Aplikasi</h2>
-                        <p className="text-xs text-zinc-400 bg-[#15151a] p-3 rounded-xl border border-[#26262d] text-left overflow-auto max-h-32">
-                            {this.state.error?.toString()}
+                        <h2 className="text-h2 font-semibold">Aplikasi mengalami kendala</h2>
+                        <p className="mt-1.5 text-body text-fg-3">
+                            Terjadi kesalahan saat menampilkan halaman. Data Anda tetap tersimpan. Muat ulang untuk melanjutkan.
                         </p>
-                        <div className="space-y-2 pt-2">
-                            <button 
-                                onClick={() => window.location.reload()} 
-                                className="gold-btn px-6 py-2.5 rounded-xl text-xs font-bold w-full"
-                            >
-                                Muat Ulang Aplikasi
-                            </button>
-                        </div>
+                        <details className="mt-4 rounded-sm border border-border bg-surface-2 p-3 text-body-sm text-fg-3">
+                            <summary className="cursor-pointer text-fg-2">Detail teknis</summary>
+                            <pre className="mt-2 max-h-32 overflow-auto whitespace-pre-wrap text-caption">{this.state.error?.toString()}</pre>
+                        </details>
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-sm bg-primary text-body font-semibold text-primary-fg hover:bg-primary-hover"
+                        >
+                            <RotateCw size={16} aria-hidden="true" />
+                            Muat ulang aplikasi
+                        </button>
                     </div>
                 </div>
             );
@@ -70,25 +65,31 @@ class ErrorBoundary extends Component {
 // =========================================================================
 // TOP-LEVEL APP (ORCHESTRATOR)
 // =========================================================================
-export function App() {
+
+// Legacy task shape used by the reminder banner: Jakarta calendar date + Indonesian status.
+const toBannerTask = (t) => ({
+    id: t.id,
+    status: t.status === 'DONE' ? 'Selesai' : t.status === 'CANCELLED' ? 'Batal' : 'Pending',
+    dueDate: t.dueAt ? new Date(new Date(t.dueAt).getTime() + 7 * 3600_000).toISOString().slice(0, 10) : null,
+    needsReschedule: !t.dueAt && t.status === 'PENDING'
+});
+
+export function App({ session, onSessionChange, onLoggedOut }) {
     const [activeTab, setActiveTab] = useState('workspace');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [toast, setToast] = useState(null);
+    const [addLeadRequested, setAddLeadRequested] = useState(false);
+    const [aiPrefillLead, setAiPrefillLead] = useState(null);
     const toastTimerRef = useRef(null);
 
-    // Multi-Brand Auth Session & Modal States
-    const [authSession, setAuthSession] = useState(() => AuthService.getCurrentSession());
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [showCommandPalette, setShowCommandPalette] = useState(false);
-
-    const [userId, setUserId] = useState(null);
-    const [syncStatus, setSyncStatus] = useState(() => {
-        return window.firebaseServices?.isConfigured ? 'checking' : 'local';
-    });
     const [showCloudModal, setShowCloudModal] = useState(false);
-    const [firebaseConfigState, setFirebaseConfigState] = useState(() => {
-        return window.firebaseServices?.getActiveConfig?.() || null;
-    });
+
+    const [crmLeads, setCrmLeads] = useState([]);
+    const [leadsLoading, setLeadsLoading] = useState(true);
+    const [followUpTasks, setFollowUpTasks] = useState([]);
+    const [syncStatus, setSyncStatus] = useState('synced');
 
     const showToast = useCallback((message, type = 'info') => {
         if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -98,199 +99,71 @@ export function App() {
         }, 3500);
     }, []);
 
-    // Listen event ganti auth dan command palette
     useEffect(() => {
-        const handleAuthChanged = (e) => {
-            if (e.detail) {
-                setAuthSession(e.detail);
-            }
-        };
-        const handleOpenPalette = () => {
-            setShowCommandPalette(true);
-        };
-        window.addEventListener('auth-changed', handleAuthChanged);
+        const handleOpenPalette = () => setShowCommandPalette(true);
         window.addEventListener('open-command-palette', handleOpenPalette);
         return () => {
-            window.removeEventListener('auth-changed', handleAuthChanged);
             window.removeEventListener('open-command-palette', handleOpenPalette);
-        };
-    }, []);
-
-    useEffect(() => {
-        return () => {
             if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
         };
     }, []);
 
-    const activeBrand = authSession?.activeBrand;
-    const currentUser = authSession?.user;
-    const allBrands = useMemo(() => AuthService.getBrands(), [authSession]);
+    const activeBrand = session.activeBrand;
+    const currentUser = session.user;
+    const allBrands = session.brands;
+    const can = useCallback((perm) => Boolean(session.permissions?.includes(perm)), [session.permissions]);
 
-    const handleSwitchBrand = (brandId) => {
+    const reloadLeads = useCallback(async () => {
+        setLeadsLoading(true);
         try {
-            const updated = AuthService.switchWorkspace(brandId);
-            setAuthSession(updated);
-            showToast(`Beralih ke workspace ${updated.activeBrand?.brandName}`, 'info');
+            const res = await LeadsApi.list();
+            setCrmLeads(res.data);
+            setSyncStatus('synced');
+        } catch (err) {
+            setSyncStatus('error');
+            showToast(err.message, 'error');
+        } finally {
+            setLeadsLoading(false);
+        }
+    }, [showToast]);
+
+    const reloadTasks = useCallback(async () => {
+        if (!session.permissions?.includes('task.manage')) return;
+        try {
+            const res = await TasksApi.list('all');
+            setFollowUpTasks(res.data.map(toBannerTask));
+        } catch {
+            // Banner is non-critical; errors surface on the CRM page.
+        }
+    }, [session.permissions]);
+
+    useEffect(() => {
+        reloadLeads();
+        reloadTasks();
+    }, [session.activeBrandId, reloadLeads, reloadTasks]);
+
+    const handleSwitchBrand = async (brandId) => {
+        try {
+            const next = await AuthApi.switchBrand(brandId);
+            onSessionChange(next);
+            showToast(`Beralih ke workspace ${next.activeBrand?.brandName}`, 'info');
         } catch (err) {
             showToast(err.message, 'error');
         }
     };
 
-    const handleLoginSuccess = (session) => {
-        setAuthSession(session);
-        showToast(`Sesi aktif: ${session.user?.fullName} (${session.activeBrand?.brandName})`, 'info');
-    };
-
-    const [crmLeads, setCrmLeads] = useState(() => {
-        const { leads } = loadUserData(null);
-        return leads;
-    });
-
-    const [followUpTasks, setFollowUpTasks] = useState(() => {
-        const { tasks } = loadUserData(null);
-        return tasks;
-    });
-
-    // Storage synchronization
-    useEffect(() => {
-        const key = StorageService.getUserKey(BASE_KEYS.CRM_LEADS, userId);
-        const res = StorageService.setItem(key, crmLeads);
-        if (!res.success && res.isQuotaExceeded) {
-            showToast("Peringatan: Kuota penyimpanan browser penuh! Segera ekspor data ke CSV.", "error");
+    const handleLogout = async () => {
+        try {
+            await AuthApi.logout();
+        } finally {
+            onLoggedOut();
         }
-    }, [crmLeads, userId, showToast]);
-
-    useEffect(() => {
-        const key = StorageService.getUserKey(BASE_KEYS.FOLLOWUP_TASKS, userId);
-        const res = StorageService.setItem(key, followUpTasks);
-        if (!res.success && res.isQuotaExceeded) {
-            showToast("Peringatan: Kuota penyimpanan browser penuh! Segera ekspor data ke CSV.", "error");
-        }
-    }, [followUpTasks, userId, showToast]);
-
-    // Firebase Lifecycle & Real-Time Sync
-    useEffect(() => {
-        let unsubAuth = null;
-        let unsubLeadsSnapshot = null;
-        let unsubTasksSnapshot = null;
-        let isMounted = true;
-
-        const connectFirebase = async () => {
-            if (!window.firebaseServices || !window.firebaseServices.isConfigured) {
-                if (isMounted) setSyncStatus('local');
-                return;
-            }
-
-            const { auth, db, appId, signInAnonymously, onAuthStateChanged, collection, onSnapshot } = window.firebaseServices;
-
-            if (!auth || !db) {
-                if (isMounted) setSyncStatus('local');
-                return;
-            }
-
-            if (isMounted) setSyncStatus('checking');
-
-            try {
-                await signInAnonymously(auth);
-            } catch (authErr) {
-                console.warn("[App] Auth error:", authErr);
-                if (isMounted) {
-                    if (authErr.code === 'auth/unauthorized-domain') {
-                        setSyncStatus('error');
-                        showToast(`Domain "${window.location.hostname}" belum diizinkan di Firebase Console. Buka Pengaturan Cloud untuk instruksi.`, "error");
-                    } else {
-                        setSyncStatus('local');
-                    }
-                }
-            }
-
-            unsubAuth = onAuthStateChanged(auth, (user) => {
-                if (!isMounted) return;
-
-                if (user) {
-                    setUserId(user.uid);
-
-                    const userLocalData = loadUserData(user.uid);
-                    setCrmLeads(userLocalData.leads);
-                    setFollowUpTasks(userLocalData.tasks);
-
-                    const leadsCol = collection(db, 'artifacts', appId, 'users', user.uid, 'crmLeads');
-                    unsubLeadsSnapshot = onSnapshot(leadsCol, (snapshot) => {
-                        if (!isMounted) return;
-                        const cloudItems = [];
-                        snapshot.forEach(docSnap => cloudItems.push(docSnap.data()));
-
-                        const tombstones = getTombstones('leads', user.uid);
-                        setCrmLeads(prev => reconcileCloudData(prev, cloudItems, tombstones));
-                        setSyncStatus('synced');
-                    }, (err) => {
-                        console.warn("[App] Leads snapshot error:", err);
-                        if (isMounted) setSyncStatus('error');
-                    });
-
-                    const tasksCol = collection(db, 'artifacts', appId, 'users', user.uid, 'followUpTasks');
-                    unsubTasksSnapshot = onSnapshot(tasksCol, (snapshot) => {
-                        if (!isMounted) return;
-                        const cloudTasks = [];
-                        snapshot.forEach(docSnap => cloudTasks.push(docSnap.data()));
-
-                        const tombstones = getTombstones('tasks', user.uid);
-                        setFollowUpTasks(prev => reconcileCloudData(prev, cloudTasks, tombstones));
-                    }, (err) => {
-                        console.warn("[App] Tasks snapshot error:", err);
-                    });
-
-                } else {
-                    setUserId(null);
-                    setSyncStatus('local');
-                }
-            });
-        };
-
-        connectFirebase();
-
-        const handleReconfigured = () => {
-            if (isMounted) {
-                setFirebaseConfigState(window.firebaseServices.getActiveConfig());
-                connectFirebase();
-            }
-        };
-
-        window.addEventListener('firebase-ready', connectFirebase);
-        window.addEventListener('firebase-reconfigured', handleReconfigured);
-
-        return () => {
-            isMounted = false;
-            window.removeEventListener('firebase-ready', connectFirebase);
-            window.removeEventListener('firebase-reconfigured', handleReconfigured);
-            if (unsubAuth) unsubAuth();
-            if (unsubLeadsSnapshot) unsubLeadsSnapshot();
-            if (unsubTasksSnapshot) unsubTasksSnapshot();
-        };
-    }, [showToast]);
-
-    const handleSaveCloudConfig = (config) => {
-        if (window.firebaseServices?.reconfigure) {
-            const res = window.firebaseServices.reconfigure(config);
-            setFirebaseConfigState(config);
-            if (res.isConfigured) {
-                showToast("Konfigurasi Firebase diterapkan! Memeriksa koneksi...", "info");
-            } else {
-                setSyncStatus('local');
-                showToast("Beralih ke mode penyimpanan lokal.", "info");
-            }
-        }
-    };
-
-    const handleForceLocal = () => {
-        handleSaveCloudConfig(null);
-        setShowCloudModal(false);
     };
 
     const todayStr = getAsiaJakartaDate();
-    const overdueCount = useMemo(() => followUpTasks.filter(t => t.status !== 'Selesai' && t.dueDate && t.dueDate < todayStr).length, [followUpTasks, todayStr]);
-    const todayCount = useMemo(() => followUpTasks.filter(t => t.dueDate === todayStr && t.status !== 'Selesai').length, [followUpTasks, todayStr]);
-    const rescheduleCount = useMemo(() => followUpTasks.filter(t => t.needsReschedule || (!t.dueDate && t.status !== 'Selesai')).length, [followUpTasks]);
+    const overdueCount = useMemo(() => followUpTasks.filter(t => t.status === 'Pending' && t.dueDate && t.dueDate < todayStr).length, [followUpTasks, todayStr]);
+    const todayCount = useMemo(() => followUpTasks.filter(t => t.dueDate === todayStr && t.status === 'Pending').length, [followUpTasks, todayStr]);
+    const rescheduleCount = useMemo(() => followUpTasks.filter(t => t.needsReschedule).length, [followUpTasks]);
 
     return (
         <AppShell
@@ -313,85 +186,73 @@ export function App() {
             <Toast toast={toast} />
 
             {activeTab === 'workspace' && (
-                <AIWorkspace 
-                    activeBrand={activeBrand} 
-                    currentUser={currentUser} 
-                    crmLeads={crmLeads} 
-                    showToast={showToast} 
+                <AIWorkspace
+                    activeBrand={activeBrand}
+                    currentUser={currentUser}
+                    crmLeads={crmLeads}
+                    showToast={showToast}
+                    prefillLead={aiPrefillLead}
+                    onPrefillHandled={() => setAiPrefillLead(null)}
                 />
             )}
             {activeTab === 'crm' && (
-                <CRMModule 
-                    crmLeads={crmLeads} 
-                    setCrmLeads={setCrmLeads} 
-                    followUpTasks={followUpTasks} 
-                    setFollowUpTasks={setFollowUpTasks} 
-                    userId={userId} 
+                <CRMModule
+                    crmLeads={crmLeads}
+                    setCrmLeads={setCrmLeads}
+                    isLoading={leadsLoading}
+                    can={can}
                     showToast={showToast}
                     activeBrand={activeBrand}
                     currentUser={currentUser}
+                    autoOpenAddLead={addLeadRequested}
+                    onAutoOpenAddLeadHandled={() => setAddLeadRequested(false)}
                     onConsultLeadInAI={(lead) => {
+                        setAiPrefillLead(lead);
                         setActiveTab('workspace');
-                        showToast(`Membuka Sales Ary untuk klien ${lead.name}`, 'info');
+                        showToast(`Memori klien ${lead.name} dimuat di Sales AI.`, 'info');
                     }}
                 />
             )}
             {activeTab === 'estimator' && (
-                <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#26262d] pb-6">
-                        <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="w-2 h-2 rounded-full bg-[#c5a059]"></span>
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-[#c5a059]">
-                                    Kalkulator Interior & Custom Furniture
-                                </span>
-                            </div>
-                            <h1 className="text-xl md:text-2xl font-black text-white tracking-wide">
-                                Estimator Anggaran Biaya (RAB) — {activeBrand?.brandName || 'Brand Aktif'}
-                            </h1>
-                            <p className="text-xs text-zinc-400 mt-1">
-                                Simulasikan rincian biaya proyek interior, ekspor dokumen PDF penawaran resmi, dan sinkronkan ke Sales Ary.
-                            </p>
-                        </div>
-                    </div>
-
-                    <EstimatorCalculator 
-                        activeBrand={activeBrand} 
-                        showToast={showToast} 
+                <div className="space-y-6">
+                    <PageHeader
+                        title="Estimator"
+                        description="Simulasikan RAB proyek interior, lalu bagikan ke klien atau gunakan di Sales AI."
+                    />
+                    <EstimatorCalculator
+                        activeBrand={activeBrand}
+                        showToast={showToast}
                         onApplyToAI={(calcData) => {
                             setActiveTab('workspace');
-                            showToast(`Hasil hitungan ${calcData.projectType} (${calcData.budget}) siap digunakan di Sales Ary!`);
-                        }} 
+                            showToast(`Hasil hitungan ${calcData.projectType} (${calcData.budget}) siap digunakan di Sales AI.`);
+                        }}
                     />
                 </div>
             )}
             {activeTab === 'knowledge' && (
-                <KnowledgeBase 
+                <KnowledgeBase
                     activeBrand={activeBrand}
                     currentUser={currentUser}
-                    onApplyToAI={(calcData) => {
-                        setActiveTab('workspace');
-                        showToast(`Hasil hitungan ${calcData.projectType} (${calcData.budget}) siap digunakan di Sales Ary!`);
-                    }}
+                    onOpenEstimator={() => setActiveTab('estimator')}
                     showToast={showToast}
                 />
             )}
 
-            <CloudSettingsModal 
+            <CloudSettingsModal
                 isOpen={showCloudModal}
                 onClose={() => setShowCloudModal(false)}
-                onSaveConfig={handleSaveCloudConfig}
-                currentConfig={firebaseConfigState}
-                syncStatus={syncStatus}
-                onForceLocalMode={handleForceLocal}
+                session={session}
+                can={can}
+                showToast={showToast}
+                onDataChanged={() => { reloadLeads(); reloadTasks(); }}
             />
 
             <AuthModal
                 isOpen={showAuthModal}
                 onClose={() => setShowAuthModal(false)}
-                currentUser={currentUser}
-                activeBrand={activeBrand}
-                onLoginSuccess={handleLoginSuccess}
+                session={session}
+                showToast={showToast}
+                onLogout={handleLogout}
             />
 
             <CommandPalette
@@ -402,9 +263,35 @@ export function App() {
                 currentUser={currentUser}
                 onSwitchBrand={handleSwitchBrand}
                 onOpenAuthModal={() => setShowAuthModal(true)}
+                onAddLead={() => {
+                    setActiveTab('crm');
+                    setAddLeadRequested(true);
+                }}
             />
         </AppShell>
     );
+}
+
+// Session gate: nothing renders until the server confirms the httpOnly session.
+function AppRoot() {
+    const [session, setSession] = useState(undefined);
+
+    useEffect(() => {
+        AuthApi.me().then(setSession).catch(() => setSession(null));
+        const onUnauthorized = () => setSession(null);
+        window.addEventListener('api-unauthorized', onUnauthorized);
+        return () => window.removeEventListener('api-unauthorized', onUnauthorized);
+    }, []);
+
+    if (session === undefined) {
+        return (
+            <div className="flex min-h-[100dvh] items-center justify-center bg-bg text-fg-3" role="status" aria-live="polite">
+                Memuat sesi…
+            </div>
+        );
+    }
+    if (!session) return <LoginScreen onLoggedIn={setSession} />;
+    return <App key={session.user.id} session={session} onSessionChange={setSession} onLoggedOut={() => setSession(null)} />;
 }
 
 // =========================================================================
@@ -415,7 +302,7 @@ if (rootElement) {
     const root = ReactDOM.createRoot(rootElement);
     root.render(
         <ErrorBoundary>
-            <App />
+            <AppRoot />
         </ErrorBoundary>
     );
 }
